@@ -1,0 +1,332 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+enum Track {
+  REACT
+  REACT_NATIVE
+  TYPESCRIPT
+  FRONTEND_SYSTEMS
+}
+
+enum QuestionLevel {
+  JUNIOR
+  MID
+  SENIOR
+}
+
+enum QuestionFormat {
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+  CODE_OUTPUT
+  BUG_HUNT
+  OPEN_ENDED
+}
+
+enum SessionMode {
+  PRACTICE
+  REVIEW
+  MOCK_INTERVIEW
+}
+
+enum MasteryState {
+  NEW
+  LEARNING
+  REVIEWING
+  MASTERED
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean
+  image         String?
+  createdAt     DateTime
+  updatedAt     DateTime
+
+  role       String?
+  banned     Boolean?
+  banReason  String?
+  banExpires DateTime?
+
+  sessions   Session[]
+  accounts   Account[]
+
+  preferences       UserPreference?
+  attempts          Attempt[]
+  questionProgress  QuestionProgress[]
+  skillProgress     SkillProgress[]
+  bookmarks         Bookmark[]
+  notes             Note[]
+  trainingSessions  TrainingSession[]
+
+  @@map("user")
+}
+
+model Session {
+  id           String   @id
+  expiresAt    DateTime
+  token        String   @unique
+  createdAt    DateTime
+  updatedAt    DateTime
+  ipAddress    String?
+  userAgent    String?
+  userId       String
+  impersonatedBy String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
+}
+
+model UserPreference {
+  id              String         @id @default(cuid())
+  userId          String         @unique
+  targetRole      String?
+  targetLevel     QuestionLevel? @default(MID)
+  weeklyGoal      Int            @default(30)
+  preferredTracks Track[]        @default([REACT, TYPESCRIPT])
+  focusMode       String         @default("balanced")
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preference")
+}
+
+model LearningModule {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  title       String
+  description String
+  summary     String?
+  order       Int           @default(0)
+  track       Track
+  level       QuestionLevel
+  status      String        @default("published")
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  skills    Skill[]
+  questions Question[]
+
+  @@map("learning_module")
+}
+
+model Skill {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String
+  moduleId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  module          LearningModule  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  questionsPrimary Question[]     @relation("PrimarySkill")
+  questionLinks    QuestionSkill[]
+  progress         SkillProgress[]
+
+  @@map("skill")
+}
+
+model Question {
+  id             String         @id @default(cuid())
+  slug           String         @unique
+  moduleId       String
+  primarySkillId String
+  difficulty     Int
+  level          QuestionLevel
+  format         QuestionFormat
+  prompt         String
+  explanation    String
+  takeaways      Json?
+  status         String         @default("published")
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  module       LearningModule   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  primarySkill Skill            @relation("PrimarySkill", fields: [primarySkillId], references: [id], onDelete: Restrict)
+  options      QuestionOption[]
+  skillLinks   QuestionSkill[]
+  attempts     Attempt[]
+  progress     QuestionProgress[]
+  bookmarks    Bookmark[]
+  notes        Note[]
+  sessionItems TrainingSessionItem[]
+
+  @@map("question")
+}
+
+model QuestionOption {
+  id          String   @id @default(cuid())
+  questionId  String
+  label       String
+  explanation String
+  isCorrect   Boolean  @default(false)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@map("question_option")
+}
+
+model QuestionSkill {
+  questionId String
+  skillId    String
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  skill    Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([questionId, skillId])
+  @@map("question_skill")
+}
+
+model TrainingSession {
+  id        String      @id @default(cuid())
+  userId    String
+  mode      SessionMode
+  config    Json?
+  score     Int?
+  startedAt DateTime    @default(now())
+  endedAt   DateTime?
+
+  user     User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items    TrainingSessionItem[]
+  attempts Attempt[]
+
+  @@map("training_session")
+}
+
+model TrainingSessionItem {
+  id         String   @id @default(cuid())
+  sessionId  String
+  questionId String
+  order      Int
+  createdAt  DateTime @default(now())
+
+  session  TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  question Question        @relation(fields: [questionId], references: [id], onDelete: Restrict)
+
+  @@map("training_session_item")
+}
+
+model Attempt {
+  id                String      @id @default(cuid())
+  userId            String
+  questionId        String
+  sessionId         String?
+  selectedOptionIds String[]
+  isCorrect         Boolean
+  timeSpentMs       Int?
+  mode              SessionMode
+  createdAt         DateTime    @default(now())
+
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question Question         @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  session  TrainingSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@map("attempt")
+}
+
+model QuestionProgress {
+  id            String       @id @default(cuid())
+  userId        String
+  questionId    String
+  ease          Float        @default(2.3)
+  intervalDays  Int          @default(1)
+  streakCorrect Int          @default(0)
+  lastAttemptAt DateTime?
+  nextReviewAt  DateTime?
+  masteryState  MasteryState @default(NEW)
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+  @@index([userId, nextReviewAt])
+  @@map("question_progress")
+}
+
+model SkillProgress {
+  id            String   @id @default(cuid())
+  userId        String
+  skillId       String
+  masteryScore  Int      @default(0)
+  correctRate   Float    @default(0)
+  lastUpdatedAt DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, skillId])
+  @@map("skill_progress")
+}
+
+model Bookmark {
+  id         String   @id @default(cuid())
+  userId     String
+  questionId String
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+  @@map("bookmark")
+}
+
+model Note {
+  id         String   @id @default(cuid())
+  userId     String
+  questionId String
+  body       String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@map("note")
+}
