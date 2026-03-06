@@ -7,12 +7,17 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "lint:ci": "eslint .",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "tsx prisma/seed.ts"
+    "prisma:seed": "tsx prisma/seed.ts",
+    "test": "vitest",
+    "test:ci": "vitest run",
+    "test:e2e": "playwright test --ui",
+    "test:e2e:ci": "CI=TRUE HEADLESS=TRUE playwright test"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -37,13 +42,20 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@playwright/test": "^1.55.0",
+    "@testing-library/jest-dom": "^6.8.0",
+    "@testing-library/react": "^16.2.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@vitejs/plugin-react": "^5.0.3",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "jsdom": "^28.0.0",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.6.14",
     "prisma": "^6.19.2",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   }
 }
