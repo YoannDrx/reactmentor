@@ -9,6 +9,39 @@ import { SiteConfig } from "@/site-config";
 
 type SocialProvidersType = Parameters<typeof betterAuth>[0]["socialProviders"];
 
+const withLoopbackAliases = (origin: string) => {
+  try {
+    const url = new URL(origin);
+    const aliases = new Set([url.origin]);
+
+    if (url.hostname === "localhost") {
+      aliases.add(`${url.protocol}//127.0.0.1${url.port ? `:${url.port}` : ""}`);
+    }
+
+    if (url.hostname === "127.0.0.1") {
+      aliases.add(`${url.protocol}//localhost${url.port ? `:${url.port}` : ""}`);
+    }
+
+    return [...aliases];
+  } catch {
+    return [origin];
+  }
+};
+
+const trustedOrigins = Array.from(
+  new Set(
+    [
+      getServerUrl(),
+      env.BETTER_AUTH_URL,
+      env.NEXT_PUBLIC_APP_URL,
+      env.NODE_ENV === "development" ? "http://localhost:3000" : undefined,
+      env.NODE_ENV === "development" ? "http://127.0.0.1:3000" : undefined,
+    ]
+      .filter((origin): origin is string => Boolean(origin))
+      .flatMap(withLoopbackAliases),
+  ),
+);
+
 export const SocialProviders: SocialProvidersType = {};
 
 if (env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET) {
@@ -32,10 +65,7 @@ export const configuredSocialProviders = Object.keys(SocialProviders) as Array<
 export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.BETTER_AUTH_URL ?? getServerUrl(),
-  trustedOrigins: [
-    getServerUrl(),
-    ...(env.NEXT_PUBLIC_APP_URL ? [env.NEXT_PUBLIC_APP_URL] : []),
-  ],
+  trustedOrigins,
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
