@@ -18,6 +18,7 @@ export const env = createEnv({
     GOOGLE_CLIENT_ID: z.string().optional(),
     GOOGLE_CLIENT_SECRET: z.string().optional(),
     RESEND_API_KEY: z.string().optional(),
+    RESEND_AUDIENCE_ID: z.string().optional(),
     EMAIL_FROM: z
       .string()
       .default("React Mentor <noreply@reactmentor.dev>"),
