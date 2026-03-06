@@ -1,0 +1,106 @@
+name: Playwright
+
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "prisma/**"
+      - "e2e/**"
+      - "test/**"
+      - "__tests__/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "playwright.config.ts"
+      - ".github/workflows/playwright.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "src/**"
+      - "prisma/**"
+      - "e2e/**"
+      - "test/**"
+      - "__tests__/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "playwright.config.ts"
+      - ".github/workflows/playwright.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/react_mentor_e2e"
+      DATABASE_URL_UNPOOLED: "postgresql://postgres:postgres@localhost:5432/react_mentor_e2e"
+      BETTER_AUTH_SECRET: "ci-e2e-secret-for-react-mentor"
+      BETTER_AUTH_URL: "http://localhost:3000"
+      NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+      EMAIL_FROM: "React Mentor <noreply@do-not-reply.app>"
+      GOOGLE_CLIENT_ID: "ci-google-client-id.apps.googleusercontent.com"
+      GOOGLE_CLIENT_SECRET: "ci-google-client-secret"
+      GITHUB_CLIENT_ID: "ci-github-client-id"
+      GITHUB_CLIENT_SECRET: "ci-github-client-secret"
+      RESEND_API_KEY: "re_ci_placeholder"
+      RESEND_AUDIENCE_ID: "aud_ci_placeholder"
+      PLAYWRIGHT_TEST_BASE_URL: "http://localhost:3000"
+      PORT: 3000
+      CI: "true"
+      NODE_ENV: "production"
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: react_mentor_e2e
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Generate Prisma client
+        run: pnpm prisma generate
+      - name: Apply migrations
+        run: pnpm prisma migrate deploy
+      - name: Verify migration status
+        run: pnpm prisma migrate status
+      - name: Build application
+        run: pnpm build
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install chromium --with-deps
+      - name: Run Playwright tests
+        run: pnpm test:e2e:ci
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: test-results
+          path: test-results/
+          retention-days: 30
