@@ -65,14 +65,35 @@ export async function completeOnboardingIfNeeded(page: Page) {
     return;
   }
 
-  await page
-    .getByLabel(/Target role|Role cible/)
-    .fill("Frontend Product Engineer");
-  await page.getByRole("button", { name: /Continue|Continuer/ }).click();
-  await page.getByRole("button", { name: /Continue|Continuer/ }).click();
-  await page
-    .getByRole("button", { name: /Open dashboard|Ouvrir le dashboard/ })
-    .click();
+  const targetRoleField = page.locator('input[name="targetRole"]');
+  const cadenceField = page.locator('input[name="weeklyGoal"]');
+  const continueButton = page.getByRole("button", {
+    name: /Continue|Continuer/,
+  });
+  const finishButton = page.getByRole("button", {
+    name: /Open dashboard|Ouvrir le dashboard/,
+  });
+
+  await expect(targetRoleField).toBeVisible({ timeout: 15_000 });
+  await targetRoleField.fill("Frontend Product Engineer");
+
+  await Promise.all([
+    expect(targetRoleField).toBeHidden({ timeout: 15_000 }),
+    continueButton.click(),
+  ]);
+
+  await expect(continueButton).toBeVisible({ timeout: 15_000 });
+  await Promise.all([
+    expect(cadenceField).toBeVisible({ timeout: 15_000 }),
+    continueButton.click(),
+  ]);
+
+  await expect(finishButton).toBeVisible({ timeout: 15_000 });
+  await Promise.all([
+    page.waitForURL(/\/dashboard$/, { timeout: 20_000 }),
+    finishButton.click(),
+  ]);
+  await page.waitForLoadState("networkidle");
   await expect(page).toHaveURL(/\/dashboard$/);
 }
 
