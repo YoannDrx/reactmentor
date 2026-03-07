@@ -1,12 +1,6 @@
 "use client";
 
 import {
-  getLocalizedMasteryBands,
-  getLocalizedSkillRadar,
-  getLocalizedWeeklyMomentum,
-} from "@/features/dashboard/dashboard-view-model";
-import { useI18n } from "@/i18n/provider";
-import {
   Area,
   AreaChart,
   Bar,
@@ -25,9 +19,11 @@ const tooltipStyle = {
   boxShadow: "0 22px 60px -28px rgba(15,23,32,0.35)",
 };
 
-export function WeeklyMomentumChart() {
-  const { messages } = useI18n();
-  const data = getLocalizedWeeklyMomentum(messages);
+export function WeeklyMomentumChart({
+  data,
+}: {
+  data: Array<{ day: string; score: number }>;
+}) {
 
   return (
     <ResponsiveContainer width="100%" height={260}>
@@ -66,9 +62,11 @@ export function WeeklyMomentumChart() {
   );
 }
 
-export function SkillRadarChart() {
-  const { messages } = useI18n();
-  const data = getLocalizedSkillRadar(messages);
+export function SkillRadarChart({
+  data,
+}: {
+  data: Array<{ skill: string; score: number }>;
+}) {
 
   return (
     <ResponsiveContainer width="100%" height={300}>
@@ -99,9 +97,11 @@ export function SkillRadarChart() {
   );
 }
 
-export function MasteryBreakdownChart() {
-  const { messages } = useI18n();
-  const data = getLocalizedMasteryBands(messages);
+export function MasteryBreakdownChart({
+  data,
+}: {
+  data: Array<{ band: string; value: number }>;
+}) {
 
   return (
     <ResponsiveContainer width="100%" height={250}>

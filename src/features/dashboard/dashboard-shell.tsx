@@ -1,9 +1,11 @@
 "use client";
 
+import { QuestionLevel, Track } from "@prisma/client";
 import { LogoMark } from "@/components/brand/logo";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { LanguageToggle } from "@/features/i18n/language-toggle";
+import type { DashboardRecommendation } from "@/features/dashboard/dashboard-recommendation-contract";
 import { useI18n } from "@/i18n/provider";
 import { cn } from "@/lib/utils";
 import {
@@ -34,17 +36,34 @@ const navigationIcons = {
 export function DashboardShell({
   children,
   user,
+  sidebarSnapshot,
 }: {
   children: React.ReactNode;
   user: {
     name: string;
     email: string;
   };
+  sidebarSnapshot: {
+    dueReviews: number;
+    readiness: number;
+    targetRole: string;
+    targetLevel: QuestionLevel;
+    primaryTrack: Track;
+    recommendation: DashboardRecommendation;
+  };
 }) {
   const pathname = usePathname();
   const { messages, t } = useI18n();
   const sidebar = messages.dashboard.sidebar;
   const pages = messages.dashboard.pages;
+  const levelLabels: Record<QuestionLevel, string> = {
+    [QuestionLevel.JUNIOR]: messages.common.levels.junior,
+    [QuestionLevel.MID]: messages.common.levels.mid,
+    [QuestionLevel.SENIOR]: messages.common.levels.senior,
+  };
+  const activeTargetValue = sidebarSnapshot.targetRole.trim()
+    ? `${sidebarSnapshot.targetRole} · ${messages.dashboard.trackLabels[sidebarSnapshot.primaryTrack]} / ${levelLabels[sidebarSnapshot.targetLevel]}`
+    : `${messages.dashboard.trackLabels[sidebarSnapshot.primaryTrack]} / ${levelLabels[sidebarSnapshot.targetLevel]}`;
   const navigation = [
     {
       href: "/dashboard",
@@ -83,9 +102,15 @@ export function DashboardShell({
     "/dashboard/progress": pages.progress,
     "/dashboard/mock-interviews": pages.mockInterviews,
     "/dashboard/review": pages.review,
+    "/dashboard/session": pages.session,
     "/dashboard/settings": pages.settings,
   } as const;
-  const currentMeta = pageMeta[pathname as keyof typeof pageMeta] ?? pageMeta["/dashboard"];
+  const currentMeta =
+    pathname.startsWith("/dashboard/modules/")
+      ? pageMeta["/dashboard/modules"]
+      : pathname.startsWith("/dashboard/session/")
+        ? pageMeta["/dashboard/session"]
+      : pageMeta[pathname as keyof typeof pageMeta] ?? pageMeta["/dashboard"];
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window === "undefined") {
       return false;
@@ -94,6 +119,20 @@ export function DashboardShell({
     return window.localStorage.getItem("react-mentor.sidebar") === "collapsed";
   });
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const todayFocusText =
+    sidebarSnapshot.recommendation.kind === "review"
+      ? t("dashboard.sidebar.todayFocusReview", {
+          count: sidebarSnapshot.recommendation.dueCount,
+        })
+      : sidebarSnapshot.recommendation.kind === "module"
+        ? t(
+            `dashboard.sidebar.todayFocusModule.${sidebarSnapshot.recommendation.reason}`,
+            {
+              module: sidebarSnapshot.recommendation.moduleTitle,
+            },
+          )
+        : sidebar.todayFocusFallback;
 
   const toggleCollapsed = () => {
     const next = !collapsed;
@@ -170,12 +209,14 @@ export function DashboardShell({
                   {sidebar.todayFocusLabel}
                 </div>
                 <div className="text-sm leading-6 text-slate-200">
-                  {sidebar.todayFocusText}
+                  {todayFocusText}
                 </div>
               </div>
               <div className={cn("mt-3", collapsed && "mt-0")}>
                 <Badge className="w-fit border-cyan-400/20 bg-cyan-400/10 text-cyan-100">
-                  {t("dashboard.sidebar.dueReviews", { count: 18 })}
+                  {t("dashboard.sidebar.dueReviews", {
+                    count: sidebarSnapshot.dueReviews,
+                  })}
                 </Badge>
               </div>
             </div>
@@ -227,10 +268,12 @@ export function DashboardShell({
                 <div className="text-xs uppercase tracking-[0.22em] text-slate-400">
                   {sidebar.activeTargetLabel}
                 </div>
-                <div className="text-sm text-white">{sidebar.activeTargetValue}</div>
+                <div className="text-sm text-white">{activeTargetValue}</div>
               </div>
               <Badge className="mt-3 w-fit border-emerald-400/20 bg-emerald-400/10 text-emerald-100">
-                {t("dashboard.sidebar.readiness", { value: 81 })}
+                {t("dashboard.sidebar.readiness", {
+                  value: sidebarSnapshot.readiness,
+                })}
               </Badge>
             </div>
 
@@ -280,9 +323,6 @@ export function DashboardShell({
 
               <div className="flex items-center gap-3">
                 <LanguageToggle />
-                <div className="hidden rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-sm text-slate-600 lg:block">
-                  {sidebar.nextMock}
-                </div>
                 <Link
                   href="/dashboard/review"
                   className={cn(

@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -8,27 +9,187 @@ import {
 } from "@/components/ui/card";
 import {
   getLocalizedMockTemplates,
-  getLocalizedRecentSessions,
-  getLocalizedReviewQueue,
 } from "@/features/dashboard/dashboard-view-model";
 import {
   SkillRadarChart,
   WeeklyMomentumChart,
 } from "@/features/dashboard/dashboard-charts";
+import { getDashboardRecommendation } from "@/features/dashboard/dashboard-recommendations";
+import { getMockTemplateAvailabilities } from "@/features/sessions/session-builder";
+import { createTrainingSessionAction } from "@/features/sessions/session.action";
+import { mockTemplateKeys } from "@/features/sessions/session-contract";
 import { getI18n } from "@/i18n/server";
+import { getRequiredUser } from "@/lib/auth/auth-user";
+import { getDashboardReadModel } from "@/features/dashboard/dashboard-read-model";
 import { Target } from "lucide-react";
+import Link from "next/link";
 
 export default async function DashboardOverviewPage() {
-  const { messages } = await getI18n();
+  const user = await getRequiredUser("/dashboard");
+  const { locale, messages, t } = await getI18n();
   const overview = messages.dashboard.overview;
-  const reviewQueue = getLocalizedReviewQueue(messages);
-  const recentSessions = getLocalizedRecentSessions(messages);
   const mockTemplates = getLocalizedMockTemplates(messages).slice(0, 2);
+  const readModel = await getDashboardReadModel(user.id, locale);
+  const recommendation = await getDashboardRecommendation(user.id, locale);
+  const templateAvailabilities = await getMockTemplateAvailabilities();
+  const reviewQueue = readModel.overview.dueItems;
+  const recentSessions = readModel.overview.recentSessions;
+  const reviewQuestionCount = Math.min(
+    10,
+    Math.max(1, readModel.overview.stats.dueToday),
+  );
+  const weeklyMomentumData = readModel.overview.weeklyMomentum.map((item) => ({
+    day: messages.common.days[item.dayKey],
+    score: item.score,
+  }));
+  const skillReadinessData = readModel.overview.skillReadiness.map((item) => ({
+    skill: item.skill,
+    score: item.score,
+  }));
+  const statCards = [
+    {
+      label: overview.stats[0]?.label ?? "",
+      value: `${readModel.overview.stats.readiness}/100`,
+      change: overview.statChanges.readiness,
+    },
+    {
+      label: overview.stats[1]?.label ?? "",
+      value: String(readModel.overview.stats.masteredQuestions),
+      change: t("dashboard.overview.statChanges.mastered", {
+        count: readModel.overview.stats.masteredQuestions,
+        total: readModel.overview.stats.totalQuestions,
+      }),
+    },
+    {
+      label: overview.stats[2]?.label ?? "",
+      value: String(readModel.overview.stats.dueToday),
+      change:
+        readModel.overview.stats.dueToday > 0
+          ? overview.statChanges.dueActive
+          : overview.statChanges.dueClear,
+    },
+    {
+      label: overview.stats[3]?.label ?? "",
+      value: String(readModel.overview.stats.completedMocks),
+      change:
+        readModel.overview.stats.completedMocks > 0
+          ? t("dashboard.overview.statChanges.mocks", {
+              count: readModel.overview.stats.completedMocks,
+            })
+          : overview.statChanges.noMocks,
+    },
+  ];
 
   return (
     <div className="grid gap-6">
+      {recommendation.kind !== "none" ? (
+        <Card className="overflow-hidden border-slate-950 bg-slate-950 text-white">
+          <CardHeader className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-start">
+            <div className="space-y-3">
+              <Badge className="w-fit border-white/10 bg-white/10 text-white">
+                {overview.recommendedTitle}
+              </Badge>
+              <div className="space-y-2">
+                <CardTitle className="text-white">
+                  {recommendation.kind === "review"
+                    ? overview.recommendedReviewTitle
+                    : t("dashboard.recommendation.moduleTitle", {
+                        module: recommendation.moduleTitle,
+                      })}
+                </CardTitle>
+                <CardDescription className="max-w-2xl text-slate-300">
+                  {recommendation.kind === "review"
+                    ? t("dashboard.recommendation.reviewDescription", {
+                        count: recommendation.dueCount,
+                      })
+                    : t(
+                        `dashboard.recommendation.moduleDescriptions.${recommendation.reason}`,
+                      )}
+                </CardDescription>
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:min-w-[18rem]">
+              {recommendation.kind === "review" ? (
+                <>
+                  <div className="rounded-[22px] border border-white/10 bg-white/5 p-4">
+                    <div className="text-xs uppercase tracking-[0.22em] text-slate-400">
+                      {overview.recommendedDueLabel}
+                    </div>
+                    <div className="mt-2 text-2xl font-semibold text-white">
+                      {recommendation.dueCount}
+                    </div>
+                  </div>
+                  <div className="rounded-[22px] border border-white/10 bg-white/5 p-4">
+                    <div className="text-xs uppercase tracking-[0.22em] text-slate-400">
+                      {overview.recommendedSessionSizeLabel}
+                    </div>
+                    <div className="mt-2 text-2xl font-semibold text-cyan-200">
+                      {recommendation.questionCount}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="rounded-[22px] border border-white/10 bg-white/5 p-4">
+                    <div className="text-xs uppercase tracking-[0.22em] text-slate-400">
+                      {overview.recommendedTrackLabel}
+                    </div>
+                    <div className="mt-2 text-base font-semibold text-white">
+                      {messages.dashboard.trackLabels[recommendation.track]}
+                    </div>
+                  </div>
+                  <div className="rounded-[22px] border border-white/10 bg-white/5 p-4">
+                    <div className="text-xs uppercase tracking-[0.22em] text-slate-400">
+                      {overview.recommendedProgressLabel}
+                    </div>
+                    <div className="mt-2 text-2xl font-semibold text-cyan-200">
+                      {recommendation.progressPercent}%
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap gap-2">
+              {recommendation.kind === "module"
+                ? recommendation.focusSkills.map((skill) => (
+                    <Badge
+                      key={skill}
+                      className="border-white/10 bg-white/5 text-slate-200"
+                    >
+                      {skill}
+                    </Badge>
+                  ))
+                : null}
+            </div>
+
+            {recommendation.kind === "review" ? (
+              <form action={createTrainingSessionAction}>
+                <input type="hidden" name="mode" value="REVIEW" />
+                <input type="hidden" name="locale" value={locale} />
+                <input
+                  type="hidden"
+                  name="questionCount"
+                  value={String(recommendation.questionCount)}
+                />
+                <Button type="submit">{overview.startReviewAction}</Button>
+              </form>
+            ) : (
+              <Link
+                href={`/dashboard/modules/${recommendation.moduleSlug}`}
+                className={buttonVariants({ variant: "primary", size: "md" })}
+              >
+                {overview.recommendedModuleAction}
+              </Link>
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
+
       <section className="grid gap-4 xl:grid-cols-4">
-        {overview.stats.map((stat) => (
+        {statCards.map((stat) => (
           <Card key={stat.label}>
             <CardContent className="space-y-3 pt-6">
               <div className="text-sm text-slate-500">{stat.label}</div>
@@ -50,7 +211,7 @@ export default async function DashboardOverviewPage() {
             <CardDescription>{overview.weeklyMomentumDescription}</CardDescription>
           </CardHeader>
           <CardContent>
-            <WeeklyMomentumChart />
+            <WeeklyMomentumChart data={weeklyMomentumData} />
           </CardContent>
         </Card>
 
@@ -60,7 +221,7 @@ export default async function DashboardOverviewPage() {
             <CardDescription>{overview.skillReadinessDescription}</CardDescription>
           </CardHeader>
           <CardContent>
-            <SkillRadarChart />
+            <SkillRadarChart data={skillReadinessData} />
           </CardContent>
         </Card>
       </section>
@@ -68,29 +229,58 @@ export default async function DashboardOverviewPage() {
       <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <Card>
           <CardHeader>
-            <CardTitle>{overview.dueTitle}</CardTitle>
-            <CardDescription>{overview.dueDescription}</CardDescription>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <CardTitle>{overview.dueTitle}</CardTitle>
+                <CardDescription>{overview.dueDescription}</CardDescription>
+              </div>
+              {readModel.overview.stats.dueToday > 0 ? (
+                <form action={createTrainingSessionAction}>
+                  <input type="hidden" name="mode" value="REVIEW" />
+                  <input type="hidden" name="locale" value={locale} />
+                  <input
+                    type="hidden"
+                    name="questionCount"
+                    value={String(reviewQuestionCount)}
+                  />
+                  <Button type="submit">{overview.startReviewAction}</Button>
+                </form>
+              ) : (
+                <Link href="/dashboard/review">
+                  <Button variant="secondary">{overview.openReviewAction}</Button>
+                </Link>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {reviewQueue.map((item) => (
-              <div
-                key={item.title}
-                className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4"
-              >
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <Badge className="border-orange-200 bg-orange-50 text-orange-700">
-                    {item.urgency}
-                  </Badge>
-                  <div className="text-xs uppercase tracking-[0.22em] text-slate-400">
-                    {item.skill}
+            {reviewQueue.length > 0 ? (
+              reviewQueue.map((item) => (
+                <div
+                  key={item.questionId}
+                  className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4"
+                >
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <Badge className="border-orange-200 bg-orange-50 text-orange-700">
+                      {overview.urgencyLabels[item.urgency]}
+                    </Badge>
+                    <div className="text-xs uppercase tracking-[0.22em] text-slate-400">
+                      {item.skill}
+                    </div>
                   </div>
+                  <div className="font-medium text-slate-950">{item.title}</div>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    {overview.reasonLabels[item.reason]}
+                  </p>
                 </div>
-                <div className="font-medium text-slate-950">{item.title}</div>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  {item.reason}
-                </p>
+              ))
+            ) : (
+              <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4 text-sm leading-6 text-slate-600">
+                <div className="font-medium text-slate-950">
+                  {overview.emptyDueTitle}
+                </div>
+                <p className="mt-2">{overview.emptyDueDescription}</p>
               </div>
-            ))}
+            )}
           </CardContent>
         </Card>
 
@@ -101,25 +291,41 @@ export default async function DashboardOverviewPage() {
               <CardDescription>{overview.recentDescription}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {recentSessions.map((session) => (
-                <div
-                  key={session.id}
-                  className="flex items-start justify-between gap-4 rounded-[24px] border border-slate-200 bg-white p-4"
-                >
-                  <div>
-                    <div className="font-medium text-slate-950">{session.title}</div>
-                    <div className="mt-1 text-sm text-slate-500">
-                      {session.duration}
+              {recentSessions.length > 0 ? (
+                recentSessions.map((session) => (
+                  <div
+                    key={session.id}
+                    className="flex items-start justify-between gap-4 rounded-[24px] border border-slate-200 bg-white p-4"
+                  >
+                    <div>
+                      <div className="font-medium text-slate-950">
+                        {overview.sessionModes[session.mode]}
+                      </div>
+                      <div className="mt-1 text-sm text-slate-500">
+                        {t("dashboard.overview.recentSessionDuration", {
+                          count: session.durationMinutes,
+                        })}
+                      </div>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">
+                        {t("dashboard.overview.recentSessionSummary", {
+                          count: session.answersCount,
+                          mode: overview.sessionModes[session.mode],
+                        })}
+                      </p>
                     </div>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">
-                      {session.summary}
-                    </p>
+                    <div className="rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-700">
+                      {session.score}%
+                    </div>
                   </div>
-                  <div className="rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-700">
-                    {session.score}%
+                ))
+              ) : (
+                <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4 text-sm leading-6 text-slate-600">
+                  <div className="font-medium text-slate-950">
+                    {overview.emptyRecentTitle}
                   </div>
+                  <p className="mt-2">{overview.emptyRecentDescription}</p>
                 </div>
-              ))}
+              )}
             </CardContent>
           </Card>
 
@@ -129,7 +335,13 @@ export default async function DashboardOverviewPage() {
               <CardDescription>{overview.nextMockDescription}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {mockTemplates.map((template) => (
+              {mockTemplates.map((template, index) => {
+                const templateKey = mockTemplateKeys[index];
+                const availableQuestions = templateKey
+                  ? templateAvailabilities[templateKey]
+                  : 0;
+
+                return (
                 <div
                   key={template.title}
                   className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4"
@@ -143,8 +355,24 @@ export default async function DashboardOverviewPage() {
                   <p className="text-sm leading-6 text-slate-600">
                     {template.description}
                   </p>
+                  {templateKey ? (
+                    <form action={createTrainingSessionAction} className="mt-4">
+                      <input type="hidden" name="mode" value="MOCK_INTERVIEW" />
+                      <input type="hidden" name="locale" value={locale} />
+                      <input type="hidden" name="templateKey" value={templateKey} />
+                      <Button type="submit" disabled={availableQuestions === 0}>
+                        {overview.launchMockAction}
+                      </Button>
+                    </form>
+                  ) : null}
+                  {availableQuestions === 0 ? (
+                    <p className="mt-3 text-sm leading-6 text-slate-500">
+                      {overview.mockUnavailable}
+                    </p>
+                  ) : null}
                 </div>
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
         </div>

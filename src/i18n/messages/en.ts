@@ -323,6 +323,37 @@ const en = {
       socialError: "Unable to sign in",
     },
   },
+  onboarding: {
+    badge: "First-run setup",
+    title: "Give React Mentor enough context to coach you properly.",
+    description:
+      "This short setup prevents a generic dashboard and aligns the next modules, reviews and mock sessions with your actual objective.",
+    steps: {
+      goal: "Goal",
+      tracks: "Tracks",
+      cadence: "Cadence",
+    },
+    stepDescriptions: {
+      goal: "Define the role and benchmark you are preparing for.",
+      tracks: "Choose the stacks that should dominate recommendations.",
+      cadence: "Set the weekly intensity and the posture of the training loop.",
+    },
+    panelTitle: "This setup will drive",
+    panelDescription:
+      "React Mentor uses these signals to rank modules, schedule reviews and decide how aggressive the product should be during short preparation windows.",
+    panelItems: [
+      "the default order of recommended modules",
+      "the cadence of spaced reviews and weak-signal reminders",
+      "the tone and density of future mock interviews",
+      "the next best action surfaced in the dashboard",
+    ],
+    actions: {
+      back: "Back",
+      next: "Continue",
+      finish: "Open dashboard",
+      finishing: "Finishing...",
+    },
+  },
   dashboard: {
     pages: {
       overview: {
@@ -350,6 +381,11 @@ const en = {
         description:
           "Focus on what slipped recently and what still sounds fragile under pressure.",
       },
+      session: {
+        title: "Live session",
+        description:
+          "Answer, validate and move through a real training sequence with immediate feedback.",
+      },
       settings: {
         title: "Workspace settings",
         description:
@@ -359,13 +395,19 @@ const en = {
     sidebar: {
       appLabel: "interview workspace",
       todayFocusLabel: "Today focus",
-      todayFocusText:
-        "Review effects, finish the React Mid mock and push TypeScript above 80%.",
+      todayFocusFallback:
+        "Tune your workspace and open a module to start shaping the next training loop.",
+      todayFocusReview:
+        "{count} due cards should be cleared before opening new drills.",
+      todayFocusModule: {
+        start: "Start {module} to align today with your active track.",
+        grow: "Push {module}; it is the biggest growth surface in your current path.",
+        reinforce: "Reinforce {module} before widening the surface.",
+      },
       dueReviews: "{count} reviews due",
       activeTargetLabel: "Active target",
       activeTargetValue: "React Mid / Frontend Product",
       readiness: "{value} readiness",
-      nextMock: "Next mock in 02:15",
       nav: {
         overview: {
           label: "Overview",
@@ -394,6 +436,13 @@ const en = {
       },
     },
     overview: {
+      recommendedTitle: "Recommended next step",
+      recommendedReviewTitle: "Clear the review queue before it hardens",
+      recommendedDueLabel: "Due now",
+      recommendedSessionSizeLabel: "Suggested review size",
+      recommendedTrackLabel: "Priority track",
+      recommendedProgressLabel: "Current progress",
+      recommendedModuleAction: "Open recommended module",
       stats: [
         {
           label: "Preparation score",
@@ -416,6 +465,14 @@ const en = {
           change: "latest score 84%",
         },
       ],
+      statChanges: {
+        readiness: "live readiness signal",
+        mastered: "{count} out of {total} tracked questions",
+        dueActive: "spacing queue is active",
+        dueClear: "nothing due right now",
+        mocks: "{count} completed timed sessions",
+        noMocks: "no timed session yet",
+      },
       weeklyMomentumTitle: "Weekly momentum",
       weeklyMomentumDescription:
         "Observe how answer quality evolves, not just the amount of questions completed.",
@@ -425,34 +482,79 @@ const en = {
       dueTitle: "Due today",
       dueDescription:
         "The queue of questions to revisit before a bad intuition settles in.",
+      startReviewAction: "Start review session",
+      openReviewAction: "Open review lab",
       recentTitle: "Recent sessions",
       recentDescription:
         "A compact history to stay focused on feedback and useful decisions.",
       nextMockTitle: "Next recommended mock",
       nextMockDescription:
         "A suggested session based on your current weak zone.",
+      launchMockAction: "Launch this mock",
+      mockUnavailable: "This mock is not available yet because no playable question matches the preset.",
+      urgencyLabels: {
+        critical: "Review now",
+        high: "Due today",
+        normal: "Scheduled",
+      },
+      reasonLabels: {
+        overdue: "This card is overdue and should come back before the intuition degrades further.",
+        failedRecently:
+          "This topic is still unstable and needs a short feedback loop.",
+        scheduled:
+          "This question is due again to verify that the mechanism actually stuck.",
+      },
+      emptyDueTitle: "No review cards due right now",
+      emptyDueDescription:
+        "The queue is clear for now. The best next move is to start a new practice session or a timed mock.",
+      sessionModes: {
+        PRACTICE: "Practice session",
+        REVIEW: "Review session",
+        MOCK_INTERVIEW: "Mock interview",
+      },
+      recentSessionDuration: "{count} min",
+      recentSessionSummary: "{count} answers recorded in {mode}.",
+      emptyRecentTitle: "No completed sessions yet",
+      emptyRecentDescription:
+        "As soon as you finish a practice, review or mock session, the recent activity will appear here.",
+    },
+    recommendation: {
+      moduleTitle: "Focus next on {module}",
+      reviewDescription:
+        "{count} review cards are already due. A short review loop protects the concepts you already touched.",
+      moduleDescriptions: {
+        start:
+          "This module matches your active track and has not been started yet. It is the cleanest next entry point.",
+        grow:
+          "This module still has the most room to grow for your active track, with enough surface to create momentum quickly.",
+        reinforce:
+          "This module is already moving and is the best place to reinforce before you widen the surface area.",
+      },
     },
     modules: {
+      recommendedTitle: "Recommended module path",
+      recommendedReviewTitle: "Review should take priority over opening a new module",
+      recommendedDueLabel: "Due cards",
+      recommendedSessionSizeLabel: "Suggested review size",
+      recommendedTrackLabel: "Priority track",
+      recommendedProgressLabel: "Current progress",
+      recommendedModuleAction: "Open recommended module",
+      recommendedReviewAction: "Open review lab",
+      recommendedBadge: "Recommended",
       completionLabel: "Module completion",
+      attemptedSummary: "{count} attempted",
+      masteredSummary: "{count} mastered",
       questionsSummary:
         "{count} questions currently active, with detailed explanations and interview-ready talking points.",
-      metrics: [
-        {
-          label: "Active tracks",
-          value: "4",
-          detail: "React, hooks, TS, RN",
-        },
-        {
-          label: "Questions in rotation",
-          value: "154",
-          detail: "mixed practice and review",
-        },
-        {
-          label: "Current bottleneck",
-          value: "Effects",
-          detail: "deps and synchronization",
-        },
-      ],
+      stats: {
+        activeTracksLabel: "Active tracks",
+        activeTracksDetail: "currently represented in the content library",
+        questionCountLabel: "Questions in library",
+        questionCountDetail: "already modeled in the current seed",
+        skillCountLabel: "Skills in library",
+        skillCountDetail: "available as localized building blocks",
+      },
+      openModule: "Open module",
       architectureTitle: "Module architecture",
       architectureDescription:
         "The system is ready to go deeper: modules, skills, questions, progression and sessions are already designed at the data layer.",
@@ -472,10 +574,117 @@ const en = {
         "recommendations powered by repeated mistakes",
       ],
     },
+    trackLabels: {
+      REACT: "React",
+      REACT_NATIVE: "React Native",
+      TYPESCRIPT: "TypeScript",
+      FRONTEND_SYSTEMS: "Frontend Systems",
+    },
+    moduleDetail: {
+      backToLibrary: "Back to library",
+      summaryFallback:
+        "This module is already structured in the data layer and ready to power sessions, progression and review flows.",
+      questionCountLabel: "Questions in module",
+      skillCountLabel: "Skills covered",
+      launchPractice: "Launch practice session",
+      practiceUnavailable: "No playable single-choice question is available yet for this module.",
+      skillsTitle: "Skills covered",
+      skillsDescription:
+        "Each skill should later feed practice sessions, review scheduling and weakness analytics.",
+      positioningTitle: "Interview angle",
+      positioningDescription:
+        "This module should prepare the user to explain the mechanism, the trap and the tradeoff instead of reciting an API.",
+      positioningItems: [
+        "one clear topic cluster with explicit interview signals",
+        "skills mapped before question volume grows",
+        "designed to connect future sessions, review and mocks",
+      ],
+      nextBuildTitle: "Next delivery layers",
+      nextBuildDescription:
+        "The module page is now real data. The next step is to wire sessions, progress and recommendations on top of it.",
+      nextBuildItems: [
+        "practice mode launched from the module",
+        "review sessions scoped to the module",
+        "module-specific mock templates",
+        "weakness insights tied to the covered skills",
+      ],
+    },
+    session: {
+      progressLabel: "Question {current} / {total}",
+      submitAnswer: "Submit answer",
+      retryAnswer: "Retry save",
+      submitting: "Checking...",
+      nextQuestion: "Next question",
+      finishSession: "See session result",
+      loadingNextQuestion: "Loading next question...",
+      loadingSessionResult: "Loading session result...",
+      selectionRequired: "Select an answer before submitting.",
+      correctState: "Correct",
+      incorrectState: "Incorrect",
+      keyboardHint: "Use keys 1-{count} to choose an answer, then Enter to validate.",
+      explanationTitle: "Mechanism",
+      takeawaysTitle: "What to retain",
+      recoveryTitle: "Answer not saved yet",
+      recoveryHint:
+        "Your selection is still preserved. Retry the save or adjust your answer before submitting again.",
+      timerLabel: "Mock timer",
+      timeRemainingLabel: "Time left",
+      timeBudgetLabel: "Time budget",
+      timeSpentLabel: "Time used",
+      timedModeBadge: "Timed simulation",
+      timerExpiredToast: "Time is up. The mock is being closed.",
+      completedBadge: "Session completed",
+      completedTitle: "Session completed",
+      mockReportTitle: "Mock report",
+      mockReportDescription:
+        "A first pressure readout to see whether the answer quality held under the template constraints.",
+      mockPressureLabel: "Pressure readout",
+      mockSkillsTitle: "Skills tested in this mock",
+      mockSkillsSummary: "{correct} correct out of {total} questions on this skill.",
+      mockRiskTitle: "Main slips to revisit",
+      mockRiskStates: {
+        incorrect: "Incorrect answer",
+        unanswered: "Unanswered under pressure",
+      },
+      mockRiskEmpty:
+        "No major slip was detected in this mock. Keep the verbalization points below for the next round.",
+      mockVerbalizeTitle: "Points to verbalize next time",
+      mockPressureStates: {
+        controlled: "Controlled pace",
+        tight: "Tight but acceptable",
+        overrun: "Pressure still breaks the answer",
+      },
+      mockPressureDescriptions: {
+        controlled:
+          "The mock stayed under control: score, completion and time budget all stayed in a strong zone.",
+        tight:
+          "The mock stayed viable, but the margin is thinner. Keep sharpening speed and verbal structure.",
+        overrun:
+          "Timing or answer quality still collapses under pressure. Run another targeted loop before trusting this signal.",
+      },
+      backToDashboard: "Back to dashboard",
+      backToModules: "Back to modules",
+      correctAnswersLabel: "Correct answers",
+      questionsAnsweredLabel: "Answered",
+      minutesShort: "{count} min",
+      errors: {
+        unauthorized: "Your session expired. Sign in again.",
+        invalid: "This session item is no longer valid.",
+        expired: "This timed session has already ended.",
+        unknown: "Unable to save this answer right now.",
+      },
+      modeLabels: {
+        PRACTICE: "Practice session",
+        REVIEW: "Review session",
+        MOCK_INTERVIEW: "Mock interview",
+      },
+    },
     progress: {
       masteryMapTitle: "Mastery map",
       masteryMapDescription:
         "The strongest skills and the uncertainty pockets that are still visible.",
+      emptyModuleAction: "Open recommended module",
+      emptyReviewAction: "Open review lab",
       distributionTitle: "Mastery distribution",
       distributionDescription:
         "Mastered, in progress and questions that need immediate review.",
@@ -490,12 +699,52 @@ const en = {
         medium: "good base, language still needs sharpening",
         fragile: "still fragile in interview conditions",
       },
+      emptyTitle: "No learning signal yet",
+      emptyDescription:
+        "Your progression charts will become meaningful after your first real attempts. Start with a module to generate the first data points.",
     },
     mockInterviews: {
       timedMode: "timed mode",
+      launchTemplate: "Launch template",
+      templateUnavailable:
+        "No playable single-choice question is available for this preset yet.",
+      overviewTitle: "Mock performance readout",
+      overviewDescription:
+        "A compact signal on whether the latest timed runs are actually improving your interview readiness.",
+      completedMocksLabel: "Completed mocks",
+      averageScoreLabel: "Average score",
+      bestScoreLabel: "Best score",
+      latestMomentumLabel: "Latest momentum",
+      noTrendYet: "A second completed mock is needed before trend becomes meaningful.",
+      momentumStates: {
+        up: "Improving",
+        down: "Slipping",
+        steady: "Stable",
+      },
+      momentumDescriptions: {
+        up: "{count} pts above the previous mock average.",
+        down: "{count} pts below the previous mock average.",
+        steady: "Within {count} pts of the previous mock average.",
+      },
+      templateSignalsTitle: "Template signals",
+      templateSignalsDescription:
+        "Which mock presets are already holding up and which ones still need another pass.",
+      strongestTemplateLabel: "Most stable template",
+      needsWorkTemplateLabel: "Needs another pass",
+      templateSessionsSummary: "{count} completed runs",
+      latestScoreLabel: "Latest score",
+      averagePaceLabel: "Average pace",
       historyTitle: "Recent mock history",
       historyDescription:
         "What was executed recently and which gains should feed into the next rounds.",
+      historyEmptyTitle: "No completed mock yet",
+      historyEmptyDescription:
+        "As soon as you finish a timed session, the real mock history will appear here.",
+      fallbackSessionTitle: "Mock interview",
+      completedAtLabel: "Completed",
+      recentSessionDuration: "{count} min",
+      recentSessionSummary: "{count} answers recorded in this mock.",
+      openReport: "Open report",
       philosophyTitle: "Scoring philosophy",
       philosophyDescription:
         "The final score should not flatter. It should tell you whether the answer can survive in front of a demanding interviewer.",
@@ -514,6 +763,28 @@ const en = {
       queueTitle: "Review queue",
       queueDescription:
         "The cards to revisit now so bad intuitions do not become habits.",
+      launchTitle: "Turn due cards into a live review session",
+      launchDescription:
+        "Run a focused review loop before weak intuitions decay further. The engine will prioritize the most overdue and most fragile cards first.",
+      launchAction: "Start review session",
+      launchUnavailable: "No review session is available because nothing is due yet.",
+      dueNowLabel: "Cards due now",
+      nextSessionSizeLabel: "Cards in next session",
+      urgencyLabels: {
+        critical: "Review now",
+        high: "Due today",
+        normal: "Scheduled",
+      },
+      reasonLabels: {
+        overdue: "This card is overdue and should come back before the intuition degrades further.",
+        failedRecently:
+          "This topic is still unstable and needs a short feedback loop.",
+        scheduled:
+          "This question is due again to verify that the mechanism actually stuck.",
+      },
+      emptyTitle: "No reviews are due right now",
+      emptyDescription:
+        "This queue will fill automatically when questions become due again through the spaced review system.",
       howTitle: "How review is meant to work",
       howDescription:
         "The goal is not to repeat the same questions forever. It is to fix an identified misconception, then let time test the stability.",
@@ -524,23 +795,78 @@ const en = {
       ],
     },
     settings: {
-      targetTitle: "Target setup",
-      targetDescription:
-        "What the engine should optimize when it prepares your sessions and recommendations.",
-      targetItems: [
-        { label: "Target level", value: "React Mid / Frontend Product" },
-        { label: "Primary stack", value: "React, TypeScript, React Native" },
-        { label: "Weekly goal", value: "30 questions + 2 mocks" },
-      ],
-      postureTitle: "Learning posture",
-      postureDescription:
-        "The settings that the future product can use to nuance feedback and review pacing.",
-      postureItems: [
-        "immediate feedback enabled",
-        "mock sessions on Tuesday and Friday",
-        "priority on hooks and effects mistakes",
-        "automatic review for questions marked fragile",
-      ],
+      introBadge: "Personalize your training loop",
+      introTitle:
+        "Turn the workspace into a plan that matches your interviews.",
+      introDescription:
+        "These preferences drive prioritization, pacing and future recommendations. Keep them aligned with the role you are actually targeting.",
+      targetRoleLabel: "Target role",
+      targetRoleHint:
+        "Describe the role, company context or interview scope you want the product to optimize for.",
+      targetRolePlaceholder: "Frontend Product Engineer · React / Next.js",
+      targetLevelTitle: "Target level",
+      targetLevelDescription:
+        "Explanation depth, question mix and mock intensity will adapt to this benchmark.",
+      preferredTracksTitle: "Priority tracks",
+      preferredTracksDescription:
+        "Select the tracks that should dominate your next recommendations and sessions.",
+      weeklyGoalTitle: "Weekly cadence",
+      weeklyGoalDescription:
+        "Set the effort level you realistically want the engine to plan around.",
+      weeklyGoalLabel: "Questions target",
+      weeklyGoalHint:
+        "Between 5 and 150 questions per week. Adjust it to the time you can really protect.",
+      weeklyGoalPresetsLabel: "Quick presets",
+      focusModeTitle: "Training posture",
+      focusModeDescription:
+        "This setting tunes how aggressive the platform should be when choosing drills and reviews.",
+      summaryTitle: "Current operating profile",
+      summaryDescription:
+        "A compact snapshot of the way React Mentor will shape the next study cycle.",
+      summaryTargetLabel: "Active target",
+      summaryWeeklyGoalLabel: "Weekly volume",
+      summaryFocusModeLabel: "Focus mode",
+      summaryTracksLabel: "Track coverage",
+      summaryEmptyTargetRole: "Target role not defined yet",
+      summaryConfigured:
+        "Your workspace is personalized and ready to drive the next sessions.",
+      summaryNotConfigured:
+        "Define a target role to unlock better recommendations from the dashboard.",
+      weeklyGoalUnit: "questions / week",
+      actions: {
+        save: "Save setup",
+        saving: "Saving...",
+      },
+      errors: {
+        targetRoleRequired: "Define the role you want React Mentor to optimize for",
+        targetRoleTooLong: "Keep the target role under 120 characters",
+        weeklyGoalTooSmall: "Set a weekly goal of at least 5 questions",
+        weeklyGoalTooBig: "Keep the weekly goal at 150 questions or less",
+        preferredTracksRequired: "Select at least one priority track",
+        invalidSelection: "This setting value is not valid",
+        unauthorized: "Your session expired. Sign in again to save.",
+        unknown: "Unable to save your preferences right now.",
+      },
+      toasts: {
+        saved: "Preferences updated",
+      },
+      focusModes: {
+        balanced: {
+          label: "Balanced progression",
+          description:
+            "Mix breadth and repetition so the product keeps moving without losing the fundamentals.",
+        },
+        deep_dive: {
+          label: "Deep dive on weak spots",
+          description:
+            "Bias the queue toward fragile concepts, harder explanations and concentrated correction loops.",
+        },
+        interview_cram: {
+          label: "Interview sprint",
+          description:
+            "Compress the pace for short preparation windows with more mocks and denser weekly goals.",
+        },
+      },
     },
     modulesCatalog: [
       {
@@ -639,6 +965,9 @@ const en = {
       rn: "React Native",
     },
     masteryLabels: {
+      new: "New",
+      learning: "Learning",
+      reviewing: "Reviewing",
       mastered: "Mastered",
       inProgress: "In progress",
       review: "To review",
