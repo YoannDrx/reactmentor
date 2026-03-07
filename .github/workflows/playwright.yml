@@ -37,7 +37,7 @@ jobs:
     env:
       DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/react_mentor_e2e"
       DATABASE_URL_UNPOOLED: "postgresql://postgres:postgres@localhost:5432/react_mentor_e2e"
-      BETTER_AUTH_SECRET: "ci-e2e-secret-6S4mW9pL2rTx8QnK7vHd3YbNc5ZjF1aP"
+      BETTER_AUTH_SECRET: "${{ secrets.BETTER_AUTH_SECRET }}"
       BETTER_AUTH_URL: "http://localhost:3000"
       NEXT_PUBLIC_APP_URL: "http://localhost:3000"
       EMAIL_FROM: "React Mentor <noreply@do-not-reply.app>"
