@@ -367,6 +367,16 @@ const fr = {
         description:
           "Des modules organisés autour des skills qui comptent vraiment en entretien React.",
       },
+      bookmarks: {
+        title: "Questions sauvegardees",
+        description:
+          "Garder sous la main les prompts a rehearser avant le prochain round d'entretien.",
+      },
+      notes: {
+        title: "Notes personnelles",
+        description:
+          "Capturer ton propre langage d'entretien, les pieges et les rappels directement sur les questions importantes.",
+      },
       progress: {
         title: "Progression par skill",
         description:
@@ -419,6 +429,14 @@ const fr = {
         modules: {
           label: "Modules",
           description: "Parcours, drills et banque de questions",
+        },
+        bookmarks: {
+          label: "Bookmarks",
+          description: "Prompts sauvegardes et points a revisiter",
+        },
+        notes: {
+          label: "Notes",
+          description: "Rappels perso et formulations d'entretien",
         },
         progress: {
           label: "Progression",
@@ -506,6 +524,10 @@ const fr = {
           "Cette card est en retard de review et doit revenir avant que l'intuition ne se degrade davantage.",
         failedRecently:
           "Ce sujet reste instable et a besoin d'une boucle de feedback courte.",
+        weakSkill:
+          "Le skill parent reste fragile ou peu fiable, donc cette question aide a consolider le signal.",
+        mockFallout:
+          "Cette question a cede en mode mock et doit revenir vite avant le prochain round sous pression.",
         scheduled:
           "Cette question revient pour verifier que le mecanisme a vraiment tenu dans le temps.",
       },
@@ -593,7 +615,7 @@ const fr = {
       skillCountLabel: "Skills couvertes",
       launchPractice: "Lancer une session practice",
       practiceUnavailable:
-        "Aucune question single-choice exploitable n'est encore disponible pour ce module.",
+        "Aucune question exploitable n'est encore disponible pour ce module.",
       skillsTitle: "Skills couvertes",
       skillsDescription:
         "Chaque skill doit ensuite alimenter les sessions practice, la programmation des reviews et les analytics de faiblesse.",
@@ -615,6 +637,59 @@ const fr = {
         "insights de faiblesse relies aux skills couvertes",
       ],
     },
+    bookmarks: {
+      title: "Questions sauvegardees",
+      description:
+        "Conserve les prompts que tu veux rehearser, puis relance une boucle practice ciblee quand tu veux.",
+      savedCountLabel: "Sauvegardees",
+      dueCountLabel: "Dues parmi elles",
+      pendingCountLabel: "En review",
+      listTitle: "Queue de bookmarks",
+      listDescription:
+        "Une vue compacte des questions a revisiter, entre cartes dues, reponses ouvertes en attente et references stables.",
+      saveAction: "Sauvegarder",
+      removeAction: "Retirer",
+      openModuleAction: "Ouvrir le module",
+      launchPracticeAction: "Lancer une practice",
+      savedAtLabel: "Sauvegardee le",
+      emptyTitle: "Aucune question sauvegardee pour l'instant",
+      emptyDescription:
+        "Sauvegarde une question depuis une session live, une carte de review ou un rapport de mock pour la garder a portee.",
+      statusLabels: {
+        saved: "Sauvegardee",
+        due: "Due maintenant",
+        pendingReview: "En review",
+        stable: "Reference stable",
+      },
+    },
+    notes: {
+      title: "Notes personnelles",
+      description:
+        "Garde ton propre langage d'entretien au plus pres des questions que tu veux mieux defendre la prochaine fois.",
+      noteCountLabel: "Notes sauvegardees",
+      dueCountLabel: "Dues parmi les notes",
+      pendingCountLabel: "En review",
+      listTitle: "Notes recentes",
+      listDescription:
+        "Une recap compacte des questions sur lesquelles tu as note ta propre correction ou ton angle d'entretien.",
+      editorTitle: "Note personnelle",
+      editorPlaceholder:
+        "Ecris le mecanisme, le piege ou la formulation exacte que tu veux retenir.",
+      updatedAtLabel: "Mise a jour",
+      saveAction: "Enregistrer la note",
+      clearAction: "Effacer la note",
+      openModuleAction: "Ouvrir le module",
+      launchPracticeAction: "Lancer une practice",
+      emptyTitle: "Aucune note personnelle pour l'instant",
+      emptyDescription:
+        "Enregistre une note depuis la review, les bookmarks ou le feedback mock pour construire ton propre langage d'entretien.",
+      statusLabels: {
+        saved: "Sauvegardee",
+        due: "Due maintenant",
+        pendingReview: "En review",
+        stable: "Reference stable",
+      },
+    },
     session: {
       progressLabel: "Question {current} / {total}",
       submitAnswer: "Valider la reponse",
@@ -624,12 +699,39 @@ const fr = {
       finishSession: "Voir le resultat",
       loadingNextQuestion: "Chargement de la question suivante...",
       loadingSessionResult: "Chargement du resultat...",
-      selectionRequired: "Selectionne une reponse avant de valider.",
+      selectionRequired: "Selectionne au moins une reponse avant de valider.",
+      responseRequired: "Ecris une reponse avant de valider.",
       correctState: "Correct",
       incorrectState: "Incorrect",
-      keyboardHint: "Utilise les touches 1-{count} pour choisir puis Entree pour valider.",
+      pendingReviewState: "Enregistree pour review",
+      pendingReviewHint:
+        "Cette reponse est bien enregistree, mais elle n'influence pas encore le score car elle demande une review manuelle.",
+      answerModeLabelSingle: "Reponse unique",
+      answerModeLabelMultiple: "Reponses multiples",
+      answerModeLabelOpen: "Reponse ouverte",
+      openAnswerHint:
+        "Ecris ta reponse, puis valide pour l'enregistrer et continuer.",
+      bugHuntHint:
+        "Selectionne les lignes suspectes, explique le bug, puis valide pour enregistrer l'analyse.",
+      keyboardHintSingle:
+        "Utilise les touches 1-{count} pour choisir puis Entree pour valider.",
+      keyboardHintMultiple:
+        "Utilise les touches 1-{count} pour activer ou retirer des reponses, puis Entree pour valider.",
       explanationTitle: "Mecanisme",
       takeawaysTitle: "A retenir",
+      openResponseLabel: "Ta reponse",
+      openResponsePlaceholder:
+        "Donne le mecanisme, le compromis et la formulation que tu defendrais en entretien.",
+      codeResponseLabel: "Ton code ou snippet",
+      codeResponsePlaceholder:
+        "Ecris le code ou pseudo-code que tu defendrais pendant l'entretien.",
+      codeLanguageLabel: "Langage",
+      codeLanguagePlaceholder: "tsx",
+      bugHuntSnippetLabel: "Snippet a analyser",
+      bugHuntSummaryLabel: "Ton analyse du bug",
+      bugHuntSummaryPlaceholder:
+        "Explique ce qui casse, pourquoi c'est risque et quel changement tu ferais.",
+      bugHuntSelectedLinesLabel: "Lignes selectionnees",
       recoveryTitle: "La reponse n'est pas encore enregistree",
       recoveryHint:
         "Ta selection est conservee. Reessaie l'enregistrement ou ajuste ta reponse avant de valider a nouveau.",
@@ -647,13 +749,27 @@ const fr = {
       mockPressureLabel: "Lecture de pression",
       mockSkillsTitle: "Skills testees dans ce mock",
       mockSkillsSummary: "{correct} bonnes reponses sur {total} questions pour cette skill.",
+      mockSkillsPendingSummary:
+        "{correct} bonnes reponses sur {graded} auto-corrigees, {pending} en attente de review sur cette skill.",
       mockRiskTitle: "Principales chutes a revoir",
       mockRiskStates: {
         incorrect: "Reponse incorrecte",
+        pendingReview: "Verdict manuel en attente",
         unanswered: "Question laissee sous pression",
       },
       mockRiskEmpty:
         "Aucune chute majeure n'a ete detectee dans ce mock. Garde quand meme les points a verbaliser ci-dessous pour la prochaine passe.",
+      mockRubricTitle: "Grille de lecture",
+      mockRubricFocusTitle: "Points a recuperer",
+      rubricCriteriaLabels: {
+        accuracy: "exactitude technique",
+        mechanism: "mecanisme explique",
+        tradeoffs: "tradeoffs et limites",
+        clarity: "clarte du sketch",
+        rootCause: "cause racine",
+        evidence: "preuves dans le snippet",
+        repair: "fix propose",
+      },
       mockVerbalizeTitle: "Points a verbaliser la prochaine fois",
       mockPressureStates: {
         controlled: "Rythme maitrise",
@@ -671,11 +787,15 @@ const fr = {
       backToDashboard: "Retour au dashboard",
       backToModules: "Retour aux modules",
       correctAnswersLabel: "Bonnes reponses",
+      gradedAnswersLabel: "Reponses notees",
+      pendingReviewCountLabel: "En review",
       questionsAnsweredLabel: "Questions traitees",
+      scorePendingLabel: "En review",
       minutesShort: "{count} min",
       errors: {
         unauthorized: "Ta session a expire. Reconnecte-toi.",
         invalid: "Cet item de session n'est plus valide.",
+        unsupported: "Ce format de question n'est pas encore pris en charge dans le player live.",
         expired: "Cette session chronometree est deja terminee.",
         unknown: "Impossible d'enregistrer cette reponse pour l'instant.",
       },
@@ -705,6 +825,15 @@ const fr = {
         medium: "bonne base, langage encore à affûter",
         fragile: "encore fragile en condition d'entretien",
       },
+      signalStates: {
+        high: "signal solide",
+        medium: "signal moyen",
+        low: "signal mince",
+      },
+      confidenceLabel: "Confiance {score}/100",
+      questionsCoveredLabel: "Questions couvertes: {count}",
+      recentFailuresLabel: "Echecs recents: {count}",
+      lastSignalLabel: "Dernier signal: {date}",
       emptyTitle: "Aucun signal d'apprentissage pour l'instant",
       emptyDescription:
         "Les graphiques de progression deviendront utiles apres tes premieres vraies tentatives. Commence par un module pour generer les premiers points de donnees.",
@@ -713,7 +842,7 @@ const fr = {
       timedMode: "mode chronométré",
       launchTemplate: "Lancer le template",
       templateUnavailable:
-        "Aucune question single-choice exploitable n'est encore disponible pour ce preset.",
+        "Aucune question exploitable n'est encore disponible pour ce preset.",
       overviewTitle: "Lecture de performance mock",
       overviewDescription:
         "Un signal compact pour voir si les derniers runs chronométrés améliorent vraiment la readiness entretien.",
@@ -736,6 +865,12 @@ const fr = {
       templateSignalsTitle: "Signaux par template",
       templateSignalsDescription:
         "Les presets qui tiennent deja sous pression et ceux qui demandent encore une passe.",
+      criterionSignalsTitle: "Carte de friction par critere",
+      criterionSignalsDescription:
+        "Une lecture transverse des criteres qui cassent encore le plus souvent lors des reviews manuelles.",
+      criterionReviewCountLabel: "Reponses reviewees",
+      criterionMissingLabel: "Verdicts manquants",
+      criterionPartialLabel: "Verdicts partiels",
       strongestTemplateLabel: "Template le plus stable",
       needsWorkTemplateLabel: "Template a retravailler",
       templateSessionsSummary: "{count} mocks termines",
@@ -770,6 +905,9 @@ const fr = {
       queueTitle: "Review queue",
       queueDescription:
         "Les cartes à reprendre maintenant pour éviter que les mauvaises intuitions deviennent des habitudes.",
+      pendingTitle: "Reviews manuelles en attente",
+      pendingDescription:
+        "Les attempts ouvertes demandent un verdict manuel avant d'impacter la readiness et les scores.",
       launchTitle: "Transformer les cartes dues en session de review",
       launchDescription:
         "Lance une boucle de review ciblée avant que les intuitions fragiles ne se dégradent davantage. Le moteur priorise d'abord les cartes les plus en retard et les plus instables.",
@@ -778,16 +916,55 @@ const fr = {
         "Aucune session review n'est disponible pour l'instant car aucune carte n'est encore due.",
       dueNowLabel: "Cartes dues maintenant",
       nextSessionSizeLabel: "Cartes dans la prochaine session",
+      pendingCountLabel: "Verdicts en attente",
+      yourAnswerLabel: "Ta reponse",
+      referenceLabel: "Correction de reference",
+      selectedLinesLabel: "Lignes selectionnees",
+      rubricVerdictsTitle: "Verdict par critere",
+      reviewSummaryLabel: "Synthese de review",
+      reviewSummaryPlaceholder:
+        "Note le trou principal, l'argument qui manque ou la formulation a rehearser.",
+      saveRubricAction: "Enregistrer la review",
+      rubricVerdictLabels: {
+        solid: "solide",
+        partial: "partiel",
+        missing: "manquant",
+      },
+      rubricTitle: "Rubric de review",
+      rubricFocusTitle: "Points a entendre ou verifier",
+      rubricCriteriaLabels: {
+        accuracy: "exactitude technique",
+        mechanism: "mecanisme explique",
+        tradeoffs: "tradeoffs et limites",
+        clarity: "clarte du sketch",
+        rootCause: "cause racine",
+        evidence: "preuves dans le snippet",
+        repair: "fix propose",
+      },
+      markCorrectAction: "Marquer solide",
+      markIncorrectAction: "Marquer fragile",
+      emptyPendingTitle: "Aucune review manuelle en attente",
+      emptyPendingDescription:
+        "Des qu'une question ouverte ou un bug hunt est termine, il apparait ici jusqu'a ce que tu lui donnes un verdict.",
       urgencyLabels: {
         critical: "A revoir maintenant",
         high: "A revoir aujourd'hui",
         normal: "Programmee",
+      },
+      responseLabels: {
+        text_response: "Reponse ecrite",
+        code_response: "Sketch de code",
+        bug_hunt_response: "Analyse de bug",
       },
       reasonLabels: {
         overdue:
           "Cette card est en retard de review et doit revenir avant que l'intuition ne se degrade davantage.",
         failedRecently:
           "Ce sujet reste instable et a besoin d'une boucle de feedback courte.",
+        weakSkill:
+          "Le skill parent reste fragile ou peu fiable, donc cette question aide a consolider le signal.",
+        mockFallout:
+          "Cette question a cede en mode mock et doit revenir vite avant le prochain round sous pression.",
         scheduled:
           "Cette question revient pour verifier que le mecanisme a vraiment tenu dans le temps.",
       },

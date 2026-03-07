@@ -54,6 +54,13 @@ enum TranslationStatus {
   READY
 }
 
+enum ContentStatus {
+  DRAFT
+  IN_REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
 model User {
   id            String   @id
   name          String
@@ -148,13 +155,13 @@ model UserPreference {
 model LearningModule {
   id          String        @id @default(cuid())
   slug        String        @unique
-  title       String
-  description String
+  title       String?
+  description String?
   summary     String?
   order       Int           @default(0)
   track       Track
   level       QuestionLevel
-  status      String        @default("published")
+  status      ContentStatus @default(PUBLISHED)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
@@ -162,18 +169,19 @@ model LearningModule {
   questions    Question[]
   translations LearningModuleTranslation[]
 
+  @@index([status])
   @@map("learning_module")
 }
 
 model Skill {
-  id          String   @id @default(cuid())
-  slug        String   @unique
-  title       String
-  description String
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  title       String?
+  description String?
   moduleId    String
-  status      String   @default("published")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  status      ContentStatus @default(PUBLISHED)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
   module           LearningModule     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   questionsPrimary Question[]         @relation("PrimarySkill")
@@ -181,6 +189,7 @@ model Skill {
   progress         SkillProgress[]
   translations     SkillTranslation[]
 
+  @@index([status])
   @@map("skill")
 }
 
@@ -192,10 +201,10 @@ model Question {
   difficulty     Int
   level          QuestionLevel
   format         QuestionFormat
-  prompt         String
-  explanation    String
+  prompt         String?
+  explanation    String?
   takeaways      Json?
-  status         String         @default("published")
+  status         ContentStatus  @default(PUBLISHED)
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
@@ -203,6 +212,7 @@ model Question {
   primarySkill Skill                 @relation("PrimarySkill", fields: [primarySkillId], references: [id], onDelete: Restrict)
   options      QuestionOption[]
   skillLinks   QuestionSkill[]
+  pitfallLinks QuestionPitfallTag[]
   attempts     Attempt[]
   progress     QuestionProgress[]
   bookmarks    Bookmark[]
@@ -210,14 +220,15 @@ model Question {
   sessionItems TrainingSessionItem[]
   translations QuestionTranslation[]
 
+  @@index([status])
   @@map("question")
 }
 
 model QuestionOption {
   id          String   @id @default(cuid())
   questionId  String
-  label       String
-  explanation String
+  label       String?
+  explanation String?
   isCorrect   Boolean  @default(false)
   order       Int      @default(0)
   createdAt   DateTime @default(now())
@@ -269,6 +280,7 @@ model QuestionTranslation {
   prompt          String
   explanation     String
   takeaways       Json?
+  contextData     Json?
   interviewSignal String?
   verbalizePoints Json?
   createdAt       DateTime          @default(now())
@@ -307,6 +319,30 @@ model QuestionSkill {
   @@map("question_skill")
 }
 
+model PitfallTag {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  questionLinks QuestionPitfallTag[]
+
+  @@map("pitfall_tag")
+}
+
+model QuestionPitfallTag {
+  questionId   String
+  pitfallTagId String
+
+  question   Question   @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  pitfallTag PitfallTag @relation(fields: [pitfallTagId], references: [id], onDelete: Cascade)
+
+  @@id([questionId, pitfallTagId])
+  @@map("question_pitfall_tag")
+}
+
 model TrainingSession {
   id        String      @id @default(cuid())
   userId    String
@@ -341,8 +377,11 @@ model Attempt {
   userId            String
   questionId        String
   sessionId         String?
-  selectedOptionIds String[]
-  isCorrect         Boolean
+  selectedOptionIds String[]    @default([])
+  responseData      Json?
+  reviewData        Json?
+  isCorrect         Boolean?
+  reviewedAt        DateTime?
   timeSpentMs       Int?
   mode              SessionMode
   createdAt         DateTime    @default(now())
@@ -362,6 +401,9 @@ model QuestionProgress {
   ease          Float        @default(2.3)
   intervalDays  Int          @default(1)
   streakCorrect Int          @default(0)
+  reviewCount   Int          @default(0)
+  lapseCount    Int          @default(0)
+  lastOutcomeCorrect Boolean?
   lastAttemptAt DateTime?
   nextReviewAt  DateTime?
   masteryState  MasteryState @default(NEW)
@@ -380,6 +422,12 @@ model SkillProgress {
   skillId       String
   masteryScore  Int      @default(0)
   correctRate   Float    @default(0)
+  coverageCount Int      @default(0)
+  uniqueQuestionCount Int @default(0)
+  uniqueDifficultyCount Int @default(0)
+  recentFailureCount Int @default(0)
+  confidenceScore Int @default(0)
+  lastAttemptAt DateTime?
   lastUpdatedAt DateTime @updatedAt
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)

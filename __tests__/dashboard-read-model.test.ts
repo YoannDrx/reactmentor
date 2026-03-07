@@ -1,4 +1,9 @@
-import { ContentLocale, MasteryState, SessionMode } from "@prisma/client";
+import {
+  ContentLocale,
+  ContentStatus,
+  MasteryState,
+  SessionMode,
+} from "@prisma/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
@@ -61,6 +66,51 @@ import {
   getMockInterviewReadModel,
 } from "@/features/dashboard/dashboard-read-model";
 
+function createModuleFixture(params: {
+  id: string;
+  slug: string;
+  titleEn: string;
+  titleFr: string;
+}) {
+  return {
+    id: params.id,
+    slug: params.slug,
+    title: params.titleEn,
+    description: `${params.titleEn} description`,
+    summary: `${params.titleEn} summary`,
+    order: 1,
+    track: "REACT",
+    level: "MID",
+    status: ContentStatus.PUBLISHED,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    translations: [
+      {
+        id: `${params.id}_en`,
+        moduleId: params.id,
+        locale: ContentLocale.EN,
+        status: "READY",
+        title: params.titleEn,
+        description: `${params.titleEn} description`,
+        summary: `${params.titleEn} summary`,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: `${params.id}_fr`,
+        moduleId: params.id,
+        locale: ContentLocale.FR,
+        status: "READY",
+        title: params.titleFr,
+        description: `${params.titleFr} description`,
+        summary: `${params.titleFr} resume`,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ],
+  };
+}
+
 function createSkillFixture(params: {
   id: string;
   slug: string;
@@ -73,9 +123,15 @@ function createSkillFixture(params: {
     title: params.titleEn,
     description: `${params.titleEn} description`,
     moduleId: "module_1",
-    status: "published",
+    status: ContentStatus.PUBLISHED,
     createdAt: new Date(),
     updatedAt: new Date(),
+    progress: [] as Array<{
+      userId: string;
+      skillId: string;
+      masteryScore: number;
+      confidenceScore: number;
+    }>,
     translations: [
       {
         id: `${params.id}_en`,
@@ -119,7 +175,7 @@ function createQuestionFixture(params: {
     prompt: params.promptEn,
     explanation: "Legacy explanation",
     takeaways: ["legacy takeaway"],
-    status: "published",
+    status: ContentStatus.PUBLISHED,
     createdAt: new Date(),
     updatedAt: new Date(),
     translations: [
@@ -151,6 +207,18 @@ function createQuestionFixture(params: {
       },
     ],
     primarySkill: params.primarySkill,
+    bookmarks: [] as Array<{
+      id: string;
+    }>,
+    notes: [] as Array<{
+      body: string;
+      updatedAt: Date;
+    }>,
+    attempts: [] as Array<{
+      mode: SessionMode;
+      isCorrect: boolean | null;
+      createdAt: Date;
+    }>,
     options: [
       {
         id: `${params.id}_option_1`,
@@ -194,11 +262,13 @@ describe("getDashboardReadModel", () => {
     transactionMock.mockReset();
     questionCountMock.mockClear();
     attemptCountMock.mockClear();
-    attemptFindManyMock.mockClear();
+    attemptFindManyMock.mockReset();
+    attemptFindManyMock.mockResolvedValue([]);
     questionProgressCountMock.mockClear();
     questionProgressFindManyMock.mockClear();
     trainingSessionCountMock.mockClear();
-    trainingSessionFindManyMock.mockClear();
+    trainingSessionFindManyMock.mockReset();
+    trainingSessionFindManyMock.mockResolvedValue([]);
     skillProgressAggregateMock.mockClear();
     skillProgressFindManyMock.mockClear();
     skillFindManyMock.mockClear();
@@ -229,6 +299,7 @@ describe("getDashboardReadModel", () => {
       [fallbackSkill],
       [],
       [],
+      [],
     ]);
 
     const readModel = await getDashboardReadModel("user_1", "fr");
@@ -256,6 +327,7 @@ describe("getDashboardReadModel", () => {
     });
     expect(readModel.overview.dueItems).toEqual([]);
     expect(readModel.review.items).toEqual([]);
+    expect(readModel.review.pendingItems).toEqual([]);
     expect(readModel.overview.recentSessions).toEqual([]);
     expect(readModel.progress.weeklyMomentum).toHaveLength(7);
     expect(readModel.progress.weeklyMomentum.every((item) => item.score === 0)).toBe(
@@ -367,6 +439,50 @@ describe("getDashboardReadModel", () => {
         },
       },
     ] as never);
+    attemptFindManyMock.mockResolvedValue([
+      {
+        reviewData: {
+          kind: "rubric_review",
+          criteria: [
+            {
+              criterion: "accuracy",
+              verdict: "missing",
+            },
+            {
+              criterion: "mechanism",
+              verdict: "partial",
+            },
+            {
+              criterion: "tradeoffs",
+              verdict: "solid",
+            },
+          ],
+          summary: "Still hand-wavy under pressure.",
+          scorePercent: 50,
+        },
+      },
+      {
+        reviewData: {
+          kind: "rubric_review",
+          criteria: [
+            {
+              criterion: "accuracy",
+              verdict: "partial",
+            },
+            {
+              criterion: "mechanism",
+              verdict: "missing",
+            },
+            {
+              criterion: "tradeoffs",
+              verdict: "partial",
+            },
+          ],
+          summary: "Tradeoffs need sharper language.",
+          scorePercent: 33,
+        },
+      },
+    ] as never);
 
     const readModel = await getMockInterviewReadModel("user_1");
 
@@ -413,9 +529,38 @@ describe("getDashboardReadModel", () => {
         durationBudgetMinutes: 45,
       },
     ]);
+    expect(readModel.criterionBreakdown).toEqual([
+      {
+        criterion: "accuracy",
+        averageScore: 25,
+        reviewCount: 2,
+        missingCount: 1,
+        partialCount: 1,
+      },
+      {
+        criterion: "mechanism",
+        averageScore: 25,
+        reviewCount: 2,
+        missingCount: 1,
+        partialCount: 1,
+      },
+      {
+        criterion: "tradeoffs",
+        averageScore: 75,
+        reviewCount: 2,
+        missingCount: 0,
+        partialCount: 1,
+      },
+    ]);
   });
 
   it("computes review urgency, mastery distribution and localized recent activity", async () => {
+    const renderingModule = createModuleFixture({
+      id: "module_rendering",
+      slug: "react-rendering-systems",
+      titleEn: "React Rendering Systems",
+      titleFr: "Systemes de rendu React",
+    });
     const skillEffects = createSkillFixture({
       id: "skill_effects",
       slug: "effect-mental-model",
@@ -445,12 +590,147 @@ describe("getDashboardReadModel", () => {
       promptFr: "Changer une key force-t-il toujours un rerender ?",
       primarySkill: skillRendering,
     });
+    const mockFalloutQuestion = createQuestionFixture({
+      id: "question_mock_fallout",
+      slug: "effect-cleanup-mock-fallout",
+      promptEn: "Why can an async cleanup wrapper hide a lifecycle bug?",
+      promptFr: "Pourquoi un wrapper de cleanup async peut-il masquer un bug de cycle de vie ?",
+      primarySkill: skillRendering,
+    });
+    skillEffects.progress = [
+      {
+        userId: "user_1",
+        skillId: skillEffects.id,
+        masteryScore: 82,
+        confidenceScore: 84,
+      },
+    ];
+    skillRendering.progress = [
+      {
+        userId: "user_1",
+        skillId: skillRendering.id,
+        masteryScore: 61,
+        confidenceScore: 48,
+      },
+    ];
+    overdueQuestion.attempts = [
+      {
+        mode: SessionMode.REVIEW,
+        isCorrect: true,
+        createdAt: new Date("2026-03-05T10:00:00.000Z"),
+      },
+    ];
+    unstableQuestion.attempts = [
+      {
+        mode: SessionMode.PRACTICE,
+        isCorrect: false,
+        createdAt: new Date("2026-03-07T09:00:00.000Z"),
+      },
+    ];
+    mockFalloutQuestion.attempts = [
+      {
+        mode: SessionMode.MOCK_INTERVIEW,
+        isCorrect: false,
+        createdAt: new Date("2026-03-07T08:30:00.000Z"),
+      },
+    ];
+    overdueQuestion.bookmarks = [{ id: "bookmark_overdue" }];
+    const pendingBugHuntQuestion = {
+      ...createQuestionFixture({
+        id: "question_pending_bug_hunt",
+        slug: "effect-cleanup-bug-hunt",
+        promptEn: "Find the suspicious lines in this effect cleanup snippet.",
+        promptFr: "Trouve les lignes suspectes dans ce snippet de cleanup.",
+        primarySkill: skillEffects,
+      }),
+      format: "BUG_HUNT",
+      module: renderingModule,
+      bookmarks: [{ id: "bookmark_pending" }],
+      notes: [
+        {
+          body: "Mention the cleanup boundary explicitly.",
+          updatedAt: new Date("2026-03-07T10:30:00.000Z"),
+        },
+      ],
+      translations: [
+        {
+          id: "question_pending_bug_hunt_en",
+          questionId: "question_pending_bug_hunt",
+          locale: ContentLocale.EN,
+          status: "READY",
+          prompt: "Find the suspicious lines in this effect cleanup snippet.",
+          explanation:
+            "The cleanup is returned from the inner async function, so React never uses it as the effect cleanup.",
+          takeaways: ["Cleanup must come from the effect itself."],
+          contextData: {
+            kind: "bug_hunt",
+            language: "tsx",
+            snippetTitle: "SearchBox debounce effect",
+            code: `function SearchBox({ query }: { query: string }) {
+  useEffect(() => {
+    async function syncAnalytics() {
+      const timer = window.setTimeout(() => {
+        console.log("sync", query);
+      }, 300);
+
+      return () => {
+        window.clearTimeout(timer);
+      };
+    }
+
+    void syncAnalytics();
+  }, [query]);
+}`,
+            suggestedLineNumbers: [4, 5],
+          },
+          interviewSignal: "Explain the cleanup boundary",
+          verbalizePoints: ["Cleanup must be returned by useEffect."],
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: "question_pending_bug_hunt_fr",
+          questionId: "question_pending_bug_hunt",
+          locale: ContentLocale.FR,
+          status: "READY",
+          prompt: "Trouve les lignes suspectes dans ce snippet de cleanup.",
+          explanation:
+            "Le cleanup est retourne depuis la fonction async interne, donc React ne l'utilise jamais comme cleanup de l'effet.",
+          takeaways: ["Le cleanup doit etre retourne par l'effet lui-meme."],
+          contextData: {
+            kind: "bug_hunt",
+            language: "tsx",
+            snippetTitle: "Effet de debounce SearchBox",
+            code: `function SearchBox({ query }: { query: string }) {
+  useEffect(() => {
+    async function syncAnalytics() {
+      const timer = window.setTimeout(() => {
+        console.log("sync", query);
+      }, 300);
+
+      return () => {
+        window.clearTimeout(timer);
+      };
+    }
+
+    void syncAnalytics();
+  }, [query]);
+}`,
+            suggestedLineNumbers: [4, 5],
+          },
+          interviewSignal: "Expliquer la frontiere du cleanup",
+          verbalizePoints: ["Le cleanup doit venir de useEffect."],
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ],
+    };
 
     transactionMock.mockResolvedValue([
       24,
       8,
       3,
-      2,
+      3,
       1,
       { _avg: { masteryScore: 78.4 } },
       [
@@ -478,11 +758,25 @@ describe("getDashboardReadModel", () => {
         {
           skillId: skillEffects.id,
           masteryScore: 82,
+          correctRate: 0.875,
+          coverageCount: 5,
+          uniqueQuestionCount: 4,
+          uniqueDifficultyCount: 3,
+          recentFailureCount: 0,
+          confidenceScore: 84,
+          lastAttemptAt: new Date("2026-03-07T09:00:00.000Z"),
           skill: skillEffects,
         },
         {
           skillId: skillRendering.id,
           masteryScore: 61,
+          correctRate: 0.625,
+          coverageCount: 3,
+          uniqueQuestionCount: 2,
+          uniqueDifficultyCount: 2,
+          recentFailureCount: 1,
+          confidenceScore: 48,
+          lastAttemptAt: new Date("2026-03-06T10:00:00.000Z"),
           skill: skillRendering,
         },
       ],
@@ -491,14 +785,39 @@ describe("getDashboardReadModel", () => {
         {
           questionId: overdueQuestion.id,
           masteryState: MasteryState.MASTERED,
+          lastOutcomeCorrect: true,
           nextReviewAt: new Date("2026-03-03T10:00:00.000Z"),
           question: overdueQuestion,
         },
         {
           questionId: unstableQuestion.id,
           masteryState: MasteryState.LEARNING,
+          lastOutcomeCorrect: false,
           nextReviewAt: new Date("2026-03-07T06:00:00.000Z"),
           question: unstableQuestion,
+        },
+        {
+          questionId: mockFalloutQuestion.id,
+          masteryState: MasteryState.REVIEWING,
+          lastOutcomeCorrect: false,
+          nextReviewAt: new Date("2026-03-07T08:00:00.000Z"),
+          question: mockFalloutQuestion,
+        },
+      ],
+      [
+        {
+          id: "attempt_pending_1",
+          userId: "user_1",
+          questionId: pendingBugHuntQuestion.id,
+          sessionId: "session_pending_1",
+          responseData: {
+            kind: "bug_hunt_response",
+            summary:
+              "The cleanup is returned by the inner async function instead of the effect.",
+            selectedLineNumbers: [5, 4],
+          },
+          createdAt: new Date("2026-03-07T11:00:00.000Z"),
+          question: pendingBugHuntQuestion,
         },
       ],
       [
@@ -537,7 +856,31 @@ describe("getDashboardReadModel", () => {
         score: 61,
       },
     ]);
-    expect(readModel.review.urgentCount).toBe(2);
+    expect(readModel.progress.skillBreakdown).toEqual([
+      expect.objectContaining({
+        id: "skill_effects",
+        skill: "Modele mental des effects",
+        score: 82,
+        coverageCount: 5,
+        uniqueQuestionCount: 4,
+        uniqueDifficultyCount: 3,
+        recentFailureCount: 0,
+        confidenceScore: 84,
+        lastAttemptAt: new Date("2026-03-07T09:00:00.000Z"),
+      }),
+      expect.objectContaining({
+        id: "skill_rendering",
+        skill: "Rendu et identite",
+        score: 61,
+        coverageCount: 3,
+        uniqueQuestionCount: 2,
+        uniqueDifficultyCount: 2,
+        recentFailureCount: 1,
+        confidenceScore: 48,
+        lastAttemptAt: new Date("2026-03-06T10:00:00.000Z"),
+      }),
+    ]);
+    expect(readModel.review.urgentCount).toBe(3);
     expect(readModel.review.items).toEqual([
       expect.objectContaining({
         questionId: "question_overdue",
@@ -546,6 +889,7 @@ describe("getDashboardReadModel", () => {
         skill: "Modele mental des effects",
         urgency: "critical",
         reason: "overdue",
+        isBookmarked: true,
       }),
       expect.objectContaining({
         questionId: "question_unstable",
@@ -554,6 +898,45 @@ describe("getDashboardReadModel", () => {
         skill: "Rendu et identite",
         urgency: "high",
         reason: "failedRecently",
+        isBookmarked: false,
+      }),
+      expect.objectContaining({
+        questionId: "question_mock_fallout",
+        questionSlug: "effect-cleanup-mock-fallout",
+        title:
+          "Pourquoi un wrapper de cleanup async peut-il masquer un bug de cycle de vie ?",
+        skill: "Rendu et identite",
+        urgency: "high",
+        reason: "mockFallout",
+        isBookmarked: false,
+      }),
+    ]);
+    expect(readModel.review.pendingCount).toBe(1);
+    expect(readModel.review.pendingItems).toEqual([
+      expect.objectContaining({
+        attemptId: "attempt_pending_1",
+        sessionId: "session_pending_1",
+        questionId: "question_pending_bug_hunt",
+        prompt: "Trouve les lignes suspectes dans ce snippet de cleanup.",
+        skill: "Modele mental des effects",
+        module: "Systemes de rendu React",
+        format: "BUG_HUNT",
+        responsePreview: {
+          kind: "bug_hunt_response",
+          content:
+            "The cleanup is returned by the inner async function instead of the effect.",
+          language: null,
+          selectedLineNumbers: [4, 5],
+        },
+        verbalizePoints: ["Le cleanup doit venir de useEffect."],
+        rubricCriteria: ["rootCause", "evidence", "repair"],
+        rubricFocusPoints: [
+          "Le cleanup doit venir de useEffect.",
+          "Le cleanup doit etre retourne par l'effet lui-meme.",
+        ],
+        isBookmarked: true,
+        noteBody: "Mention the cleanup boundary explicitly.",
+        noteUpdatedAt: new Date("2026-03-07T10:30:00.000Z"),
       }),
     ]);
     expect(readModel.overview.recentSessions).toEqual([

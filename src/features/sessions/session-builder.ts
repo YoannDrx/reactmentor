@@ -1,4 +1,5 @@
 import {
+  ContentStatus,
   MasteryState,
   Prisma,
   QuestionFormat,
@@ -18,14 +19,37 @@ import {
   resolveTrainingSessionInput,
 } from "./session-contract";
 
+function getPlayableFormats(mode: SessionMode) {
+  if (mode === SessionMode.REVIEW) {
+    return [QuestionFormat.SINGLE_CHOICE, QuestionFormat.MULTIPLE_CHOICE];
+  }
+
+  return [
+    QuestionFormat.SINGLE_CHOICE,
+    QuestionFormat.MULTIPLE_CHOICE,
+    QuestionFormat.OPEN_ENDED,
+    QuestionFormat.CODE_OUTPUT,
+    QuestionFormat.BUG_HUNT,
+  ];
+}
+
 function buildQuestionWhere(input: {
+  mode: SessionMode;
   moduleSlug?: string;
   tracks?: Track[];
   level?: QuestionLevel;
 }) {
   const where: Prisma.QuestionWhereInput = {
-    status: "published",
-    format: QuestionFormat.SINGLE_CHOICE,
+    status: ContentStatus.PUBLISHED,
+    format: {
+      in: getPlayableFormats(input.mode),
+    },
+    module: {
+      status: ContentStatus.PUBLISHED,
+    },
+    primarySkill: {
+      status: ContentStatus.PUBLISHED,
+    },
   };
 
   if (input.level) {
@@ -34,6 +58,7 @@ function buildQuestionWhere(input: {
 
   if (input.moduleSlug || (input.tracks && input.tracks.length > 0)) {
     where.module = {
+      status: ContentStatus.PUBLISHED,
       ...(input.moduleSlug ? { slug: input.moduleSlug } : {}),
       ...(input.tracks && input.tracks.length > 0
         ? {
@@ -61,6 +86,7 @@ function buildReviewProgressWhere(input: {
       lte: input.now,
     },
     question: buildQuestionWhere({
+      mode: SessionMode.REVIEW,
       moduleSlug: input.moduleSlug,
       tracks: input.tracks,
       level: input.level,
@@ -118,6 +144,9 @@ function scoreReviewCandidate(candidate: {
   masteryState: MasteryState;
   nextReviewAt: Date | null;
   lastAttemptAt: Date | null;
+  reviewCount: number;
+  lapseCount: number;
+  lastOutcomeCorrect: boolean | null;
   now: Date;
 }) {
   let score = 0;
@@ -150,9 +179,88 @@ function scoreReviewCandidate(candidate: {
     score += 18;
   }
 
+  if (candidate.lastOutcomeCorrect === false) {
+    score += 18;
+  }
+
+  score += Math.min(24, candidate.lapseCount * 8);
+
+  if (candidate.reviewCount <= 2) {
+    score += 10;
+  }
+
   score += candidate.difficulty * 2;
 
   return score;
+}
+
+function selectMockQuestionIds(params: {
+  candidates: Array<{
+    id: string;
+    format: QuestionFormat;
+    difficulty: number;
+    score: number;
+  }>;
+  questionCount: number;
+  templateKey?: MockTemplateKey;
+}) {
+  const sortedCandidates = [...params.candidates].sort((left, right) => {
+    if (right.score !== left.score) {
+      return right.score - left.score;
+    }
+
+    if (right.difficulty !== left.difficulty) {
+      return right.difficulty - left.difficulty;
+    }
+
+    return left.id.localeCompare(right.id);
+  });
+  const selectedIds: string[] = [];
+  const selectedSet = new Set<string>();
+  const template = params.templateKey
+    ? mockTemplateDefinitions[params.templateKey]
+    : null;
+
+  if (template) {
+    for (const target of template.formatTargets) {
+      if (selectedIds.length >= params.questionCount) {
+        break;
+      }
+
+      const matchingCandidates = sortedCandidates.filter(
+        (candidate) =>
+          !selectedSet.has(candidate.id) &&
+          target.formats.includes(candidate.format),
+      );
+
+      for (const candidate of matchingCandidates.slice(0, target.targetCount)) {
+        if (
+          selectedIds.length >= params.questionCount ||
+          selectedSet.has(candidate.id)
+        ) {
+          break;
+        }
+
+        selectedIds.push(candidate.id);
+        selectedSet.add(candidate.id);
+      }
+    }
+  }
+
+  for (const candidate of sortedCandidates) {
+    if (selectedIds.length >= params.questionCount) {
+      break;
+    }
+
+    if (selectedSet.has(candidate.id)) {
+      continue;
+    }
+
+    selectedIds.push(candidate.id);
+    selectedSet.add(candidate.id);
+  }
+
+  return selectedIds;
 }
 
 function differenceInCalendarDays(left: Date, right: Date) {
@@ -167,12 +275,18 @@ function differenceInCalendarDays(left: Date, right: Date) {
 }
 
 export async function countQuestionsForSessionInput(input: {
+  mode?: SessionMode;
   moduleSlug?: string;
   tracks?: Track[];
   level?: QuestionLevel;
 }) {
   return prisma.question.count({
-    where: buildQuestionWhere(input),
+    where: buildQuestionWhere({
+      mode: input.mode ?? SessionMode.PRACTICE,
+      moduleSlug: input.moduleSlug,
+      tracks: input.tracks,
+      level: input.level,
+    }),
   });
 }
 
@@ -180,6 +294,7 @@ export async function getMockTemplateAvailabilities() {
   const entries = await Promise.all(
     Object.entries(mockTemplateDefinitions).map(async ([key, template]) => {
       const count = await countQuestionsForSessionInput({
+        mode: SessionMode.MOCK_INTERVIEW,
         tracks: template.tracks,
         level: template.level,
       });
@@ -251,6 +366,7 @@ export async function createTrainingSession(input: CreateTrainingSessionInput) {
   }
 
   const where = buildQuestionWhere({
+    mode: resolvedInput.mode,
     moduleSlug: resolvedInput.moduleSlug,
     tracks: resolvedInput.tracks,
     level: resolvedInput.level,
@@ -273,6 +389,9 @@ export async function createTrainingSession(input: CreateTrainingSessionInput) {
               masteryState: true,
               nextReviewAt: true,
               lastAttemptAt: true,
+              reviewCount: true,
+              lapseCount: true,
+              lastOutcomeCorrect: true,
               question: {
                 select: {
                   difficulty: true,
@@ -289,6 +408,9 @@ export async function createTrainingSession(input: CreateTrainingSessionInput) {
               masteryState: candidate.masteryState,
               nextReviewAt: candidate.nextReviewAt,
               lastAttemptAt: candidate.lastAttemptAt,
+              reviewCount: candidate.reviewCount,
+              lapseCount: candidate.lapseCount,
+              lastOutcomeCorrect: candidate.lastOutcomeCorrect,
               now,
             }),
           }))
@@ -301,6 +423,11 @@ export async function createTrainingSession(input: CreateTrainingSessionInput) {
           })
           .slice(0, questionCount)
           .map((candidate) => candidate.id)
+      : [];
+
+  const scoredQuestionCandidates =
+    resolvedInput.mode === SessionMode.REVIEW
+      ? []
       : (
           await prisma.question.findMany({
             where,
@@ -332,6 +459,7 @@ export async function createTrainingSession(input: CreateTrainingSessionInput) {
         )
           .map((candidate) => ({
             id: candidate.id,
+            format: candidate.format,
             difficulty: candidate.difficulty,
             score: scoreCandidate({
               difficulty: candidate.difficulty,
@@ -350,18 +478,32 @@ export async function createTrainingSession(input: CreateTrainingSessionInput) {
             }
 
             return left.difficulty - right.difficulty;
-          })
+          });
+
+  const selectedPracticeOrMockIds =
+    resolvedInput.mode === SessionMode.MOCK_INTERVIEW
+      ? selectMockQuestionIds({
+          candidates: scoredQuestionCandidates,
+          questionCount,
+          templateKey: resolvedInput.templateKey,
+        })
+      : scoredQuestionCandidates
           .slice(0, questionCount)
           .map((candidate) => candidate.id);
 
-  if (selectedQuestionIds.length === 0) {
+  const finalSelectedQuestionIds =
+    resolvedInput.mode === SessionMode.REVIEW
+      ? selectedQuestionIds
+      : selectedPracticeOrMockIds;
+
+  if (finalSelectedQuestionIds.length === 0) {
     throw new Error("No questions are available for this session.");
   }
 
   const config: TrainingSessionConfig = {
     source: resolvedInput.templateKey ? "mock_template" : "module",
     locale: resolvedInput.locale,
-    questionCount: selectedQuestionIds.length,
+    questionCount: finalSelectedQuestionIds.length,
     durationMinutes: resolvedInput.durationMinutes ?? null,
     moduleSlug: resolvedInput.moduleSlug ?? null,
     tracks: resolvedInput.tracks,
@@ -379,7 +521,7 @@ export async function createTrainingSession(input: CreateTrainingSessionInput) {
     });
 
     await tx.trainingSessionItem.createMany({
-      data: selectedQuestionIds.map((questionId, index) => ({
+      data: finalSelectedQuestionIds.map((questionId, index) => ({
         sessionId: createdSession.id,
         questionId,
         order: index + 1,
@@ -391,7 +533,7 @@ export async function createTrainingSession(input: CreateTrainingSessionInput) {
 
   return {
     id: session.id,
-    questionCount: selectedQuestionIds.length,
+    questionCount: finalSelectedQuestionIds.length,
     mode: session.mode,
     config,
     resumed: false,

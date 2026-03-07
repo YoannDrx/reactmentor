@@ -9,7 +9,13 @@ describe("computeMockSessionReport", () => {
           questionId: "q1",
           prompt: "Question one",
           skill: "Effects",
+          format: "SINGLE_CHOICE",
+          isBookmarked: false,
+          noteBody: null,
+          noteUpdatedAt: null,
+          attempted: true,
           isCorrect: false,
+          scorePercent: 0,
           verbalizePoints: [
             "Explain dependency identity.",
             "Link the answer to synchronization.",
@@ -20,7 +26,13 @@ describe("computeMockSessionReport", () => {
           questionId: "q2",
           prompt: "Question two",
           skill: "Effects",
+          format: "CODE_OUTPUT",
+          isBookmarked: false,
+          noteBody: null,
+          noteUpdatedAt: null,
+          attempted: true,
           isCorrect: true,
+          scorePercent: 100,
           verbalizePoints: ["Explain cleanup timing."],
           takeaways: ["Cleanup runs before the next effect."],
         },
@@ -28,7 +40,13 @@ describe("computeMockSessionReport", () => {
           questionId: "q3",
           prompt: "Question three",
           skill: "Rendering",
+          format: "OPEN_ENDED",
+          isBookmarked: true,
+          noteBody: "Explain remount versus rerender with identity first.",
+          noteUpdatedAt: new Date("2026-03-07T09:00:00.000Z"),
+          attempted: true,
           isCorrect: null,
+          scorePercent: null,
           verbalizePoints: ["Explain remount versus rerender."],
           takeaways: ["Keys carry identity."],
         },
@@ -39,12 +57,16 @@ describe("computeMockSessionReport", () => {
       {
         skill: "Rendering",
         questionCount: 1,
+        gradedCount: 0,
+        pendingCount: 1,
         correctCount: 0,
         accuracyPercent: 0,
       },
       {
         skill: "Effects",
         questionCount: 2,
+        gradedCount: 2,
+        pendingCount: 0,
         correctCount: 1,
         accuracyPercent: 50,
       },
@@ -55,7 +77,17 @@ describe("computeMockSessionReport", () => {
         questionId: "q1",
         prompt: "Question one",
         skill: "Effects",
+        format: "SINGLE_CHOICE",
+        isBookmarked: false,
+        noteBody: null,
+        noteUpdatedAt: null,
         status: "incorrect",
+        rubricCriteria: ["accuracy", "mechanism", "tradeoffs"],
+        focusPoints: [
+          "Explain dependency identity.",
+          "Link the answer to synchronization.",
+          "Dependencies are compared by reference.",
+        ],
         verbalizePoints: [
           "Explain dependency identity.",
           "Link the answer to synchronization.",
@@ -65,7 +97,16 @@ describe("computeMockSessionReport", () => {
         questionId: "q3",
         prompt: "Question three",
         skill: "Rendering",
-        status: "unanswered",
+        format: "OPEN_ENDED",
+        isBookmarked: true,
+        noteBody: "Explain remount versus rerender with identity first.",
+        noteUpdatedAt: new Date("2026-03-07T09:00:00.000Z"),
+        status: "pending_review",
+        rubricCriteria: ["accuracy", "mechanism", "tradeoffs"],
+        focusPoints: [
+          "Explain remount versus rerender.",
+          "Keys carry identity.",
+        ],
         verbalizePoints: ["Explain remount versus rerender."],
       },
     ]);
@@ -77,6 +118,52 @@ describe("computeMockSessionReport", () => {
       "Explain cleanup timing.",
       "Dependencies are compared by reference.",
       "Cleanup runs before the next effect.",
+    ]);
+  });
+
+  it("averages graded score percents so partially reviewed open answers affect the mock score", () => {
+    const report = computeMockSessionReport({
+      questions: [
+        {
+          questionId: "q1",
+          prompt: "Question one",
+          skill: "Effects",
+          format: "CODE_OUTPUT",
+          isBookmarked: false,
+          noteBody: "Keep the dependency list explicit.",
+          noteUpdatedAt: new Date("2026-03-07T08:00:00.000Z"),
+          attempted: true,
+          isCorrect: false,
+          scorePercent: 50,
+          verbalizePoints: ["Explain the missing dependency."],
+          takeaways: ["Keep the dependency list explicit."],
+        },
+        {
+          questionId: "q2",
+          prompt: "Question two",
+          skill: "Effects",
+          format: "SINGLE_CHOICE",
+          isBookmarked: false,
+          noteBody: null,
+          noteUpdatedAt: null,
+          attempted: true,
+          isCorrect: true,
+          scorePercent: 100,
+          verbalizePoints: [],
+          takeaways: [],
+        },
+      ],
+    });
+
+    expect(report.skillBreakdown).toEqual([
+      {
+        skill: "Effects",
+        questionCount: 2,
+        gradedCount: 2,
+        pendingCount: 0,
+        correctCount: 1,
+        accuracyPercent: 75,
+      },
     ]);
   });
 });

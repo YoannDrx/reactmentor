@@ -26,6 +26,7 @@ export default async function DashboardMockInterviewsPage() {
   const user = await getRequiredUser("/dashboard/mock-interviews");
   const { locale, messages, t } = await getI18n();
   const mockInterviews = messages.dashboard.mockInterviews;
+  const rubricCriteriaLabels = messages.dashboard.session.rubricCriteriaLabels;
   const templates = getLocalizedMockTemplates(messages);
   const templateTitles = Object.fromEntries(
     mockTemplateKeys.map((key, index) => [key, templates[index]?.title ?? key]),
@@ -266,6 +267,62 @@ export default async function DashboardMockInterviewsPage() {
             </CardContent>
           </Card>
         </section>
+      ) : null}
+
+      {mockReadModel.criterionBreakdown.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>{mockInterviews.criterionSignalsTitle}</CardTitle>
+            <CardDescription>
+              {mockInterviews.criterionSignalsDescription}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {mockReadModel.criterionBreakdown.map((criterion) => (
+              <div
+                key={criterion.criterion}
+                className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="font-medium text-slate-950">
+                    {rubricCriteriaLabels[criterion.criterion]}
+                  </div>
+                  <Badge
+                    className={
+                      criterion.averageScore >= 80
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                        : criterion.averageScore >= 60
+                          ? "border-amber-200 bg-amber-50 text-amber-700"
+                          : "border-rose-200 bg-rose-50 text-rose-700"
+                    }
+                  >
+                    {criterion.averageScore}%
+                  </Badge>
+                </div>
+                <div className="mt-4 grid gap-3 text-sm text-slate-600">
+                  <div className="flex items-center justify-between gap-3">
+                    <span>{mockInterviews.criterionReviewCountLabel}</span>
+                    <span className="font-medium text-slate-950">
+                      {criterion.reviewCount}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span>{mockInterviews.criterionMissingLabel}</span>
+                    <span className="font-medium text-slate-950">
+                      {criterion.missingCount}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span>{mockInterviews.criterionPartialLabel}</span>
+                    <span className="font-medium text-slate-950">
+                      {criterion.partialCount}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
       ) : null}
 
       <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">

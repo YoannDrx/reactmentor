@@ -19,13 +19,62 @@ import { getRequiredUser } from "@/lib/auth/auth-user";
 import { formatPercent } from "@/lib/utils";
 import Link from "next/link";
 
+function getSkillNote(
+  skill: {
+    score: number;
+    confidenceScore: number;
+    recentFailureCount: number;
+  },
+  progressMessages: {
+    notes: {
+      stable: string;
+      medium: string;
+      fragile: string;
+    };
+  },
+) {
+  if (
+    skill.score >= 75 &&
+    skill.confidenceScore >= 70 &&
+    skill.recentFailureCount === 0
+  ) {
+    return progressMessages.notes.stable;
+  }
+
+  if (
+    skill.score >= 60 &&
+    skill.confidenceScore >= 45 &&
+    skill.recentFailureCount <= 1
+  ) {
+    return progressMessages.notes.medium;
+  }
+
+  return progressMessages.notes.fragile;
+}
+
+function getSignalState(confidenceScore: number) {
+  if (confidenceScore >= 70) {
+    return "high" as const;
+  }
+
+  if (confidenceScore >= 45) {
+    return "medium" as const;
+  }
+
+  return "low" as const;
+}
+
 export default async function DashboardProgressPage() {
   const user = await getRequiredUser("/dashboard/progress");
-  const { locale, messages } = await getI18n();
+  const { locale, messages, t } = await getI18n();
   const progress = messages.dashboard.progress;
   const readModel = await getDashboardReadModel(user.id, locale);
   const recommendation = await getDashboardRecommendation(user.id, locale);
   const skillRadar = readModel.progress.skillBreakdown;
+  const dateFormatter = new Intl.DateTimeFormat(locale, {
+    day: "numeric",
+    month: "short",
+  });
   const weeklyMomentumData = readModel.progress.weeklyMomentum.map((item) => ({
     day: messages.common.days[item.dayKey],
     score: item.score,
@@ -122,12 +171,49 @@ export default async function DashboardProgressPage() {
                 <div>
                   <div className="font-medium text-slate-950">{item.skill}</div>
                   <div className="text-sm text-slate-500">
-                    {item.score >= 75
-                      ? progress.notes.stable
-                      : item.score >= 60
-                        ? progress.notes.medium
-                        : progress.notes.fragile}
+                    {getSkillNote(item, progress)}
                   </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Badge
+                      className={
+                        getSignalState(item.confidenceScore) === "high"
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                          : getSignalState(item.confidenceScore) === "medium"
+                            ? "border-cyan-200 bg-cyan-50 text-cyan-700"
+                            : "border-orange-200 bg-orange-50 text-orange-700"
+                      }
+                    >
+                      {
+                        progress.signalStates[
+                          getSignalState(item.confidenceScore)
+                        ]
+                      }
+                    </Badge>
+                    <Badge className="border-slate-200 bg-white text-slate-700">
+                      {t("dashboard.progress.confidenceLabel", {
+                        score: item.confidenceScore,
+                      })}
+                    </Badge>
+                    <Badge className="border-slate-200 bg-white text-slate-700">
+                      {t("dashboard.progress.questionsCoveredLabel", {
+                        count: item.uniqueQuestionCount,
+                      })}
+                    </Badge>
+                    {item.recentFailureCount > 0 ? (
+                      <Badge className="border-rose-200 bg-rose-50 text-rose-700">
+                        {t("dashboard.progress.recentFailuresLabel", {
+                          count: item.recentFailureCount,
+                        })}
+                      </Badge>
+                    ) : null}
+                  </div>
+                  {item.lastAttemptAt ? (
+                    <div className="mt-3 text-xs text-slate-400">
+                      {t("dashboard.progress.lastSignalLabel", {
+                        date: dateFormatter.format(item.lastAttemptAt),
+                      })}
+                    </div>
+                  ) : null}
                 </div>
                 <Badge
                   className={

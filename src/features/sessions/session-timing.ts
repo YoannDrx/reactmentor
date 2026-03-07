@@ -56,11 +56,14 @@ export function getMockPressureState(input: {
   totalQuestions: number;
   timeSpentMinutes: number;
   timeBudgetMinutes: number;
+  pendingEvaluationCount?: number;
 }): MockPressureState {
   const completionRatio =
     input.totalQuestions > 0 ? input.answeredCount / input.totalQuestions : 0;
+  const hasPendingEvaluation = (input.pendingEvaluationCount ?? 0) > 0;
 
   if (
+    !hasPendingEvaluation &&
     input.score >= 80 &&
     completionRatio >= 1 &&
     input.timeSpentMinutes <= input.timeBudgetMinutes * 0.85

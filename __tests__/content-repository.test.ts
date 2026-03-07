@@ -1,4 +1,4 @@
-import { ContentLocale } from "@prisma/client";
+import { ContentLocale, ContentStatus } from "@prisma/client";
 import { describe, expect, it } from "vitest";
 import {
   localizeModule,
@@ -17,7 +17,7 @@ describe("content-repository localization helpers", () => {
       order: 1,
       track: "REACT",
       level: "MID",
-      status: "published",
+      status: ContentStatus.PUBLISHED,
       createdAt: new Date(),
       updatedAt: new Date(),
       translations: [
@@ -60,7 +60,7 @@ describe("content-repository localization helpers", () => {
       title: "Legacy skill title",
       description: "Legacy skill description",
       moduleId: "module_1",
-      status: "published",
+      status: ContentStatus.PUBLISHED,
       createdAt: new Date(),
       updatedAt: new Date(),
       translations: [
@@ -96,7 +96,7 @@ describe("content-repository localization helpers", () => {
       prompt: "Legacy prompt",
       explanation: "Legacy explanation",
       takeaways: ["legacy takeaway"],
-      status: "published",
+      status: ContentStatus.PUBLISHED,
       createdAt: new Date(),
       updatedAt: new Date(),
       translations: [
@@ -146,5 +146,26 @@ describe("content-repository localization helpers", () => {
     expect(localized.options[0]?.label).toBe("Option FR");
     expect(localized.options[0]?.explanation).toBe("Explication option FR");
     expect(localized.locale).toBe("fr");
+  });
+
+  it("does not fall back to legacy root fields when translations are missing", () => {
+    const learningModule = {
+      id: "module_missing_translation",
+      slug: "legacy-only-module",
+      title: "Legacy-only title",
+      description: "Legacy-only description",
+      summary: "Legacy-only summary",
+      order: 9,
+      track: "REACT",
+      level: "MID",
+      status: ContentStatus.PUBLISHED,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      translations: [],
+    } as Parameters<typeof localizeModule>[0];
+
+    expect(() => localizeModule(learningModule, "fr")).toThrow(
+      "Missing module translation for module_missing_translation in locale fr.",
+    );
   });
 });

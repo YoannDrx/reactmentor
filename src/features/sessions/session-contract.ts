@@ -1,4 +1,9 @@
-import { QuestionLevel, SessionMode, Track } from "@prisma/client";
+import {
+  QuestionFormat,
+  QuestionLevel,
+  SessionMode,
+  Track,
+} from "@prisma/client";
 import type { Locale } from "@/i18n/config";
 
 export const mockTemplateKeys = [
@@ -92,6 +97,10 @@ export const mockTemplateDefinitions: Record<
     level: QuestionLevel;
     questionCount: number;
     durationMinutes: number;
+    formatTargets: Array<{
+      formats: QuestionFormat[];
+      targetCount: number;
+    }>;
   }
 > = {
   react_mid_30: {
@@ -100,6 +109,20 @@ export const mockTemplateDefinitions: Record<
     level: QuestionLevel.MID,
     questionCount: 10,
     durationMinutes: 30,
+    formatTargets: [
+      {
+        formats: [QuestionFormat.SINGLE_CHOICE, QuestionFormat.MULTIPLE_CHOICE],
+        targetCount: 6,
+      },
+      {
+        formats: [QuestionFormat.CODE_OUTPUT],
+        targetCount: 2,
+      },
+      {
+        formats: [QuestionFormat.OPEN_ENDED],
+        targetCount: 2,
+      },
+    ],
   },
   frontend_senior_defense: {
     mode: SessionMode.MOCK_INTERVIEW,
@@ -107,6 +130,24 @@ export const mockTemplateDefinitions: Record<
     level: QuestionLevel.SENIOR,
     questionCount: 6,
     durationMinutes: 45,
+    formatTargets: [
+      {
+        formats: [QuestionFormat.OPEN_ENDED],
+        targetCount: 3,
+      },
+      {
+        formats: [QuestionFormat.BUG_HUNT],
+        targetCount: 1,
+      },
+      {
+        formats: [QuestionFormat.CODE_OUTPUT],
+        targetCount: 1,
+      },
+      {
+        formats: [QuestionFormat.SINGLE_CHOICE, QuestionFormat.MULTIPLE_CHOICE],
+        targetCount: 1,
+      },
+    ],
   },
   react_native_sprint: {
     mode: SessionMode.MOCK_INTERVIEW,
@@ -114,6 +155,20 @@ export const mockTemplateDefinitions: Record<
     level: QuestionLevel.MID,
     questionCount: 8,
     durationMinutes: 20,
+    formatTargets: [
+      {
+        formats: [QuestionFormat.SINGLE_CHOICE, QuestionFormat.MULTIPLE_CHOICE],
+        targetCount: 5,
+      },
+      {
+        formats: [QuestionFormat.BUG_HUNT],
+        targetCount: 1,
+      },
+      {
+        formats: [QuestionFormat.OPEN_ENDED, QuestionFormat.CODE_OUTPUT],
+        targetCount: 2,
+      },
+    ],
   },
 };
 

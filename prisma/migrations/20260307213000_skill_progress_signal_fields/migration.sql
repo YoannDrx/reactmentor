@@ -1,0 +1,7 @@
+ALTER TABLE "skill_progress"
+  ADD COLUMN "coverageCount" INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN "uniqueQuestionCount" INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN "uniqueDifficultyCount" INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN "recentFailureCount" INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN "confidenceScore" INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN "lastAttemptAt" TIMESTAMP(3);

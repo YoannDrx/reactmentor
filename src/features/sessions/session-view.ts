@@ -10,6 +10,7 @@ import {
   getMockPressureState,
   getSessionTimingSnapshot,
 } from "./session-timing";
+import { getAttemptScorePercent } from "./attempt-review";
 import { parseTrainingSessionConfig } from "./session-contract";
 import { computeMockSessionReport } from "./session-mock-report";
 
@@ -40,6 +41,28 @@ type SessionWithItems = Prisma.TrainingSessionGetPayload<{
               include: {
                 translations: true;
               };
+            };
+            bookmarks: {
+              where: {
+                userId: string;
+              };
+              select: {
+                id: true;
+              };
+              take: 1;
+            };
+            notes: {
+              where: {
+                userId: string;
+              };
+              select: {
+                body: true;
+                updatedAt: true;
+              };
+              orderBy: {
+                updatedAt: "desc";
+              };
+              take: 1;
             };
           };
         };
@@ -83,19 +106,41 @@ export async function getTrainingSessionView(params: {
                   order: "asc",
                 },
               },
-              primarySkill: {
-                include: {
-                  translations: true,
-                },
+            primarySkill: {
+              include: {
+                translations: true,
               },
-              module: {
-                include: {
-                  translations: true,
-                },
+            },
+            module: {
+              include: {
+                translations: true,
               },
+            },
+            bookmarks: {
+              where: {
+                userId: params.userId,
+              },
+              select: {
+                id: true,
+              },
+              take: 1,
+            },
+            notes: {
+              where: {
+                userId: params.userId,
+              },
+              select: {
+                body: true,
+                updatedAt: true,
+              },
+              orderBy: {
+                updatedAt: "desc",
+              },
+              take: 1,
             },
           },
         },
+      },
       },
       attempts: {
         where: {
@@ -122,9 +167,19 @@ function mapTrainingSessionView(session: SessionWithItems, locale: Locale) {
   const currentItem = session.endedAt
     ? null
     : session.items.find((item) => !answeredQuestionIds.has(item.questionId)) ?? null;
-  const correctAnswers = session.attempts.filter((attempt) => attempt.isCorrect).length;
+  const correctAnswers = session.attempts.filter(
+    (attempt) => attempt.isCorrect === true,
+  ).length;
+  const gradedAnswerCount = session.attempts.filter(
+    (attempt) =>
+      getAttemptScorePercent({
+        isCorrect: attempt.isCorrect,
+        reviewData: attempt.reviewData,
+      }) !== null,
+  ).length;
   const totalQuestions = session.items.length;
   const answeredCount = answeredQuestionIds.size;
+  const pendingEvaluationCount = answeredCount - gradedAnswerCount;
   const timing = getSessionTimingSnapshot(
     sessionConfig,
     session.startedAt,
@@ -143,16 +198,30 @@ function mapTrainingSessionView(session: SessionWithItems, locale: Locale) {
     question: localizeQuestion(item.question, locale),
     skill: localizeSkill(item.question.primarySkill, locale),
     module: localizeModule(item.question.module, locale),
+    isBookmarked: item.question.bookmarks.length > 0,
+    noteBody: item.question.notes[0]?.body ?? null,
+    noteUpdatedAt: item.question.notes[0]?.updatedAt ?? null,
   }));
   const attemptMap = new Map(
     session.attempts.map((attempt) => [attempt.questionId, attempt]),
   );
+  const scoredAttemptPercents = session.attempts.flatMap((attempt) => {
+    const scorePercent = getAttemptScorePercent({
+      isCorrect: attempt.isCorrect,
+      reviewData: attempt.reviewData,
+    });
+
+    return scorePercent === null ? [] : [scorePercent];
+  });
   const currentQuestion = currentItem
     ? {
         order: currentItem.order,
         question: localizeQuestion(currentItem.question, locale),
         skill: localizeSkill(currentItem.question.primarySkill, locale),
         module: localizeModule(currentItem.question.module, locale),
+        isBookmarked: currentItem.question.bookmarks.length > 0,
+        noteBody: currentItem.question.notes[0]?.body ?? null,
+        noteUpdatedAt: currentItem.question.notes[0]?.updatedAt ?? null,
       }
     : null;
 
@@ -163,10 +232,19 @@ function mapTrainingSessionView(session: SessionWithItems, locale: Locale) {
     startedAt: session.startedAt,
     score:
       session.score ??
-      (totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0),
+      (scoredAttemptPercents.length > 0
+        ? Math.round(
+            scoredAttemptPercents.reduce(
+              (sum, scorePercent) => sum + scorePercent,
+              0,
+            ) / scoredAttemptPercents.length,
+          )
+        : null),
     totalQuestions,
     answeredCount,
     correctAnswers,
+    gradedAnswerCount,
+    pendingEvaluationCount,
     config: sessionConfig,
     timing: timing
       ? {
@@ -187,20 +265,35 @@ function mapTrainingSessionView(session: SessionWithItems, locale: Locale) {
             pressureState: getMockPressureState({
               score:
                 session.score ??
-                (totalQuestions > 0
-                  ? Math.round((correctAnswers / totalQuestions) * 100)
+                (scoredAttemptPercents.length > 0
+                  ? Math.round(
+                      scoredAttemptPercents.reduce(
+                        (sum, scorePercent) => sum + scorePercent,
+                        0,
+                      ) / scoredAttemptPercents.length,
+                    )
                   : 0),
               answeredCount,
               totalQuestions,
               timeSpentMinutes,
               timeBudgetMinutes: timing.durationMinutes,
+              pendingEvaluationCount,
             }),
             ...computeMockSessionReport({
               questions: localizedItems.map((item) => ({
                 questionId: item.question.id,
                 prompt: item.question.prompt,
                 skill: item.skill.title,
+                format: item.question.format,
+                isBookmarked: item.isBookmarked,
+                noteBody: item.noteBody,
+                noteUpdatedAt: item.noteUpdatedAt,
+                attempted: attemptMap.has(item.question.id),
                 isCorrect: attemptMap.get(item.question.id)?.isCorrect ?? null,
+                scorePercent: getAttemptScorePercent({
+                  isCorrect: attemptMap.get(item.question.id)?.isCorrect ?? null,
+                  reviewData: attemptMap.get(item.question.id)?.reviewData ?? null,
+                }),
                 verbalizePoints: Array.isArray(item.question.verbalizePoints)
                   ? item.question.verbalizePoints.filter(
                       (point): point is string => typeof point === "string",

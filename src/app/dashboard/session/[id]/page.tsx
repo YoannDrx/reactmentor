@@ -1,6 +1,8 @@
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BookmarkToggleForm } from "@/features/bookmarks/bookmark-toggle-form";
+import { NoteEditorForm } from "@/features/notes/note-editor-form";
 import { SessionPlayer } from "@/features/sessions/session-player";
 import { mockTemplateKeys } from "@/features/sessions/session-contract";
 import { getMockTemplateTitle } from "@/features/sessions/session-timing";
@@ -31,6 +33,8 @@ export default async function DashboardSessionPage({
   }
 
   const sessionMessages = messages.dashboard.session;
+  const bookmarks = messages.dashboard.bookmarks;
+  const notes = messages.dashboard.notes;
   const modeLabel = sessionMessages.modeLabels[sessionView.mode];
   const mockTemplateTitles = Object.fromEntries(
     mockTemplateKeys.map((key, index) => [
@@ -70,7 +74,9 @@ export default async function DashboardSessionPage({
           <CardContent
             className={cn(
               "grid gap-4",
-              sessionView.mockReport ? "md:grid-cols-4" : "md:grid-cols-3",
+              sessionView.mockReport || sessionView.pendingEvaluationCount > 0
+                ? "md:grid-cols-4"
+                : "md:grid-cols-3",
             )}
           >
             <div className="rounded-[22px] border border-white/10 bg-white/5 p-4">
@@ -78,15 +84,19 @@ export default async function DashboardSessionPage({
                 {modeLabel}
               </div>
               <div className="mt-2 text-2xl font-semibold text-white">
-                {sessionView.score}%
+                {sessionView.score === null
+                  ? sessionMessages.scorePendingLabel
+                  : `${sessionView.score}%`}
               </div>
             </div>
             <div className="rounded-[22px] border border-white/10 bg-white/5 p-4">
               <div className="text-xs uppercase tracking-[0.22em] text-slate-400">
-                {sessionMessages.correctAnswersLabel}
+                {sessionMessages.gradedAnswersLabel}
               </div>
               <div className="mt-2 text-2xl font-semibold text-white">
-                {sessionView.correctAnswers}/{sessionView.totalQuestions}
+                {sessionView.gradedAnswerCount > 0
+                  ? `${sessionView.correctAnswers}/${sessionView.gradedAnswerCount}`
+                  : sessionMessages.scorePendingLabel}
               </div>
             </div>
             <div className="rounded-[22px] border border-white/10 bg-white/5 p-4">
@@ -97,6 +107,16 @@ export default async function DashboardSessionPage({
                 {sessionView.answeredCount}
               </div>
             </div>
+            {sessionView.pendingEvaluationCount > 0 ? (
+              <div className="rounded-[22px] border border-white/10 bg-white/5 p-4">
+                <div className="text-xs uppercase tracking-[0.22em] text-slate-400">
+                  {sessionMessages.pendingReviewCountLabel}
+                </div>
+                <div className="mt-2 text-2xl font-semibold text-white">
+                  {sessionView.pendingEvaluationCount}
+                </div>
+              </div>
+            ) : null}
             {sessionView.mockReport ? (
               <div className="rounded-[22px] border border-white/10 bg-white/5 p-4">
                 <div className="text-xs uppercase tracking-[0.22em] text-slate-400">
@@ -181,10 +201,16 @@ export default async function DashboardSessionPage({
                             </Badge>
                           </div>
                           <p className="mt-2 text-sm leading-6 text-slate-600">
-                            {t("dashboard.session.mockSkillsSummary", {
-                              correct: skill.correctCount,
-                              total: skill.questionCount,
-                            })}
+                            {skill.pendingCount > 0
+                              ? t("dashboard.session.mockSkillsPendingSummary", {
+                                  correct: skill.correctCount,
+                                  graded: skill.gradedCount,
+                                  pending: skill.pendingCount,
+                                })
+                              : t("dashboard.session.mockSkillsSummary", {
+                                  correct: skill.correctCount,
+                                  total: skill.questionCount,
+                                })}
                           </p>
                         </div>
                       ))}
@@ -220,27 +246,59 @@ export default async function DashboardSessionPage({
                           className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4"
                         >
                           <div className="mb-3 flex items-center justify-between gap-3">
-                            <Badge
-                              className={
-                                item.status === "incorrect"
-                                  ? "border-rose-200 bg-rose-50 text-rose-700"
-                                  : "border-amber-200 bg-amber-50 text-amber-700"
-                              }
-                            >
-                              {item.status === "incorrect"
-                                ? sessionMessages.mockRiskStates.incorrect
-                                : sessionMessages.mockRiskStates.unanswered}
-                            </Badge>
-                            <div className="text-xs uppercase tracking-[0.22em] text-slate-400">
-                              {item.skill}
+                            <div className="flex flex-wrap items-center gap-3">
+                              <Badge
+                                className={
+                                  item.status === "incorrect"
+                                    ? "border-rose-200 bg-rose-50 text-rose-700"
+                                    : item.status === "pending_review"
+                                      ? "border-cyan-200 bg-cyan-50 text-cyan-700"
+                                    : "border-amber-200 bg-amber-50 text-amber-700"
+                                }
+                              >
+                                {item.status === "incorrect"
+                                  ? sessionMessages.mockRiskStates.incorrect
+                                  : item.status === "pending_review"
+                                    ? sessionMessages.mockRiskStates.pendingReview
+                                  : sessionMessages.mockRiskStates.unanswered}
+                              </Badge>
+                              <div className="text-xs uppercase tracking-[0.22em] text-slate-400">
+                                {item.skill}
+                              </div>
                             </div>
+                            <BookmarkToggleForm
+                              questionId={item.questionId}
+                              isBookmarked={item.isBookmarked}
+                              pathToRevalidate={`/dashboard/session/${sessionView.id}`}
+                              saveLabel={bookmarks.saveAction}
+                              removeLabel={bookmarks.removeAction}
+                              variant="secondary"
+                            />
                           </div>
                           <div className="font-medium text-slate-950">
                             {item.prompt}
                           </div>
-                          {item.verbalizePoints.length > 0 ? (
-                            <div className="mt-3 space-y-2">
-                              {item.verbalizePoints.map((point) => (
+                          <div className="mt-4">
+                            <div className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                              {sessionMessages.mockRubricTitle}
+                            </div>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {item.rubricCriteria.map((criterion) => (
+                                <Badge
+                                  key={`${item.questionId}-${criterion}`}
+                                  className="border-slate-200 bg-white text-slate-700"
+                                >
+                                  {sessionMessages.rubricCriteriaLabels[criterion]}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                          {item.focusPoints.length > 0 ? (
+                            <div className="mt-4 space-y-2">
+                              <div className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                                {sessionMessages.mockRubricFocusTitle}
+                              </div>
+                              {item.focusPoints.map((point) => (
                                 <div
                                   key={point}
                                   className="rounded-[18px] border border-white bg-white px-3 py-2 text-sm leading-6 text-slate-700"
@@ -250,6 +308,21 @@ export default async function DashboardSessionPage({
                               ))}
                             </div>
                           ) : null}
+
+                          <div className="mt-4">
+                            <NoteEditorForm
+                              questionId={item.questionId}
+                              body={item.noteBody}
+                              updatedAt={item.noteUpdatedAt}
+                              pathToRevalidate={`/dashboard/session/${sessionView.id}`}
+                              title={notes.editorTitle}
+                              placeholder={notes.editorPlaceholder}
+                              saveLabel={notes.saveAction}
+                              clearLabel={notes.clearAction}
+                              updatedAtLabel={notes.updatedAtLabel}
+                              locale={locale}
+                            />
+                          </div>
                         </div>
                       ))
                     ) : (
@@ -288,56 +361,97 @@ export default async function DashboardSessionPage({
     : [];
 
   return (
-    <SessionPlayer
-      key={currentQuestion.id}
-      sessionId={sessionView.id}
-      modeLabel={modeLabel}
-      currentIndex={sessionView.currentQuestion.order}
-      totalQuestions={sessionView.totalQuestions}
-      progressPercent={sessionView.progressPercent}
-      skillLabel={sessionView.currentQuestion.skill.title}
-      moduleLabel={sessionView.currentQuestion.module.title}
-      question={{
-        id: currentQuestion.id,
-        prompt: currentQuestion.prompt,
-        explanation: currentQuestion.explanation,
-        takeaways,
-        options: currentQuestion.options.map((option) => ({
-          id: option.id,
-          label: option.label,
-          explanation: option.explanation,
-          isCorrect: option.isCorrect,
-        })),
-      }}
-      timing={sessionView.timing}
-      messages={{
-        progressLabel: t("dashboard.session.progressLabel", {
-          current: sessionView.currentQuestion.order,
-          total: sessionView.totalQuestions,
-        }),
-        submitAnswer: sessionMessages.submitAnswer,
-        retryAnswer: sessionMessages.retryAnswer,
-        submitting: sessionMessages.submitting,
-        nextQuestion: sessionMessages.nextQuestion,
-        finishSession: sessionMessages.finishSession,
-        loadingNextQuestion: sessionMessages.loadingNextQuestion,
-        loadingSessionResult: sessionMessages.loadingSessionResult,
-        selectionRequired: sessionMessages.selectionRequired,
-        correctState: sessionMessages.correctState,
-        incorrectState: sessionMessages.incorrectState,
-        keyboardHint: sessionMessages.keyboardHint,
-        explanationTitle: sessionMessages.explanationTitle,
-        takeawaysTitle: sessionMessages.takeawaysTitle,
-        recoveryTitle: sessionMessages.recoveryTitle,
-        recoveryHint: sessionMessages.recoveryHint,
-        timerLabel: sessionMessages.timerLabel,
-        timeRemainingLabel: sessionMessages.timeRemainingLabel,
-        timeBudgetLabel: sessionMessages.timeBudgetLabel,
-        timerExpiredToast: sessionMessages.timerExpiredToast,
-        timedModeBadge: sessionMessages.timedModeBadge,
-        backToDashboard: sessionMessages.backToDashboard,
-        errors: sessionMessages.errors,
-      }}
-    />
+    <div className="grid gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Link
+          href="/dashboard"
+          className={buttonVariants({ variant: "secondary", size: "md" })}
+        >
+          <ArrowLeft className="size-4" />
+          {sessionMessages.backToDashboard}
+        </Link>
+        <BookmarkToggleForm
+          questionId={currentQuestion.id}
+          isBookmarked={sessionView.currentQuestion.isBookmarked}
+          pathToRevalidate={`/dashboard/session/${sessionView.id}`}
+          saveLabel={bookmarks.saveAction}
+          removeLabel={bookmarks.removeAction}
+          variant="secondary"
+        />
+      </div>
+
+      <SessionPlayer
+        key={currentQuestion.id}
+        sessionId={sessionView.id}
+        modeLabel={modeLabel}
+        currentIndex={sessionView.currentQuestion.order}
+        totalQuestions={sessionView.totalQuestions}
+        progressPercent={sessionView.progressPercent}
+        skillLabel={sessionView.currentQuestion.skill.title}
+        moduleLabel={sessionView.currentQuestion.module.title}
+        question={{
+          id: currentQuestion.id,
+          format: currentQuestion.format,
+          prompt: currentQuestion.prompt,
+          explanation: currentQuestion.explanation,
+          takeaways,
+          contextData: currentQuestion.contextData,
+          options: currentQuestion.options.map((option) => ({
+            id: option.id,
+            label: option.label,
+            explanation: option.explanation,
+            isCorrect: option.isCorrect,
+          })),
+        }}
+        timing={sessionView.timing}
+        messages={{
+          progressLabel: t("dashboard.session.progressLabel", {
+            current: sessionView.currentQuestion.order,
+            total: sessionView.totalQuestions,
+          }),
+          answerModeLabelSingle: sessionMessages.answerModeLabelSingle,
+          answerModeLabelMultiple: sessionMessages.answerModeLabelMultiple,
+          answerModeLabelOpen: sessionMessages.answerModeLabelOpen,
+          openAnswerHint: sessionMessages.openAnswerHint,
+          bugHuntHint: sessionMessages.bugHuntHint,
+          submitAnswer: sessionMessages.submitAnswer,
+          retryAnswer: sessionMessages.retryAnswer,
+          submitting: sessionMessages.submitting,
+          nextQuestion: sessionMessages.nextQuestion,
+          finishSession: sessionMessages.finishSession,
+          loadingNextQuestion: sessionMessages.loadingNextQuestion,
+          loadingSessionResult: sessionMessages.loadingSessionResult,
+          selectionRequired: sessionMessages.selectionRequired,
+          responseRequired: sessionMessages.responseRequired,
+          correctState: sessionMessages.correctState,
+          incorrectState: sessionMessages.incorrectState,
+          pendingReviewState: sessionMessages.pendingReviewState,
+          pendingReviewHint: sessionMessages.pendingReviewHint,
+          keyboardHintSingle: sessionMessages.keyboardHintSingle,
+          keyboardHintMultiple: sessionMessages.keyboardHintMultiple,
+          explanationTitle: sessionMessages.explanationTitle,
+          takeawaysTitle: sessionMessages.takeawaysTitle,
+          openResponseLabel: sessionMessages.openResponseLabel,
+          openResponsePlaceholder: sessionMessages.openResponsePlaceholder,
+          codeResponseLabel: sessionMessages.codeResponseLabel,
+          codeResponsePlaceholder: sessionMessages.codeResponsePlaceholder,
+          codeLanguageLabel: sessionMessages.codeLanguageLabel,
+          codeLanguagePlaceholder: sessionMessages.codeLanguagePlaceholder,
+          bugHuntSnippetLabel: sessionMessages.bugHuntSnippetLabel,
+          bugHuntSummaryLabel: sessionMessages.bugHuntSummaryLabel,
+          bugHuntSummaryPlaceholder: sessionMessages.bugHuntSummaryPlaceholder,
+          bugHuntSelectedLinesLabel: sessionMessages.bugHuntSelectedLinesLabel,
+          recoveryTitle: sessionMessages.recoveryTitle,
+          recoveryHint: sessionMessages.recoveryHint,
+          timerLabel: sessionMessages.timerLabel,
+          timeRemainingLabel: sessionMessages.timeRemainingLabel,
+          timeBudgetLabel: sessionMessages.timeBudgetLabel,
+          timerExpiredToast: sessionMessages.timerExpiredToast,
+          timedModeBadge: sessionMessages.timedModeBadge,
+          backToDashboard: sessionMessages.backToDashboard,
+          errors: sessionMessages.errors,
+        }}
+      />
+    </div>
   );
 }

@@ -59,6 +59,17 @@ describe("session-timing helpers", () => {
 
     expect(
       getMockPressureState({
+        score: 92,
+        answeredCount: 10,
+        totalQuestions: 10,
+        timeSpentMinutes: 24,
+        timeBudgetMinutes: 30,
+        pendingEvaluationCount: 3,
+      }),
+    ).toBe("tight");
+
+    expect(
+      getMockPressureState({
         score: 44,
         answeredCount: 5,
         totalQuestions: 10,

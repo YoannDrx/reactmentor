@@ -1,6 +1,12 @@
-import { ContentLocale, MasteryState, type Prisma } from "@prisma/client";
+import {
+  ContentLocale,
+  ContentStatus,
+  MasteryState,
+  type Prisma,
+} from "@prisma/client";
 import { defaultLocale, type Locale } from "@/i18n/config";
 import { prisma } from "@/lib/prisma";
+import { parseQuestionContextData } from "@/lib/question-context";
 
 const localeToDbLocale: Record<Locale, ContentLocale> = {
   fr: ContentLocale.FR,
@@ -59,18 +65,44 @@ function pickLocalizedTranslation<
   );
 }
 
+function requireLocalizedTranslation<
+  TItem extends {
+    locale: ContentLocale;
+  },
+>(params: {
+  entity: "module" | "skill" | "question" | "option";
+  entityId: string;
+  translations: TItem[];
+  locale: Locale;
+}) {
+  const translation = pickLocalizedTranslation(params.translations, params.locale);
+
+  if (!translation) {
+    throw new Error(
+      `Missing ${params.entity} translation for ${params.entityId} in locale ${params.locale}.`,
+    );
+  }
+
+  return translation;
+}
+
 export function localizeModule(
   module: ModuleWithTranslations,
   locale: Locale = defaultLocale,
 ) {
-  const translation = pickLocalizedTranslation(module.translations, locale);
+  const translation = requireLocalizedTranslation({
+    entity: "module",
+    entityId: module.id,
+    translations: module.translations,
+    locale,
+  });
 
   return {
     ...module,
-    locale: translation ? dbLocaleToLocale[translation.locale] : locale,
-    title: translation?.title ?? module.title,
-    description: translation?.description ?? module.description,
-    summary: translation?.summary ?? module.summary,
+    locale: dbLocaleToLocale[translation.locale],
+    title: translation.title,
+    description: translation.description,
+    summary: translation.summary ?? null,
   };
 }
 
@@ -78,13 +110,18 @@ export function localizeSkill(
   skill: SkillWithTranslations,
   locale: Locale = defaultLocale,
 ) {
-  const translation = pickLocalizedTranslation(skill.translations, locale);
+  const translation = requireLocalizedTranslation({
+    entity: "skill",
+    entityId: skill.id,
+    translations: skill.translations,
+    locale,
+  });
 
   return {
     ...skill,
-    locale: translation ? dbLocaleToLocale[translation.locale] : locale,
-    title: translation?.title ?? skill.title,
-    description: translation?.description ?? skill.description,
+    locale: dbLocaleToLocale[translation.locale],
+    title: translation.title,
+    description: translation.description,
   };
 }
 
@@ -92,24 +129,35 @@ export function localizeQuestion(
   question: QuestionWithTranslations,
   locale: Locale = defaultLocale,
 ) {
-  const translation = pickLocalizedTranslation(question.translations, locale);
+  const translation = requireLocalizedTranslation({
+    entity: "question",
+    entityId: question.id,
+    translations: question.translations,
+    locale,
+  });
 
   return {
     ...question,
-    locale: translation ? dbLocaleToLocale[translation.locale] : locale,
-    prompt: translation?.prompt ?? question.prompt,
-    explanation: translation?.explanation ?? question.explanation,
-    takeaways: translation?.takeaways ?? question.takeaways,
-    interviewSignal: translation?.interviewSignal ?? null,
-    verbalizePoints: translation?.verbalizePoints ?? null,
+    locale: dbLocaleToLocale[translation.locale],
+    prompt: translation.prompt,
+    explanation: translation.explanation,
+    takeaways: translation.takeaways ?? null,
+    contextData: parseQuestionContextData(translation.contextData),
+    interviewSignal: translation.interviewSignal ?? null,
+    verbalizePoints: translation.verbalizePoints ?? null,
     options: question.options.map((option) => {
-      const optionTranslation = pickLocalizedTranslation(option.translations, locale);
+      const optionTranslation = requireLocalizedTranslation({
+        entity: "option",
+        entityId: option.id,
+        translations: option.translations,
+        locale,
+      });
 
       return {
         ...option,
-        locale: optionTranslation ? dbLocaleToLocale[optionTranslation.locale] : locale,
-        label: optionTranslation?.label ?? option.label,
-        explanation: optionTranslation?.explanation ?? option.explanation,
+        locale: dbLocaleToLocale[optionTranslation.locale],
+        label: optionTranslation.label,
+        explanation: optionTranslation.explanation,
       };
     }),
   };
@@ -117,6 +165,9 @@ export function localizeQuestion(
 
 export async function getLocalizedModules(locale: Locale = defaultLocale) {
   const modules = await prisma.learningModule.findMany({
+    where: {
+      status: ContentStatus.PUBLISHED,
+    },
     include: {
       translations: true,
     },
@@ -132,9 +183,15 @@ export async function getLocalizedModuleCatalog(
   locale: Locale = defaultLocale,
 ) {
   const modules = await prisma.learningModule.findMany({
+    where: {
+      status: ContentStatus.PUBLISHED,
+    },
     include: {
       translations: true,
       skills: {
+        where: {
+          status: ContentStatus.PUBLISHED,
+        },
         include: {
           translations: true,
         },
@@ -142,10 +199,12 @@ export async function getLocalizedModuleCatalog(
           slug: "asc",
         },
       },
-      _count: {
+      questions: {
+        where: {
+          status: ContentStatus.PUBLISHED,
+        },
         select: {
-          questions: true,
-          skills: true,
+          id: true,
         },
       },
     },
@@ -157,7 +216,10 @@ export async function getLocalizedModuleCatalog(
   return modules.map((learningModule) => ({
     ...localizeModule(learningModule, locale),
     skills: learningModule.skills.map((skill) => localizeSkill(skill, locale)),
-    counts: learningModule._count,
+    counts: {
+      questions: learningModule.questions.length,
+      skills: learningModule.skills.length,
+    },
   }));
 }
 
@@ -166,9 +228,15 @@ export async function getLocalizedModuleCatalogWithProgress(
   locale: Locale = defaultLocale,
 ) {
   const modules = await prisma.learningModule.findMany({
+    where: {
+      status: ContentStatus.PUBLISHED,
+    },
     include: {
       translations: true,
       skills: {
+        where: {
+          status: ContentStatus.PUBLISHED,
+        },
         include: {
           translations: true,
         },
@@ -177,6 +245,9 @@ export async function getLocalizedModuleCatalogWithProgress(
         },
       },
       questions: {
+        where: {
+          status: ContentStatus.PUBLISHED,
+        },
         select: {
           id: true,
           attempts: {
@@ -199,12 +270,6 @@ export async function getLocalizedModuleCatalogWithProgress(
           },
         },
       },
-      _count: {
-        select: {
-          questions: true,
-          skills: true,
-        },
-      },
     },
     orderBy: {
       order: "asc",
@@ -219,17 +284,21 @@ export async function getLocalizedModuleCatalogWithProgress(
       (question) =>
         question.progress[0]?.masteryState === MasteryState.MASTERED,
     ).length;
+    const publishedQuestionCount = learningModule.questions.length;
     const progressPercent =
-      learningModule._count.questions > 0
+      publishedQuestionCount > 0
         ? Math.round(
-            (attemptedQuestions / learningModule._count.questions) * 100,
+            (attemptedQuestions / publishedQuestionCount) * 100,
           )
         : 0;
 
     return {
       ...localizeModule(learningModule, locale),
       skills: learningModule.skills.map((skill) => localizeSkill(skill, locale)),
-      counts: learningModule._count,
+      counts: {
+        questions: publishedQuestionCount,
+        skills: learningModule.skills.length,
+      },
       userProgress: {
         attemptedQuestions,
         masteredQuestions,
@@ -243,11 +312,17 @@ export async function getLocalizedModuleBySlug(
   slug: string,
   locale: Locale = defaultLocale,
 ) {
-  const learningModule = await prisma.learningModule.findUnique({
-    where: { slug },
+  const learningModule = await prisma.learningModule.findFirst({
+    where: {
+      slug,
+      status: ContentStatus.PUBLISHED,
+    },
     include: {
       translations: true,
       skills: {
+        where: {
+          status: ContentStatus.PUBLISHED,
+        },
         include: {
           translations: true,
         },
@@ -255,10 +330,12 @@ export async function getLocalizedModuleBySlug(
           slug: "asc",
         },
       },
-      _count: {
+      questions: {
+        where: {
+          status: ContentStatus.PUBLISHED,
+        },
         select: {
-          questions: true,
-          skills: true,
+          id: true,
         },
       },
     },
@@ -271,7 +348,10 @@ export async function getLocalizedModuleBySlug(
   return {
     ...localizeModule(learningModule, locale),
     skills: learningModule.skills.map((skill) => localizeSkill(skill, locale)),
-    counts: learningModule._count,
+    counts: {
+      questions: learningModule.questions.length,
+      skills: learningModule.skills.length,
+    },
   };
 }
 
@@ -279,8 +359,11 @@ export async function getLocalizedQuestionBySlug(
   slug: string,
   locale: Locale = defaultLocale,
 ) {
-  const question = await prisma.question.findUnique({
-    where: { slug },
+  const question = await prisma.question.findFirst({
+    where: {
+      slug,
+      status: ContentStatus.PUBLISHED,
+    },
     include: {
       translations: true,
       options: {
@@ -305,6 +388,13 @@ export async function getLocalizedQuestionBySlug(
   });
 
   if (!question) {
+    return null;
+  }
+
+  if (
+    question.module.status !== ContentStatus.PUBLISHED ||
+    question.primarySkill.status !== ContentStatus.PUBLISHED
+  ) {
     return null;
   }
 

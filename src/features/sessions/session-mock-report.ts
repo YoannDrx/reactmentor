@@ -1,8 +1,17 @@
+import type { QuestionFormat } from "@prisma/client";
+import { buildSessionRubric, type SessionRubricCriterion } from "./session-rubric";
+
 export type MockReportQuestionInput = {
   questionId: string;
   prompt: string;
   skill: string;
+  format: QuestionFormat;
+  isBookmarked: boolean;
+  noteBody: string | null;
+  noteUpdatedAt: Date | null;
+  attempted: boolean;
   isCorrect: boolean | null;
+  scorePercent: number | null;
   verbalizePoints: string[];
   takeaways: string[];
 };
@@ -11,6 +20,8 @@ export type MockSessionReport = {
   skillBreakdown: Array<{
     skill: string;
     questionCount: number;
+    gradedCount: number;
+    pendingCount: number;
     correctCount: number;
     accuracyPercent: number;
   }>;
@@ -18,7 +29,13 @@ export type MockSessionReport = {
     questionId: string;
     prompt: string;
     skill: string;
-    status: "incorrect" | "unanswered";
+    format: QuestionFormat;
+    isBookmarked: boolean;
+    noteBody: string | null;
+    noteUpdatedAt: Date | null;
+    status: "incorrect" | "pending_review" | "unanswered";
+    rubricCriteria: SessionRubricCriterion[];
+    focusPoints: string[];
     verbalizePoints: string[];
   }>;
   verbalizePoints: string[];
@@ -38,7 +55,10 @@ export function computeMockSessionReport(input: {
     {
       skill: string;
       questionCount: number;
+      gradedCount: number;
+      pendingCount: number;
       correctCount: number;
+      totalScorePercent: number;
     }
   >();
 
@@ -46,10 +66,20 @@ export function computeMockSessionReport(input: {
     const current = skillMap.get(question.skill) ?? {
       skill: question.skill,
       questionCount: 0,
+      gradedCount: 0,
+      pendingCount: 0,
       correctCount: 0,
+      totalScorePercent: 0,
     };
 
     current.questionCount += 1;
+    if (question.scorePercent !== null) {
+      current.gradedCount += 1;
+      current.totalScorePercent += question.scorePercent;
+    }
+    if (question.attempted && question.isCorrect === null) {
+      current.pendingCount += 1;
+    }
     if (question.isCorrect) {
       current.correctCount += 1;
     }
@@ -59,10 +89,14 @@ export function computeMockSessionReport(input: {
 
   const skillBreakdown = [...skillMap.values()]
     .map((skill) => ({
-      ...skill,
+      skill: skill.skill,
+      questionCount: skill.questionCount,
+      gradedCount: skill.gradedCount,
+      pendingCount: skill.pendingCount,
+      correctCount: skill.correctCount,
       accuracyPercent:
-        skill.questionCount > 0
-          ? Math.round((skill.correctCount / skill.questionCount) * 100)
+        skill.gradedCount > 0
+          ? Math.round(skill.totalScorePercent / skill.gradedCount)
           : 0,
     }))
     .sort((left, right) => {
@@ -79,18 +113,40 @@ export function computeMockSessionReport(input: {
 
   const riskItems = input.questions
     .filter((question) => question.isCorrect !== true)
-    .map((question) => ({
-      questionId: question.questionId,
-      prompt: question.prompt,
-      skill: question.skill,
-      status: (question.isCorrect === false
-        ? "incorrect"
-        : "unanswered") as "incorrect" | "unanswered",
-      verbalizePoints: uniqueStrings(question.verbalizePoints).slice(0, 3),
-    }))
+    .map((question) => {
+      const rubric = buildSessionRubric({
+        format: question.format,
+        verbalizePoints: question.verbalizePoints,
+        takeaways: question.takeaways,
+      });
+
+      return {
+        questionId: question.questionId,
+        prompt: question.prompt,
+        skill: question.skill,
+        format: question.format,
+        isBookmarked: question.isBookmarked,
+        noteBody: question.noteBody,
+        noteUpdatedAt: question.noteUpdatedAt,
+        status: (question.isCorrect === false
+          ? "incorrect"
+          : question.attempted
+            ? "pending_review"
+            : "unanswered") as "incorrect" | "pending_review" | "unanswered",
+        rubricCriteria: rubric.criteria,
+        focusPoints: rubric.focusPoints,
+        verbalizePoints: uniqueStrings(question.verbalizePoints).slice(0, 3),
+      };
+    })
     .sort((left, right) => {
       if (left.status !== right.status) {
-        return left.status === "incorrect" ? -1 : 1;
+        const statusRank = {
+          incorrect: 0,
+          pending_review: 1,
+          unanswered: 2,
+        } as const;
+
+        return statusRank[left.status] - statusRank[right.status];
       }
 
       return left.prompt.localeCompare(right.prompt);

@@ -366,6 +366,16 @@ const en = {
         description:
           "Modules organized around the skills that actually matter in React interviews.",
       },
+      bookmarks: {
+        title: "Saved questions",
+        description:
+          "Keep high-value prompts close so you can revisit them before the next interview round.",
+      },
+      notes: {
+        title: "Personal notes",
+        description:
+          "Capture your own interview language, traps and reminders directly on the questions that matter.",
+      },
       progress: {
         title: "Skill progression",
         description:
@@ -416,6 +426,14 @@ const en = {
         modules: {
           label: "Modules",
           description: "Tracks, drills and question banks",
+        },
+        bookmarks: {
+          label: "Bookmarks",
+          description: "Saved prompts and revisit targets",
+        },
+        notes: {
+          label: "Notes",
+          description: "Personal reminders and interview phrasing",
         },
         progress: {
           label: "Progress",
@@ -501,6 +519,10 @@ const en = {
         overdue: "This card is overdue and should come back before the intuition degrades further.",
         failedRecently:
           "This topic is still unstable and needs a short feedback loop.",
+        weakSkill:
+          "The parent skill is still fragile or low-confidence, so this question helps consolidate the signal.",
+        mockFallout:
+          "This question broke under mock pressure and should return before the next timed round.",
         scheduled:
           "This question is due again to verify that the mechanism actually stuck.",
       },
@@ -587,7 +609,7 @@ const en = {
       questionCountLabel: "Questions in module",
       skillCountLabel: "Skills covered",
       launchPractice: "Launch practice session",
-      practiceUnavailable: "No playable single-choice question is available yet for this module.",
+      practiceUnavailable: "No playable question is available yet for this module.",
       skillsTitle: "Skills covered",
       skillsDescription:
         "Each skill should later feed practice sessions, review scheduling and weakness analytics.",
@@ -609,6 +631,59 @@ const en = {
         "weakness insights tied to the covered skills",
       ],
     },
+    bookmarks: {
+      title: "Saved questions",
+      description:
+        "Collect the prompts you want to rehearse again, then jump back into a targeted practice loop.",
+      savedCountLabel: "Saved now",
+      dueCountLabel: "Due among saved",
+      pendingCountLabel: "Pending review",
+      listTitle: "Bookmark queue",
+      listDescription:
+        "A compact revisit list mixing due cards, pending open answers and stable reference prompts.",
+      saveAction: "Save question",
+      removeAction: "Remove bookmark",
+      openModuleAction: "Open module",
+      launchPracticeAction: "Start practice",
+      savedAtLabel: "Saved",
+      emptyTitle: "No saved question yet",
+      emptyDescription:
+        "Bookmark a question from a live session, review card or mock report to keep it in reach.",
+      statusLabels: {
+        saved: "Saved",
+        due: "Due now",
+        pendingReview: "Pending review",
+        stable: "Stable reference",
+      },
+    },
+    notes: {
+      title: "Personal notes",
+      description:
+        "Keep your own interview wording close to the questions you want to defend better next time.",
+      noteCountLabel: "Notes saved",
+      dueCountLabel: "Due among noted",
+      pendingCountLabel: "Pending review",
+      listTitle: "Recent notes",
+      listDescription:
+        "A compact recap of the questions where you wrote down your own correction or interview framing.",
+      editorTitle: "Personal note",
+      editorPlaceholder:
+        "Write the mechanism, the trap, or the exact interview wording you want to remember.",
+      updatedAtLabel: "Updated",
+      saveAction: "Save note",
+      clearAction: "Clear note",
+      openModuleAction: "Open module",
+      launchPracticeAction: "Start practice",
+      emptyTitle: "No personal note yet",
+      emptyDescription:
+        "Save a note from review, bookmarks or mock feedback to build your own interview language.",
+      statusLabels: {
+        saved: "Saved",
+        due: "Due now",
+        pendingReview: "Pending review",
+        stable: "Stable reference",
+      },
+    },
     session: {
       progressLabel: "Question {current} / {total}",
       submitAnswer: "Submit answer",
@@ -618,12 +693,37 @@ const en = {
       finishSession: "See session result",
       loadingNextQuestion: "Loading next question...",
       loadingSessionResult: "Loading session result...",
-      selectionRequired: "Select an answer before submitting.",
+      selectionRequired: "Select at least one answer before submitting.",
+      responseRequired: "Enter an answer before submitting.",
       correctState: "Correct",
       incorrectState: "Incorrect",
-      keyboardHint: "Use keys 1-{count} to choose an answer, then Enter to validate.",
+      pendingReviewState: "Saved for review",
+      pendingReviewHint:
+        "This answer is stored, but it does not affect the score yet because it still needs manual review.",
+      answerModeLabelSingle: "Single answer",
+      answerModeLabelMultiple: "Multiple answers",
+      answerModeLabelOpen: "Open answer",
+      openAnswerHint: "Write your answer, then submit to save it and continue.",
+      bugHuntHint:
+        "Select the suspicious lines, explain the bug, then submit to save the analysis.",
+      keyboardHintSingle: "Use keys 1-{count} to choose an answer, then Enter to validate.",
+      keyboardHintMultiple:
+        "Use keys 1-{count} to toggle answers, then Enter to validate.",
       explanationTitle: "Mechanism",
       takeawaysTitle: "What to retain",
+      openResponseLabel: "Your answer",
+      openResponsePlaceholder:
+        "State the mechanism, the tradeoff, and the interview language you would use.",
+      codeResponseLabel: "Your code or snippet",
+      codeResponsePlaceholder:
+        "Write the code or pseudo-code you would defend in the interview.",
+      codeLanguageLabel: "Language",
+      codeLanguagePlaceholder: "tsx",
+      bugHuntSnippetLabel: "Bug-hunt snippet",
+      bugHuntSummaryLabel: "Your bug analysis",
+      bugHuntSummaryPlaceholder:
+        "Explain what is broken, why it is risky, and what change you would make.",
+      bugHuntSelectedLinesLabel: "Selected lines",
       recoveryTitle: "Answer not saved yet",
       recoveryHint:
         "Your selection is still preserved. Retry the save or adjust your answer before submitting again.",
@@ -641,13 +741,27 @@ const en = {
       mockPressureLabel: "Pressure readout",
       mockSkillsTitle: "Skills tested in this mock",
       mockSkillsSummary: "{correct} correct out of {total} questions on this skill.",
+      mockSkillsPendingSummary:
+        "{correct} correct out of {graded} auto-scored, {pending} still pending review on this skill.",
       mockRiskTitle: "Main slips to revisit",
       mockRiskStates: {
         incorrect: "Incorrect answer",
+        pendingReview: "Manual verdict pending",
         unanswered: "Unanswered under pressure",
       },
       mockRiskEmpty:
         "No major slip was detected in this mock. Keep the verbalization points below for the next round.",
+      mockRubricTitle: "Review rubric",
+      mockRubricFocusTitle: "Points to recover",
+      rubricCriteriaLabels: {
+        accuracy: "technical accuracy",
+        mechanism: "mechanism explained",
+        tradeoffs: "tradeoffs and limits",
+        clarity: "sketch clarity",
+        rootCause: "root cause",
+        evidence: "snippet evidence",
+        repair: "proposed fix",
+      },
       mockVerbalizeTitle: "Points to verbalize next time",
       mockPressureStates: {
         controlled: "Controlled pace",
@@ -665,11 +779,15 @@ const en = {
       backToDashboard: "Back to dashboard",
       backToModules: "Back to modules",
       correctAnswersLabel: "Correct answers",
+      gradedAnswersLabel: "Graded answers",
+      pendingReviewCountLabel: "Pending review",
       questionsAnsweredLabel: "Answered",
+      scorePendingLabel: "Pending review",
       minutesShort: "{count} min",
       errors: {
         unauthorized: "Your session expired. Sign in again.",
         invalid: "This session item is no longer valid.",
+        unsupported: "This question format is not supported yet in the live player.",
         expired: "This timed session has already ended.",
         unknown: "Unable to save this answer right now.",
       },
@@ -699,6 +817,15 @@ const en = {
         medium: "good base, language still needs sharpening",
         fragile: "still fragile in interview conditions",
       },
+      signalStates: {
+        high: "strong signal",
+        medium: "medium signal",
+        low: "thin signal",
+      },
+      confidenceLabel: "Confidence {score}/100",
+      questionsCoveredLabel: "Questions covered: {count}",
+      recentFailuresLabel: "Recent failures: {count}",
+      lastSignalLabel: "Last signal: {date}",
       emptyTitle: "No learning signal yet",
       emptyDescription:
         "Your progression charts will become meaningful after your first real attempts. Start with a module to generate the first data points.",
@@ -706,8 +833,7 @@ const en = {
     mockInterviews: {
       timedMode: "timed mode",
       launchTemplate: "Launch template",
-      templateUnavailable:
-        "No playable single-choice question is available for this preset yet.",
+      templateUnavailable: "No playable question is available for this preset yet.",
       overviewTitle: "Mock performance readout",
       overviewDescription:
         "A compact signal on whether the latest timed runs are actually improving your interview readiness.",
@@ -729,6 +855,12 @@ const en = {
       templateSignalsTitle: "Template signals",
       templateSignalsDescription:
         "Which mock presets are already holding up and which ones still need another pass.",
+      criterionSignalsTitle: "Rubric friction map",
+      criterionSignalsDescription:
+        "A cross-mock readout of the criteria that still collapse most often during manual review.",
+      criterionReviewCountLabel: "Reviewed answers",
+      criterionMissingLabel: "Missing verdicts",
+      criterionPartialLabel: "Partial verdicts",
       strongestTemplateLabel: "Most stable template",
       needsWorkTemplateLabel: "Needs another pass",
       templateSessionsSummary: "{count} completed runs",
@@ -763,6 +895,9 @@ const en = {
       queueTitle: "Review queue",
       queueDescription:
         "The cards to revisit now so bad intuitions do not become habits.",
+      pendingTitle: "Pending manual reviews",
+      pendingDescription:
+        "Open-answer attempts need a manual verdict before they can affect readiness and scores.",
       launchTitle: "Turn due cards into a live review session",
       launchDescription:
         "Run a focused review loop before weak intuitions decay further. The engine will prioritize the most overdue and most fragile cards first.",
@@ -770,15 +905,54 @@ const en = {
       launchUnavailable: "No review session is available because nothing is due yet.",
       dueNowLabel: "Cards due now",
       nextSessionSizeLabel: "Cards in next session",
+      pendingCountLabel: "Pending verdicts",
+      yourAnswerLabel: "Your answer",
+      referenceLabel: "Reference correction",
+      selectedLinesLabel: "Selected lines",
+      rubricVerdictsTitle: "Verdict by criterion",
+      reviewSummaryLabel: "Review summary",
+      reviewSummaryPlaceholder:
+        "Note the main gap, the missing argument, or the interview wording that needs another pass.",
+      saveRubricAction: "Save review",
+      rubricVerdictLabels: {
+        solid: "solid",
+        partial: "partial",
+        missing: "missing",
+      },
+      rubricTitle: "Review rubric",
+      rubricFocusTitle: "Points to hear or verify",
+      rubricCriteriaLabels: {
+        accuracy: "technical accuracy",
+        mechanism: "mechanism explained",
+        tradeoffs: "tradeoffs and limits",
+        clarity: "sketch clarity",
+        rootCause: "root cause",
+        evidence: "snippet evidence",
+        repair: "proposed fix",
+      },
+      markCorrectAction: "Mark solid",
+      markIncorrectAction: "Mark needs work",
+      emptyPendingTitle: "No manual review is waiting",
+      emptyPendingDescription:
+        "As soon as you complete an open-answer or bug-hunt question, it will appear here until you give it a verdict.",
       urgencyLabels: {
         critical: "Review now",
         high: "Due today",
         normal: "Scheduled",
       },
+      responseLabels: {
+        text_response: "Written answer",
+        code_response: "Code sketch",
+        bug_hunt_response: "Bug analysis",
+      },
       reasonLabels: {
         overdue: "This card is overdue and should come back before the intuition degrades further.",
         failedRecently:
           "This topic is still unstable and needs a short feedback loop.",
+        weakSkill:
+          "The parent skill is still fragile or low-confidence, so this question helps consolidate the signal.",
+        mockFallout:
+          "This question broke under mock pressure and should return before the next timed round.",
         scheduled:
           "This question is due again to verify that the mechanism actually stuck.",
       },

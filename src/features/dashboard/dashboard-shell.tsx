@@ -10,7 +10,9 @@ import { useI18n } from "@/i18n/provider";
 import { cn } from "@/lib/utils";
 import {
   BookOpenCheck,
+  Bookmark,
   ChevronLeft,
+  NotebookText,
   Gauge,
   LayoutDashboard,
   Menu,
@@ -27,6 +29,8 @@ import { useState } from "react";
 const navigationIcons = {
   overview: LayoutDashboard,
   modules: BookOpenCheck,
+  bookmarks: Bookmark,
+  notes: NotebookText,
   progress: Gauge,
   mockInterviews: Target,
   review: Sparkles,
@@ -76,6 +80,16 @@ export function DashboardShell({
       ...sidebar.nav.modules,
     },
     {
+      href: "/dashboard/bookmarks",
+      icon: navigationIcons.bookmarks,
+      ...sidebar.nav.bookmarks,
+    },
+    {
+      href: "/dashboard/notes",
+      icon: navigationIcons.notes,
+      ...sidebar.nav.notes,
+    },
+    {
       href: "/dashboard/progress",
       icon: navigationIcons.progress,
       ...sidebar.nav.progress,
@@ -99,6 +113,8 @@ export function DashboardShell({
   const pageMeta = {
     "/dashboard": pages.overview,
     "/dashboard/modules": pages.modules,
+    "/dashboard/bookmarks": pages.bookmarks,
+    "/dashboard/notes": pages.notes,
     "/dashboard/progress": pages.progress,
     "/dashboard/mock-interviews": pages.mockInterviews,
     "/dashboard/review": pages.review,

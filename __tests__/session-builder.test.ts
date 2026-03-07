@@ -1,5 +1,7 @@
 import {
+  ContentStatus,
   MasteryState,
+  QuestionFormat,
   QuestionLevel,
   SessionMode,
   Track,
@@ -23,6 +25,7 @@ type ActiveSessionFixture = {
 
 type QuestionCandidateFixture = {
   id: string;
+  format: QuestionFormat;
   difficulty: number;
   progress: Array<{
     masteryState: MasteryState;
@@ -38,6 +41,9 @@ type ReviewCandidateFixture = {
   masteryState: MasteryState;
   nextReviewAt: Date | null;
   lastAttemptAt: Date | null;
+  reviewCount: number;
+  lapseCount: number;
+  lastOutcomeCorrect: boolean | null;
   question: {
     difficulty: number;
   };
@@ -173,6 +179,7 @@ describe("createTrainingSession", () => {
     questionFindManyMock.mockResolvedValue([
       {
         id: "question_mastered_recent",
+        format: QuestionFormat.SINGLE_CHOICE,
         difficulty: 1,
         progress: [
           {
@@ -188,6 +195,7 @@ describe("createTrainingSession", () => {
       },
       {
         id: "question_learning",
+        format: QuestionFormat.SINGLE_CHOICE,
         difficulty: 3,
         progress: [
           {
@@ -203,6 +211,7 @@ describe("createTrainingSession", () => {
       },
       {
         id: "question_new",
+        format: QuestionFormat.MULTIPLE_CHOICE,
         difficulty: 2,
         progress: [],
         attempts: [],
@@ -245,6 +254,33 @@ describe("createTrainingSession", () => {
         }),
       },
     });
+    expect(questionFindManyMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          status: ContentStatus.PUBLISHED,
+          format: {
+            in: [
+              QuestionFormat.SINGLE_CHOICE,
+              QuestionFormat.MULTIPLE_CHOICE,
+              QuestionFormat.OPEN_ENDED,
+              QuestionFormat.CODE_OUTPUT,
+              QuestionFormat.BUG_HUNT,
+            ],
+          },
+          module: {
+            slug: "react-rendering-systems",
+            status: ContentStatus.PUBLISHED,
+            track: {
+              in: [Track.REACT],
+            },
+          },
+          primarySkill: {
+            status: ContentStatus.PUBLISHED,
+          },
+          level: QuestionLevel.MID,
+        },
+      }),
+    );
     expect(trainingSessionItemCreateManyMock).toHaveBeenCalledWith({
       data: [
         {
@@ -268,6 +304,9 @@ describe("createTrainingSession", () => {
         masteryState: MasteryState.REVIEWING,
         nextReviewAt: new Date("2026-03-06T12:00:00.000Z"),
         lastAttemptAt: new Date("2026-03-05T12:00:00.000Z"),
+        reviewCount: 3,
+        lapseCount: 0,
+        lastOutcomeCorrect: true,
         question: {
           difficulty: 2,
         },
@@ -277,6 +316,9 @@ describe("createTrainingSession", () => {
         masteryState: MasteryState.LEARNING,
         nextReviewAt: new Date("2026-03-03T12:00:00.000Z"),
         lastAttemptAt: new Date("2026-03-01T12:00:00.000Z"),
+        reviewCount: 2,
+        lapseCount: 1,
+        lastOutcomeCorrect: false,
         question: {
           difficulty: 3,
         },
@@ -316,6 +358,93 @@ describe("createTrainingSession", () => {
           sessionId: "session_created",
           questionId: "question_due_recent",
           order: 2,
+        },
+      ],
+    });
+  });
+
+  it("builds mock sessions with a mixed-format bias when the template asks for it", async () => {
+    questionFindManyMock.mockResolvedValue([
+      {
+        id: "mock_closed_1",
+        format: QuestionFormat.SINGLE_CHOICE,
+        difficulty: 3,
+        progress: [],
+        attempts: [],
+      },
+      {
+        id: "mock_closed_2",
+        format: QuestionFormat.MULTIPLE_CHOICE,
+        difficulty: 4,
+        progress: [],
+        attempts: [],
+      },
+      {
+        id: "mock_code_1",
+        format: QuestionFormat.CODE_OUTPUT,
+        difficulty: 4,
+        progress: [],
+        attempts: [],
+      },
+      {
+        id: "mock_open_1",
+        format: QuestionFormat.OPEN_ENDED,
+        difficulty: 3,
+        progress: [],
+        attempts: [],
+      },
+      {
+        id: "mock_bug_1",
+        format: QuestionFormat.BUG_HUNT,
+        difficulty: 5,
+        progress: [],
+        attempts: [],
+      },
+    ]);
+
+    const session = await createTrainingSession({
+      userId: "user_1",
+      mode: SessionMode.MOCK_INTERVIEW,
+      locale: "en",
+      templateKey: "react_mid_30",
+    });
+
+    expect(session).toMatchObject({
+      id: "session_created",
+      resumed: false,
+      mode: SessionMode.MOCK_INTERVIEW,
+      questionCount: 5,
+      config: {
+        templateKey: "react_mid_30",
+        questionCount: 5,
+      },
+    });
+    expect(trainingSessionItemCreateManyMock).toHaveBeenCalledWith({
+      data: [
+        {
+          sessionId: "session_created",
+          questionId: "mock_closed_2",
+          order: 1,
+        },
+        {
+          sessionId: "session_created",
+          questionId: "mock_closed_1",
+          order: 2,
+        },
+        {
+          sessionId: "session_created",
+          questionId: "mock_code_1",
+          order: 3,
+        },
+        {
+          sessionId: "session_created",
+          questionId: "mock_open_1",
+          order: 4,
+        },
+        {
+          sessionId: "session_created",
+          questionId: "mock_bug_1",
+          order: 5,
         },
       ],
     });

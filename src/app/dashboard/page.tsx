@@ -313,9 +313,15 @@ export default async function DashboardOverviewPage() {
                         })}
                       </p>
                     </div>
-                    <div className="rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-700">
-                      {session.score}%
-                    </div>
+                    {session.score === null ? (
+                      <div className="rounded-full bg-cyan-50 px-3 py-1 text-sm font-medium text-cyan-700">
+                        {messages.dashboard.session.scorePendingLabel}
+                      </div>
+                    ) : (
+                      <div className="rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-700">
+                        {session.score}%
+                      </div>
+                    )}
                   </div>
                 ))
               ) : (

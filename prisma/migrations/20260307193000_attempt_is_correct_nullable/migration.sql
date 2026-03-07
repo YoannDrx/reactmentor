@@ -1,0 +1,2 @@
+ALTER TABLE "attempt"
+  ALTER COLUMN "isCorrect" DROP NOT NULL;
