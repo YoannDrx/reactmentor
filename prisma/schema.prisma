@@ -15,6 +15,11 @@ enum Track {
   FRONTEND_SYSTEMS
 }
 
+enum ContentLocale {
+  FR
+  EN
+}
+
 enum QuestionLevel {
   JUNIOR
   MID
@@ -42,10 +47,17 @@ enum MasteryState {
   MASTERED
 }
 
+enum TranslationStatus {
+  MISSING
+  IN_PROGRESS
+  REVIEW
+  READY
+}
+
 model User {
-  id            String    @id
+  id            String   @id
   name          String
-  email         String    @unique
+  email         String   @unique
   emailVerified Boolean
   image         String?
   createdAt     DateTime
@@ -56,29 +68,29 @@ model User {
   banReason  String?
   banExpires DateTime?
 
-  sessions   Session[]
-  accounts   Account[]
+  sessions Session[]
+  accounts Account[]
 
-  preferences       UserPreference?
-  attempts          Attempt[]
-  questionProgress  QuestionProgress[]
-  skillProgress     SkillProgress[]
-  bookmarks         Bookmark[]
-  notes             Note[]
-  trainingSessions  TrainingSession[]
+  preferences      UserPreference?
+  attempts         Attempt[]
+  questionProgress QuestionProgress[]
+  skillProgress    SkillProgress[]
+  bookmarks        Bookmark[]
+  notes            Note[]
+  trainingSessions TrainingSession[]
 
   @@map("user")
 }
 
 model Session {
-  id           String   @id
-  expiresAt    DateTime
-  token        String   @unique
-  createdAt    DateTime
-  updatedAt    DateTime
-  ipAddress    String?
-  userAgent    String?
-  userId       String
+  id             String   @id
+  expiresAt      DateTime
+  token          String   @unique
+  createdAt      DateTime
+  updatedAt      DateTime
+  ipAddress      String?
+  userAgent      String?
+  userId         String
   impersonatedBy String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -146,8 +158,9 @@ model LearningModule {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
-  skills    Skill[]
-  questions Question[]
+  skills       Skill[]
+  questions    Question[]
+  translations LearningModuleTranslation[]
 
   @@map("learning_module")
 }
@@ -158,13 +171,15 @@ model Skill {
   title       String
   description String
   moduleId    String
+  status      String   @default("published")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  module          LearningModule  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  questionsPrimary Question[]     @relation("PrimarySkill")
+  module           LearningModule     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  questionsPrimary Question[]         @relation("PrimarySkill")
   questionLinks    QuestionSkill[]
   progress         SkillProgress[]
+  translations     SkillTranslation[]
 
   @@map("skill")
 }
@@ -184,8 +199,8 @@ model Question {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
-  module       LearningModule   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  primarySkill Skill            @relation("PrimarySkill", fields: [primarySkillId], references: [id], onDelete: Restrict)
+  module       LearningModule        @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  primarySkill Skill                 @relation("PrimarySkill", fields: [primarySkillId], references: [id], onDelete: Restrict)
   options      QuestionOption[]
   skillLinks   QuestionSkill[]
   attempts     Attempt[]
@@ -193,6 +208,7 @@ model Question {
   bookmarks    Bookmark[]
   notes        Note[]
   sessionItems TrainingSessionItem[]
+  translations QuestionTranslation[]
 
   @@map("question")
 }
@@ -206,9 +222,78 @@ model QuestionOption {
   order       Int      @default(0)
   createdAt   DateTime @default(now())
 
-  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  question     Question                    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  translations QuestionOptionTranslation[]
 
   @@map("question_option")
+}
+
+model LearningModuleTranslation {
+  id          String            @id @default(cuid())
+  moduleId    String
+  locale      ContentLocale
+  status      TranslationStatus @default(READY)
+  title       String
+  description String
+  summary     String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  module LearningModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([moduleId, locale])
+  @@map("learning_module_translation")
+}
+
+model SkillTranslation {
+  id          String            @id @default(cuid())
+  skillId     String
+  locale      ContentLocale
+  status      TranslationStatus @default(READY)
+  title       String
+  description String
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([skillId, locale])
+  @@map("skill_translation")
+}
+
+model QuestionTranslation {
+  id              String            @id @default(cuid())
+  questionId      String
+  locale          ContentLocale
+  status          TranslationStatus @default(READY)
+  prompt          String
+  explanation     String
+  takeaways       Json?
+  interviewSignal String?
+  verbalizePoints Json?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([questionId, locale])
+  @@map("question_translation")
+}
+
+model QuestionOptionTranslation {
+  id          String            @id @default(cuid())
+  optionId    String
+  locale      ContentLocale
+  status      TranslationStatus @default(READY)
+  label       String
+  explanation String
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  option QuestionOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+
+  @@unique([optionId, locale])
+  @@map("question_option_translation")
 }
 
 model QuestionSkill {
@@ -231,7 +316,7 @@ model TrainingSession {
   startedAt DateTime    @default(now())
   endedAt   DateTime?
 
-  user     User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   items    TrainingSessionItem[]
   attempts Attempt[]
 
