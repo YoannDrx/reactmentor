@@ -24,6 +24,8 @@ Ce document doit etre utilise comme:
 Documents de pilotage associes:
 
 - [ExecutionPlan.md](./ExecutionPlan.md)
+- [ContinuationPlan.md](./ContinuationPlan.md)
+- [MasterDevelopmentPlan.md](./MasterDevelopmentPlan.md)
 - [BuildTracker.md](./BuildTracker.md)
 - [Taxonomy.md](./Taxonomy.md)
 - [ContentContract.md](./ContentContract.md)

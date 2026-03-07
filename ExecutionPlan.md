@@ -7,6 +7,8 @@ Document parent: [Roadmap.md](./Roadmap.md)
 Documents de suivi:
 
 - [BuildTracker.md](./BuildTracker.md)
+- [ContinuationPlan.md](./ContinuationPlan.md)
+- [MasterDevelopmentPlan.md](./MasterDevelopmentPlan.md)
 - [Taxonomy.md](./Taxonomy.md)
 - [ContentContract.md](./ContentContract.md)
 - [DashboardReadModel.md](./DashboardReadModel.md)
@@ -62,6 +64,11 @@ Consequence:
 - `Lot 7`: `IN_PROGRESS`
 - `Lot 8`: `PARTIAL`
 - prochain chantier recommande: terminer la migration legacy, finaliser la calibration long terme de `SkillProgress` et etendre le builder mock au-dela des presets single-choice actuels
+
+Plan de continuation detaille:
+
+- [ContinuationPlan.md](./ContinuationPlan.md)
+- [MasterDevelopmentPlan.md](./MasterDevelopmentPlan.md)
 
 ## 3. Strategie generale d'execution
 
