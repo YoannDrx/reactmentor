@@ -17,6 +17,7 @@
     "test": "vitest",
     "test:ci": "vitest run",
     "test:e2e": "playwright test --ui",
+    "pretest:e2e:ci": "pnpm build",
     "test:e2e:ci": "CI=TRUE HEADLESS=TRUE playwright test"
   },
   "dependencies": {

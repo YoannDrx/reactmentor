@@ -1,21 +1,9 @@
-import { expect, test, type Page } from "@playwright/test";
-
-const createTestUser = () => ({
-  name: "React Mentor Tester",
-  email: `react-mentor-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`,
-  password: "Password123!",
-});
-
-const fillSignUpForm = async (
-  page: Page,
-  user: ReturnType<typeof createTestUser>,
-) => {
-  await page.goto("/auth/signup");
-  await page.getByLabel(/Name|Nom/).fill(user.name);
-  await page.getByLabel(/Email/).fill(user.email);
-  await page.getByLabel(/^Password$|^Mot de passe$/).fill(user.password);
-  await page.getByLabel(/Confirm|Confirmation/).fill(user.password);
-};
+import { expect, test } from "@playwright/test";
+import {
+  completeOnboardingIfNeeded,
+  createTestUser,
+  signUpWithEmail,
+} from "./test-helpers";
 
 test.describe("authentication flows", () => {
   test("redirects unauthenticated users to sign in", async ({ page }) => {
@@ -25,25 +13,21 @@ test.describe("authentication flows", () => {
   });
 
   test("signs up with email and opens the dashboard", async ({ page }) => {
-    const testUser = createTestUser();
+    const testUser = createTestUser("react-mentor-auth");
 
-    await fillSignUpForm(page, testUser);
-    await page
-      .getByRole("button", { name: /Create my account|Créer mon compte/ })
-      .click();
+    await signUpWithEmail(page, testUser);
+    await completeOnboardingIfNeeded(page);
 
     await expect(page).toHaveURL(/\/dashboard$/);
   });
 
   test("signs in with an existing email account", async ({ browser }) => {
-    const testUser = createTestUser();
+    const testUser = createTestUser("react-mentor-auth");
     const signUpContext = await browser.newContext();
     const signUpPage = await signUpContext.newPage();
 
-    await fillSignUpForm(signUpPage, testUser);
-    await signUpPage
-      .getByRole("button", { name: /Create my account|Créer mon compte/ })
-      .click();
+    await signUpWithEmail(signUpPage, testUser);
+    await completeOnboardingIfNeeded(signUpPage);
     await expect(signUpPage).toHaveURL(/\/dashboard$/);
     await signUpContext.close();
 
@@ -55,6 +39,7 @@ test.describe("authentication flows", () => {
     await page
       .getByRole("button", { name: /Access dashboard|Accéder au dashboard/ })
       .click();
+    await completeOnboardingIfNeeded(page);
 
     await expect(page).toHaveURL(/\/dashboard$/);
     await context.close();
