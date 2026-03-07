@@ -37,7 +37,7 @@ jobs:
     env:
       DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/react_mentor_e2e"
       DATABASE_URL_UNPOOLED: "postgresql://postgres:postgres@localhost:5432/react_mentor_e2e"
-      BETTER_AUTH_SECRET: "ci-e2e-secret-for-react-mentor"
+      BETTER_AUTH_SECRET: "ci-e2e-secret-6S4mW9pL2rTx8QnK7vHd3YbNc5ZjF1aP"
       BETTER_AUTH_URL: "http://localhost:3000"
       NEXT_PUBLIC_APP_URL: "http://localhost:3000"
       EMAIL_FROM: "React Mentor <noreply@do-not-reply.app>"
@@ -82,6 +82,8 @@ jobs:
         run: pnpm prisma generate
       - name: Apply migrations
         run: pnpm prisma migrate deploy
+      - name: Seed database
+        run: pnpm prisma:seed
       - name: Verify migration status
         run: pnpm prisma migrate status
       - name: Build application
