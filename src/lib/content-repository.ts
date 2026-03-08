@@ -38,6 +38,22 @@ type SkillWithTranslations = Prisma.SkillGetPayload<{
   };
 }>;
 
+type QuestionSummaryWithTranslations = Prisma.QuestionGetPayload<{
+  include: {
+    translations: true;
+    primarySkill: {
+      include: {
+        translations: true;
+      };
+    };
+    module: {
+      include: {
+        translations: true;
+      };
+    };
+  };
+}>;
+
 type QuestionWithTranslations = Prisma.QuestionGetPayload<{
   include: {
     translations: true;
@@ -49,6 +65,39 @@ type QuestionWithTranslations = Prisma.QuestionGetPayload<{
   };
 }>;
 
+type QuestionCollectionWithTranslations = Prisma.QuestionCollectionGetPayload<{
+  include: {
+    translations: true;
+  };
+}>;
+
+type QuestionPromptReference = {
+  id: string;
+  slug: string;
+  translations: Array<{
+    locale: ContentLocale;
+    prompt: string;
+  }>;
+};
+
+type QuestionCollectionJourneyInput = QuestionCollectionWithTranslations & {
+  items: Array<{
+    order: number;
+    question: QuestionPromptReference;
+  }>;
+};
+
+function normalizeStringList(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+}
+
 function pickLocalizedTranslation<
   TItem extends {
     locale: ContentLocale;
@@ -59,7 +108,9 @@ function pickLocalizedTranslation<
 
   return (
     translations.find((translation) => translation.locale === dbLocale) ??
-    translations.find((translation) => translation.locale === fallbackDbLocale) ??
+    translations.find(
+      (translation) => translation.locale === fallbackDbLocale,
+    ) ??
     translations[0] ??
     null
   );
@@ -70,12 +121,15 @@ function requireLocalizedTranslation<
     locale: ContentLocale;
   },
 >(params: {
-  entity: "module" | "skill" | "question" | "option";
+  entity: "module" | "skill" | "question" | "option" | "collection";
   entityId: string;
   translations: TItem[];
   locale: Locale;
 }) {
-  const translation = pickLocalizedTranslation(params.translations, params.locale);
+  const translation = pickLocalizedTranslation(
+    params.translations,
+    params.locale,
+  );
 
   if (!translation) {
     throw new Error(
@@ -125,8 +179,27 @@ export function localizeSkill(
   };
 }
 
-export function localizeQuestion(
-  question: QuestionWithTranslations,
+export function localizeQuestionSummary(
+  question: Pick<
+    QuestionSummaryWithTranslations,
+    | "id"
+    | "slug"
+    | "moduleId"
+    | "primarySkillId"
+    | "difficulty"
+    | "level"
+    | "format"
+    | "estimatedTimeSec"
+    | "sourceType"
+    | "version"
+    | "prompt"
+    | "explanation"
+    | "takeaways"
+    | "status"
+    | "createdAt"
+    | "updatedAt"
+    | "translations"
+  >,
   locale: Locale = defaultLocale,
 ) {
   const translation = requireLocalizedTranslation({
@@ -141,10 +214,33 @@ export function localizeQuestion(
     locale: dbLocaleToLocale[translation.locale],
     prompt: translation.prompt,
     explanation: translation.explanation,
-    takeaways: translation.takeaways ?? null,
+    takeaways: normalizeStringList(translation.takeaways),
+    tlDr: translation.tlDr ?? null,
+    shortAnswer: translation.shortAnswer ?? null,
+    lessonBody: translation.lessonBody ?? null,
+    commonMistakes: normalizeStringList(translation.commonMistakes),
+    exampleTitle: translation.exampleTitle ?? null,
+    exampleCode: translation.exampleCode ?? null,
+    exampleLanguage: translation.exampleLanguage ?? null,
+    exampleExplanation: translation.exampleExplanation ?? null,
+    estimatedReadMinutes:
+      typeof translation.estimatedReadMinutes === "number"
+        ? translation.estimatedReadMinutes
+        : null,
     contextData: parseQuestionContextData(translation.contextData),
     interviewSignal: translation.interviewSignal ?? null,
-    verbalizePoints: translation.verbalizePoints ?? null,
+    verbalizePoints: normalizeStringList(translation.verbalizePoints),
+  };
+}
+
+export function localizeQuestion(
+  question: QuestionWithTranslations,
+  locale: Locale = defaultLocale,
+) {
+  const baseQuestion = localizeQuestionSummary(question, locale);
+
+  return {
+    ...baseQuestion,
     options: question.options.map((option) => {
       const optionTranslation = requireLocalizedTranslation({
         entity: "option",
@@ -160,6 +256,94 @@ export function localizeQuestion(
         explanation: optionTranslation.explanation,
       };
     }),
+  };
+}
+
+export function localizeQuestionCollection(
+  collection: QuestionCollectionWithTranslations,
+  locale: Locale = defaultLocale,
+) {
+  const translation = requireLocalizedTranslation({
+    entity: "collection",
+    entityId: collection.id,
+    translations: collection.translations,
+    locale,
+  });
+
+  return {
+    ...collection,
+    locale: dbLocaleToLocale[translation.locale],
+    title: translation.title,
+    description: translation.description,
+    summary: translation.summary ?? null,
+  };
+}
+
+export function localizeQuestionReference(
+  question: QuestionPromptReference,
+  locale: Locale = defaultLocale,
+) {
+  const translation = requireLocalizedTranslation({
+    entity: "question",
+    entityId: question.id,
+    translations: question.translations,
+    locale,
+  });
+
+  return {
+    id: question.id,
+    slug: question.slug,
+    locale: dbLocaleToLocale[translation.locale],
+    prompt: translation.prompt,
+  };
+}
+
+export function buildPrimaryCollectionJourney(
+  currentQuestionSlug: string,
+  collections: QuestionCollectionJourneyInput[],
+  locale: Locale = defaultLocale,
+) {
+  const sortedCollections = [...collections].sort((left, right) => {
+    if (left.order !== right.order) {
+      return left.order - right.order;
+    }
+
+    return left.slug.localeCompare(right.slug);
+  });
+
+  const primaryCollection = sortedCollections.find((collection) =>
+    collection.items.some((item) => item.question.slug === currentQuestionSlug),
+  );
+
+  if (!primaryCollection) {
+    return null;
+  }
+
+  const currentIndex = primaryCollection.items.findIndex(
+    (item) => item.question.slug === currentQuestionSlug,
+  );
+
+  if (currentIndex === -1) {
+    return null;
+  }
+
+  const previousItem =
+    currentIndex > 0 ? primaryCollection.items[currentIndex - 1] : null;
+  const nextItem =
+    currentIndex < primaryCollection.items.length - 1
+      ? primaryCollection.items[currentIndex + 1]
+      : null;
+
+  return {
+    collection: localizeQuestionCollection(primaryCollection, locale),
+    position: currentIndex + 1,
+    total: primaryCollection.items.length,
+    previousQuestion: previousItem
+      ? localizeQuestionReference(previousItem.question, locale)
+      : null,
+    nextQuestion: nextItem
+      ? localizeQuestionReference(nextItem.question, locale)
+      : null,
   };
 }
 
@@ -287,14 +471,14 @@ export async function getLocalizedModuleCatalogWithProgress(
     const publishedQuestionCount = learningModule.questions.length;
     const progressPercent =
       publishedQuestionCount > 0
-        ? Math.round(
-            (attemptedQuestions / publishedQuestionCount) * 100,
-          )
+        ? Math.round((attemptedQuestions / publishedQuestionCount) * 100)
         : 0;
 
     return {
       ...localizeModule(learningModule, locale),
-      skills: learningModule.skills.map((skill) => localizeSkill(skill, locale)),
+      skills: learningModule.skills.map((skill) =>
+        localizeSkill(skill, locale),
+      ),
       counts: {
         questions: publishedQuestionCount,
         skills: learningModule.skills.length,
@@ -333,10 +517,31 @@ export async function getLocalizedModuleBySlug(
       questions: {
         where: {
           status: ContentStatus.PUBLISHED,
+          primarySkill: {
+            status: ContentStatus.PUBLISHED,
+          },
         },
-        select: {
-          id: true,
+        include: {
+          translations: true,
+          primarySkill: {
+            include: {
+              translations: true,
+            },
+          },
+          module: {
+            include: {
+              translations: true,
+            },
+          },
         },
+        orderBy: [
+          {
+            difficulty: "asc",
+          },
+          {
+            createdAt: "asc",
+          },
+        ],
       },
     },
   });
@@ -352,6 +557,136 @@ export async function getLocalizedModuleBySlug(
       questions: learningModule.questions.length,
       skills: learningModule.skills.length,
     },
+    questions: learningModule.questions.map((question) => ({
+      ...localizeQuestionSummary(question, locale),
+      primarySkill: localizeSkill(question.primarySkill, locale),
+      module: localizeModule(question.module, locale),
+    })),
+  };
+}
+
+export async function getLocalizedQuestionCollections(
+  locale: Locale = defaultLocale,
+) {
+  const collections = await prisma.questionCollection.findMany({
+    where: {
+      status: ContentStatus.PUBLISHED,
+    },
+    include: {
+      translations: true,
+      items: {
+        where: {
+          question: {
+            status: ContentStatus.PUBLISHED,
+            module: {
+              status: ContentStatus.PUBLISHED,
+            },
+            primarySkill: {
+              status: ContentStatus.PUBLISHED,
+            },
+          },
+        },
+        orderBy: {
+          order: "asc",
+        },
+        include: {
+          question: {
+            include: {
+              translations: true,
+              primarySkill: {
+                include: {
+                  translations: true,
+                },
+              },
+              module: {
+                include: {
+                  translations: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      order: "asc",
+    },
+  });
+
+  return collections.map((collection) => ({
+    ...localizeQuestionCollection(collection, locale),
+    counts: {
+      questions: collection.items.length,
+    },
+    previewQuestions: collection.items.slice(0, 3).map((item) => ({
+      ...localizeQuestionSummary(item.question, locale),
+      primarySkill: localizeSkill(item.question.primarySkill, locale),
+      module: localizeModule(item.question.module, locale),
+    })),
+  }));
+}
+
+export async function getLocalizedQuestionCollectionBySlug(
+  slug: string,
+  locale: Locale = defaultLocale,
+) {
+  const collection = await prisma.questionCollection.findFirst({
+    where: {
+      slug,
+      status: ContentStatus.PUBLISHED,
+    },
+    include: {
+      translations: true,
+      items: {
+        where: {
+          question: {
+            status: ContentStatus.PUBLISHED,
+            module: {
+              status: ContentStatus.PUBLISHED,
+            },
+            primarySkill: {
+              status: ContentStatus.PUBLISHED,
+            },
+          },
+        },
+        orderBy: {
+          order: "asc",
+        },
+        include: {
+          question: {
+            include: {
+              translations: true,
+              primarySkill: {
+                include: {
+                  translations: true,
+                },
+              },
+              module: {
+                include: {
+                  translations: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!collection) {
+    return null;
+  }
+
+  return {
+    ...localizeQuestionCollection(collection, locale),
+    counts: {
+      questions: collection.items.length,
+    },
+    questions: collection.items.map((item) => ({
+      ...localizeQuestionSummary(item.question, locale),
+      primarySkill: localizeSkill(item.question.primarySkill, locale),
+      module: localizeModule(item.question.module, locale),
+    })),
   };
 }
 
@@ -384,6 +719,60 @@ export async function getLocalizedQuestionBySlug(
           translations: true,
         },
       },
+      collectionItems: {
+        where: {
+          collection: {
+            status: ContentStatus.PUBLISHED,
+          },
+        },
+        orderBy: [
+          {
+            collection: {
+              order: "asc",
+            },
+          },
+          {
+            order: "asc",
+          },
+        ],
+        include: {
+          collection: {
+            include: {
+              translations: true,
+              items: {
+                where: {
+                  question: {
+                    status: ContentStatus.PUBLISHED,
+                    module: {
+                      status: ContentStatus.PUBLISHED,
+                    },
+                    primarySkill: {
+                      status: ContentStatus.PUBLISHED,
+                    },
+                  },
+                },
+                orderBy: {
+                  order: "asc",
+                },
+                include: {
+                  question: {
+                    select: {
+                      id: true,
+                      slug: true,
+                      translations: {
+                        select: {
+                          locale: true,
+                          prompt: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     },
   });
 
@@ -402,5 +791,13 @@ export async function getLocalizedQuestionBySlug(
     ...localizeQuestion(question, locale),
     primarySkill: localizeSkill(question.primarySkill, locale),
     module: localizeModule(question.module, locale),
+    collections: question.collectionItems.map((item) =>
+      localizeQuestionCollection(item.collection, locale),
+    ),
+    primaryCollectionJourney: buildPrimaryCollectionJourney(
+      question.slug,
+      question.collectionItems.map((item) => item.collection),
+      locale,
+    ),
   };
 }

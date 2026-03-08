@@ -98,7 +98,10 @@ export function LandingPage() {
 
               <div className="grid gap-4 sm:grid-cols-3">
                 {landing.hero.stats.map((stat) => (
-                  <Card key={stat.label} className="border-white/65 bg-white/72">
+                  <Card
+                    key={stat.label}
+                    className="border-white/65 bg-white/72"
+                  >
                     <CardContent className="space-y-2 pt-6">
                       <div className="font-display text-3xl font-semibold text-slate-950">
                         {stat.value}
@@ -117,7 +120,11 @@ export function LandingPage() {
 
             <motion.div
               {...sectionMotion}
-              transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1], delay: 0.08 }}
+              transition={{
+                duration: 0.65,
+                ease: [0.16, 1, 0.3, 1],
+                delay: 0.08,
+              }}
               className="relative"
             >
               <div className="absolute -left-6 top-10 hidden h-40 w-40 rounded-full bg-cyan-400/30 blur-3xl lg:block" />
@@ -196,17 +203,34 @@ export function LandingPage() {
                             </div>
                           </div>
                           <div className="flex h-28 items-end gap-2">
-                            {[48, 56, 53, 62, 72, 68, 81].map((height, index) => (
-                              <div key={height} className="flex flex-1 flex-col items-center gap-2">
+                            {[48, 56, 53, 62, 72, 68, 81].map(
+                              (height, index) => (
                                 <div
-                                  className="w-full rounded-t-2xl bg-[linear-gradient(180deg,#67e8f9_0%,#0ea5e9_55%,#0f1720_100%)]"
-                                  style={{ height: `${height}%` }}
-                                />
-                                <span className="text-[10px] uppercase tracking-[0.2em] text-slate-500">
-                                  {common.days[["mon", "tue", "wed", "thu", "fri", "sat", "sun"][index] as keyof typeof common.days]}
-                                </span>
-                              </div>
-                            ))}
+                                  key={height}
+                                  className="flex flex-1 flex-col items-center gap-2"
+                                >
+                                  <div
+                                    className="w-full rounded-t-2xl bg-[linear-gradient(180deg,#67e8f9_0%,#0ea5e9_55%,#0f1720_100%)]"
+                                    style={{ height: `${height}%` }}
+                                  />
+                                  <span className="text-[10px] uppercase tracking-[0.2em] text-slate-500">
+                                    {
+                                      common.days[
+                                        [
+                                          "mon",
+                                          "tue",
+                                          "wed",
+                                          "thu",
+                                          "fri",
+                                          "sat",
+                                          "sun",
+                                        ][index] as keyof typeof common.days
+                                      ]
+                                    }
+                                  </span>
+                                </div>
+                              ),
+                            )}
                           </div>
                         </div>
 
@@ -315,7 +339,8 @@ export function LandingPage() {
                       const Icon =
                         item.title === landing.product.experienceItems[0]?.title
                           ? Gauge
-                          : item.title === landing.product.experienceItems[1]?.title
+                          : item.title ===
+                              landing.product.experienceItems[1]?.title
                             ? Clock3
                             : LockKeyhole;
 
@@ -406,13 +431,19 @@ export function LandingPage() {
                       >
                         <div className="mb-3 flex items-start justify-between gap-4">
                           <div>
-                            <div className="text-sm text-slate-500">{module.track}</div>
+                            <div className="text-sm text-slate-500">
+                              {module.track}
+                            </div>
                             <div className="font-display text-xl font-semibold text-slate-950">
                               {module.title}
                             </div>
                           </div>
                           <div className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-700">
-                            {common.levels[module.level as keyof typeof common.levels]}
+                            {
+                              common.levels[
+                                module.level as keyof typeof common.levels
+                              ]
+                            }
                           </div>
                         </div>
                         <p className="mb-4 text-sm leading-6 text-slate-600">
@@ -455,7 +486,9 @@ export function LandingPage() {
                             {item.skill}
                           </div>
                         </div>
-                        <div className="font-medium text-slate-950">{item.title}</div>
+                        <div className="font-medium text-slate-950">
+                          {item.title}
+                        </div>
                         <p className="mt-2 text-sm leading-6 text-slate-600">
                           {item.reason}
                         </p>
@@ -470,7 +503,10 @@ export function LandingPage() {
 
         <section className="pb-20 sm:pb-24">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <motion.div {...sectionMotion} className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+            <motion.div
+              {...sectionMotion}
+              className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]"
+            >
               <Card className="bg-[linear-gradient(145deg,#0f1720_0%,#122131_52%,#10283b_100%)] text-white">
                 <CardHeader>
                   <Badge className="w-fit border-white/15 bg-white/8 text-slate-200">
@@ -491,7 +527,9 @@ export function LandingPage() {
                       className="rounded-[24px] border border-white/10 bg-white/5 p-4"
                     >
                       <div className="mb-2 flex items-center justify-between">
-                        <div className="font-medium text-white">{session.title}</div>
+                        <div className="font-medium text-white">
+                          {session.title}
+                        </div>
                         <div className="rounded-full bg-white/10 px-3 py-1 text-xs text-cyan-200">
                           {session.score}%
                         </div>
@@ -598,11 +636,15 @@ export function LandingPage() {
                         {plan.title}
                       </div>
                       <CardTitle
-                        className={plan.featured ? "text-white" : "text-slate-950"}
+                        className={
+                          plan.featured ? "text-white" : "text-slate-950"
+                        }
                       >
                         {plan.price}
                         {plan.isFree ? null : (
-                          <span className="text-base">{landing.pricing.monthlySuffix}</span>
+                          <span className="text-base">
+                            {landing.pricing.monthlySuffix}
+                          </span>
                         )}
                       </CardTitle>
                       <CardDescription
@@ -630,7 +672,9 @@ export function LandingPage() {
                             variant={plan.featured ? "secondary" : "primary"}
                             className="w-full"
                           >
-                            {t("landing.pricing.choosePlan", { plan: plan.title })}
+                            {t("landing.pricing.choosePlan", {
+                              plan: plan.title,
+                            })}
                           </Button>
                         </Link>
                       </div>
@@ -693,6 +737,9 @@ function LandingHeader() {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
         <LogoLockup compact tagline={t("common.brandTagline")} />
         <nav className="hidden items-center gap-8 text-sm text-slate-600 lg:flex">
+          <Link href="/learn" className="hover:text-slate-950">
+            {t("landing.nav.learn")}
+          </Link>
           <a href="#tracks" className="hover:text-slate-950">
             {t("landing.nav.tracks")}
           </a>

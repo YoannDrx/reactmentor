@@ -42,6 +42,7 @@ const fr = {
   },
   landing: {
     nav: {
+      learn: "Learn",
       tracks: "Parcours",
       product: "Produit",
       pricing: "Tarifs",
@@ -154,7 +155,12 @@ const fr = {
           title: "React Core",
           summary:
             "Rendering, state, identity, reconciliation, forms, events et causes de rerenders.",
-          highlights: ["keys", "derived state", "closures", "context boundaries"],
+          highlights: [
+            "keys",
+            "derived state",
+            "closures",
+            "context boundaries",
+          ],
         },
         {
           eyebrow: "Pièges fréquents",
@@ -168,14 +174,24 @@ const fr = {
           title: "TypeScript for React",
           summary:
             "Generics, inference, utility types, typing de composants, API polymorphes et constraints.",
-          highlights: ["generics", "narrowing", "React typing", "conditional types"],
+          highlights: [
+            "generics",
+            "narrowing",
+            "React typing",
+            "conditional types",
+          ],
         },
         {
           eyebrow: "Terrain mobile",
           title: "React Native",
           summary:
             "Flexbox, navigation, lists performantes, gestures, platform specifics et architecture d'écran.",
-          highlights: ["FlatList", "navigation", "performance", "platform APIs"],
+          highlights: [
+            "FlatList",
+            "navigation",
+            "performance",
+            "platform APIs",
+          ],
         },
       ],
       liveModuleTitle: "Aperçu des modules",
@@ -215,8 +231,7 @@ const fr = {
         {
           title: "Starter",
           price: "Free",
-          description:
-            "Pour valider le format et poser un diagnostic rapide.",
+          description: "Pour valider le format et poser un diagnostic rapide.",
           features: [
             "2 modules actifs",
             "dashboard personnel",
@@ -258,8 +273,7 @@ const fr = {
   auth: {
     layout: {
       badge: "Workspace d'entraînement premium",
-      title:
-        "Construis des réponses qui résistent aux questions de relance.",
+      title: "Construis des réponses qui résistent aux questions de relance.",
       description:
         "Entre dans un workspace pensé pour mesurer la maîtrise réelle, pas juste les bonnes cases cochées.",
     },
@@ -337,7 +351,8 @@ const fr = {
     stepDescriptions: {
       goal: "Definis le role et le niveau que tu prepares vraiment.",
       tracks: "Choisis les stacks qui doivent dominer les recommandations.",
-      cadence: "Regle l'intensite hebdo et la posture de la boucle d'entrainement.",
+      cadence:
+        "Regle l'intensite hebdo et la posture de la boucle d'entrainement.",
     },
     panelTitle: "Ce setup va piloter",
     panelDescription:
@@ -377,6 +392,11 @@ const fr = {
         description:
           "Capturer ton propre langage d'entretien, les pieges et les rappels directement sur les questions importantes.",
       },
+      playlists: {
+        title: "Playlists ciblees",
+        description:
+          "Des piles auto-generees a partir des reviews dues, des frictions mock et de ta curation sauvegardee.",
+      },
       progress: {
         title: "Progression par skill",
         description:
@@ -391,6 +411,11 @@ const fr = {
         title: "Review lab",
         description:
           "Se concentrer sur ce qui a glissé récemment et ce qui reste fragile sous pression.",
+      },
+      admin: {
+        title: "Admin contenu",
+        description:
+          "Un back-office minimal pour creer, auditer et publier la bibliotheque d'entrainement sans quitter le dashboard.",
       },
       session: {
         title: "Session live",
@@ -411,9 +436,9 @@ const fr = {
       todayFocusReview:
         "{count} cards dues doivent etre nettoyees avant d'ouvrir de nouveaux drills.",
       todayFocusModule: {
-        start: "Commence par {module} pour aligner la journee avec ton track actif.",
-        grow:
-          "Pousse {module} maintenant ; c'est la zone avec le plus de levier sur ton parcours actuel.",
+        start:
+          "Commence par {module} pour aligner la journee avec ton track actif.",
+        grow: "Pousse {module} maintenant ; c'est la zone avec le plus de levier sur ton parcours actuel.",
         reinforce:
           "Renforce {module} avant d'elargir davantage la surface de travail.",
       },
@@ -430,6 +455,10 @@ const fr = {
           label: "Modules",
           description: "Parcours, drills et banque de questions",
         },
+        learn: {
+          label: "Learn",
+          description: "Cours detailles et bibliotheque guidee",
+        },
         bookmarks: {
           label: "Bookmarks",
           description: "Prompts sauvegardes et points a revisiter",
@@ -437,6 +466,10 @@ const fr = {
         notes: {
           label: "Notes",
           description: "Rappels perso et formulations d'entretien",
+        },
+        playlists: {
+          label: "Playlists",
+          description: "Piles generees pour les boucles de rattrapage courtes",
         },
         progress: {
           label: "Progression",
@@ -450,6 +483,10 @@ const fr = {
           label: "Review Lab",
           description: "Cards dues, points faibles et explications",
         },
+        admin: {
+          label: "Admin contenu",
+          description: "Inventaire editorial, creation et controle des statuts",
+        },
         settings: {
           label: "Settings",
           description: "Workspace, objectifs et rythme d'entraînement",
@@ -458,12 +495,14 @@ const fr = {
     },
     overview: {
       recommendedTitle: "Prochaine action recommandee",
-      recommendedReviewTitle: "Nettoyer la queue de review avant qu'elle ne se fige",
+      recommendedReviewTitle:
+        "Nettoyer la queue de review avant qu'elle ne se fige",
       recommendedDueLabel: "Dues maintenant",
       recommendedSessionSizeLabel: "Taille de review conseillee",
       recommendedTrackLabel: "Track prioritaire",
       recommendedProgressLabel: "Progression actuelle",
       recommendedModuleAction: "Ouvrir le module recommande",
+      openLearnLibraryAction: "Ouvrir la bibliotheque learn",
       stats: [
         {
           label: "Score de préparation",
@@ -505,6 +544,8 @@ const fr = {
         "La file des questions à reprendre avant qu'une mauvaise intuition ne se fixe.",
       startReviewAction: "Lancer une session review",
       openReviewAction: "Ouvrir le review lab",
+      openLessonAction: "Lire le cours",
+      openModuleAction: "Ouvrir le module",
       recentTitle: "Sessions récentes",
       recentDescription:
         "Un historique court pour rester orienté feedback et décisions utiles.",
@@ -552,15 +593,120 @@ const fr = {
       moduleDescriptions: {
         start:
           "Ce module correspond a ton track actif et n'a pas encore ete attaque. C'est le meilleur point d'entree immediat.",
-        grow:
-          "Ce module garde la plus grosse marge de progression sur ton track actif, avec assez de surface pour recreer du momentum rapidement.",
+        grow: "Ce module garde la plus grosse marge de progression sur ton track actif, avec assez de surface pour recreer du momentum rapidement.",
         reinforce:
           "Ce module est deja en mouvement et reste le meilleur endroit a renforcer avant d'elargir la surface.",
       },
     },
+    entitlements: {
+      summaryBadge: "Acces plan",
+      summaryTitle: "Billing et entitlements",
+      summaryDescription:
+        "Cette couche decide jusqu'ou le workspace peut aller maintenant : acces modules, mocks chronometres, profondeur d'analyse et workflows premium de rattrapage.",
+      currentPlanLabel: "Plan actuel",
+      billingStatusLabel: "Statut billing",
+      moduleAccessLabel: "Acces modules",
+      mockQuotaLabel: "Quota de mocks chronometres",
+      analyticsDepthLabel: "Profondeur d'analyse",
+      nextResetLabel: "Prochain reset",
+      moduleAccessValues: {
+        unlimited: "Tous les modules publies sont ouverts",
+        limited: "Modules publies ouverts : {count}",
+      },
+      mockQuotaValues: {
+        unlimited: "Lancements mock illimites",
+        available: "Lancements mock restants : {count}",
+        exhausted: "Le quota mock de ce mois est consomme",
+      },
+      analysisDepthLabels: {
+        CORE: "Analyse coeur",
+        ADVANCED: "Analyse avancee",
+      },
+      featureAvailabilityTitle: "Fonctionnalites disponibles",
+      featureAvailabilityDescription:
+        "Les plans superieurs elargissent la boucle de rattrapage au-dela de la surface starter.",
+      featureNames: {
+        playlists: "Playlists ciblees",
+        advancedAnalytics: "Analytics avancees",
+        sprintMode: "Mode sprint",
+      },
+      featureStates: {
+        enabled: "Actif",
+        locked: "Verrouille",
+      },
+      managementTitle: "Plans et acces abonnement",
+      managementDescription:
+        "La surface pricing est maintenant reliee au checkout Stripe et au portail billing. Starter reste gratuit, tandis que les plans premium ouvrent la boucle de rattrapage la plus large.",
+      currentPlanBadge: "Plan actuel",
+      currentPlanAction: "Plan actuel",
+      openPortalAction: "Ouvrir le portail billing",
+      checkoutUnavailable: "Checkout Stripe indisponible",
+      notices: {
+        success:
+          "Le checkout est termine. Le workspace a ete resynchronise depuis Stripe et devrait maintenant refléter le dernier plan.",
+        canceled:
+          "Le checkout a ete annule. Aucun changement billing n'a ete applique.",
+        portalReturn:
+          "Retour du portail billing. Les resynchronisations Stripe garderont le workspace aligne.",
+        notConfigured:
+          "Stripe n'est pas encore configure dans cet environnement. Ajoute les cles Stripe et les price ids pour activer le checkout.",
+        invalidPlan:
+          "Ce plan billing n'est pas valide pour le checkout.",
+        portalUnavailable:
+          "Aucun customer Stripe n'est encore rattache a ce workspace, donc le portail billing reste indisponible.",
+      },
+      manageAction: "Ouvrir les reglages",
+      planLabels: {
+        STARTER: "Starter",
+        MENTOR_PRO: "Mentor Pro",
+        HIRING_SPRINT: "Hiring Sprint",
+      },
+      statusLabels: {
+        FREE: "Gratuit",
+        ACTIVE: "Actif",
+        TRIALING: "Essai",
+        PAST_DUE: "Paiement en retard",
+        CANCELED: "Annule",
+        EXPIRED: "Expire",
+      },
+      gates: {
+        modules: {
+          badge: "Acces modules",
+          title: "Certains modules restent hors du plan Starter",
+          description:
+            "Starter ouvre les {count} premiers modules publies. Passe sur un plan superieur pour elargir la bibliotheque et garder des recommandations utiles.",
+          limitHint:
+            "{locked} modules publies restent actuellement hors de ton plan.",
+          cardBadge: "Verrouille",
+          cardHint: "Disponible sur Mentor Pro et Hiring Sprint.",
+          previewNote:
+            "L'aperçu reste visible ici, mais les lancements practice et la bibliotheque de questions restent verrouilles tant que le plan n'est pas elargi.",
+          action: "Voir l'acces plan",
+        },
+        mockInterviews: {
+          badge: "Quota mock chronometre",
+          title: "Capacite des mock interviews",
+          description:
+            "Les mocks chronometres sont volontairement limites sur Starter, donc le quota restant doit rester visible avant chaque lancement.",
+          available:
+            "Lancements mock restants dans la fenetre mensuelle courante : {count}.",
+          exhausted:
+            "Le quota mock de ce mois est epuise. Les boucles practice, review et recovery restent disponibles.",
+          action: "Voir l'acces plan",
+        },
+        playlists: {
+          badge: "Workflow premium",
+          title: "Les playlists restent reservees aux plans premium",
+          description:
+            "Les playlists generees et sauvegardees s'ouvrent quand le compte passe sur Mentor Pro ou Hiring Sprint.",
+          action: "Voir l'acces plan",
+        },
+      },
+    },
     modules: {
       recommendedTitle: "Parcours module recommande",
-      recommendedReviewTitle: "La review doit passer avant l'ouverture d'un nouveau module",
+      recommendedReviewTitle:
+        "La review doit passer avant l'ouverture d'un nouveau module",
       recommendedDueLabel: "Cards dues",
       recommendedSessionSizeLabel: "Taille de review conseillee",
       recommendedTrackLabel: "Track prioritaire",
@@ -636,6 +782,13 @@ const fr = {
         "templates de mock specifiques au module",
         "insights de faiblesse relies aux skills couvertes",
       ],
+      questionLibraryTitle: "Bibliotheque de questions",
+      questionLibraryDescription:
+        "Chaque question devient maintenant aussi un point d'entree vers un cours detaille et une pratique ciblee.",
+      readLesson: "Lire le cours",
+      focusedPractice: "Pratiquer cette question",
+      questionLibraryEmpty:
+        "Aucune question publiee n'est encore disponible dans ce module.",
     },
     bookmarks: {
       title: "Questions sauvegardees",
@@ -649,6 +802,7 @@ const fr = {
         "Une vue compacte des questions a revisiter, entre cartes dues, reponses ouvertes en attente et references stables.",
       saveAction: "Sauvegarder",
       removeAction: "Retirer",
+      openLessonAction: "Lire le cours",
       openModuleAction: "Ouvrir le module",
       launchPracticeAction: "Lancer une practice",
       savedAtLabel: "Sauvegardee le",
@@ -678,6 +832,7 @@ const fr = {
       updatedAtLabel: "Mise a jour",
       saveAction: "Enregistrer la note",
       clearAction: "Effacer la note",
+      openLessonAction: "Lire le cours",
       openModuleAction: "Ouvrir le module",
       launchPracticeAction: "Lancer une practice",
       emptyTitle: "Aucune note personnelle pour l'instant",
@@ -688,6 +843,288 @@ const fr = {
         due: "Due maintenant",
         pendingReview: "En review",
         stable: "Reference stable",
+      },
+    },
+    playlists: {
+      title: "Playlists ciblees",
+      description:
+        "Des piles courtes generees a partir des vrais signaux du produit pour transformer le prochain clic en session utile.",
+      savedTitle: "Playlists sauvegardees",
+      savedDescription:
+        "Les playlists que tu as choisi de conserver, renommer ou raccourcir pour une prochaine relance ciblee.",
+      savedEmptyTitle: "Aucune playlist sauvegardee pour l'instant",
+      savedEmptyDescription:
+        "Sauvegarde d'abord une pile generee, puis affine-la question par question depuis sa page dediee.",
+      savedDescriptionFallback:
+        "Une pile de session reutilisable que tu as gardee pour une prochaine repetition ciblee.",
+      emptyTitle: "Aucune playlist prete pour l'instant",
+      emptyDescription:
+        "Des que des reviews dues, des questions sauvegardees ou des prompts de rattrapage mock s'accumulent, React Mentor les assemblera ici.",
+      questionCountLabel: "Questions",
+      focusSkillsLabel: "Skills cibles",
+      focusSkillsEmpty: "Aucun skill cible extrait pour l'instant.",
+      updatedAtLabel: "Mise a jour",
+      sourceLabel: "Source",
+      modeLabels: {
+        PRACTICE: "Bloc practice",
+        REVIEW: "Bloc review",
+        MOCK_INTERVIEW: "Mock interview",
+      },
+      kindLabels: {
+        MANUAL: "Manuelle",
+        GENERATED: "Generee",
+      },
+      launchAction: "Lancer la playlist",
+      saveAction: "Sauvegarder la playlist",
+      editAction: "Editer la playlist",
+      backAction: "Retour aux playlists",
+      saveChangesAction: "Enregistrer les changements",
+      removeQuestionAction: "Retirer la question",
+      readLessonAction: "Lire le cours",
+      deleteAction: "Supprimer la playlist",
+      openModuleAction: "Ouvrir le module",
+      nameLabel: "Nom de la playlist",
+      modeLabel: "Mode de session",
+      descriptionLabel: "Description",
+      manageTitle: "Gerer la playlist",
+      manageDescription:
+        "Renomme la pile, ajuste son angle et transforme progressivement une recommandation generee en parcours manuel reutilisable.",
+      launchSavedTitle: "Lancer cette pile sauvegardee",
+      launchSavedDescription:
+        "L'ordre actuel des questions est conserve lors de la creation de la prochaine session.",
+      dangerTitle: "Supprimer cette playlist",
+      dangerDescription:
+        "A utiliser seulement si cette pile n'a plus de valeur. Les questions sous-jacentes restent dans la bibliotheque.",
+      questionsTitle: "Questions de la playlist",
+      questionsDescription:
+        "Une sequence ciblee que tu peux raccourcir si certains prompts ne meritent plus leur place dans la boucle.",
+      questionOrderLabel: "Question {count}",
+      questionDifficultyLabel: "Difficulte",
+      questionTimeLabel: "Temps",
+      emptyDetailTitle: "Cette playlist est maintenant vide",
+      emptyDetailDescription:
+        "Tu peux la supprimer, ou la garder comme placeholder en attendant des outils de curation plus complets.",
+      types: {
+        recoveryReview: {
+          label: "Rattrapage review",
+          description:
+            "Des cartes dues regroupees autour des signaux les plus fragiles pour stabiliser rapidement la prochaine passe de review.",
+        },
+        mockRecovery: {
+          label: "Retombee mock",
+          description:
+            "Des questions a recycler parce que la pression chronometree et les verdicts de rubric ne sont pas encore alignes avec ta readiness.",
+        },
+        bookmarks: {
+          label: "Pile sauvegardee",
+          description:
+            "Les prompts bookmarkes regroupes pour relancer rapidement un bloc de practice court.",
+        },
+        notes: {
+          label: "Relance notes",
+          description:
+            "Les questions qui portent deja ton propre langage d'entretien, pretes pour une nouvelle passe ciblee.",
+        },
+      },
+    },
+    admin: {
+      title: "Admin contenu",
+      description:
+        "Creer les prochains modules, garder la qualite bilingue visible et empecher le contenu publie de s'ecarter du contrat editorial.",
+      totalLabel: "Total",
+      stats: {
+        modulesLabel: "Modules",
+        skillsLabel: "Skills",
+        questionsLabel: "Questions",
+        publishableLabel: "Questions publiables",
+        translationGapLabel: "Ecarts de traduction",
+        pitfallTagsLabel: "Tags de pieges",
+      },
+      createModuleTitle: "Creer un module",
+      createModuleDescription:
+        "Ajoute un socle de module bilingue avec track, niveau et statut editorial.",
+      createSkillTitle: "Creer une skill",
+      createSkillDescription:
+        "Rattache une nouvelle skill a un module avec les libelles FR et EN des le depart.",
+      createQuestionTitle: "Creer une question",
+      createQuestionDescription:
+        "Ouvre une nouvelle question bilingue en une passe, sur formats fermes comme sur formats a prompt libre.",
+      createPitfallTagTitle: "Creer un tag de piege",
+      createPitfallTagDescription:
+        "Ajoute un tag reutilisable pour capturer une confusion recurrente et la rattacher ensuite aux questions.",
+      inventoryTitle: "Inventaire editorial recent",
+      inventoryDescription:
+        "Une vue compacte de ce qui a bouge recemment et de ce qui bloque encore la publication.",
+      qualityTitle: "Qualite editoriale",
+      qualityDescription:
+        "Des signaux rapides sur la dette de traduction, la couverture taxonomique vide et les modules encore trop maigres.",
+      qualityTranslationGapsLabel: "Questions avec ecarts de traduction",
+      qualityUntaggedQuestionsLabel: "Questions sans tag de piege",
+      qualityThinModulesLabel: "Modules trop maigres",
+      qualityCoverageLabel: "Photo de couverture",
+      qualityNoThinModules: "Aucun module trop maigre detecte.",
+      pitfallTagsListTitle: "Tags de pieges recents",
+      pitfallTagsListDescription:
+        "Garde le vocabulaire des confusions propre et visible avant qu'il ne se propage dans le reporting.",
+      filtersTitle: "Filtres questions",
+      modulesListTitle: "Modules recents",
+      skillsListTitle: "Skills recentes",
+      questionsListTitle: "Questions recentes",
+      checklistTitle: "Checklist de publication",
+      slugLabel: "Slug",
+      trackLabel: "Track",
+      levelLabel: "Niveau",
+      orderLabel: "Ordre",
+      statusLabel: "Statut",
+      moduleLabel: "Module",
+      skillLabel: "Skill principale",
+      formatLabel: "Format",
+      difficultyLabel: "Difficulte",
+      estimatedTimeSecLabel: "Temps estime (sec)",
+      sourceTypeLabel: "Type de source",
+      pitfallTagTitleLabel: "Titre du tag de piege",
+      pitfallTagDescriptionLabel: "Description du tag de piege",
+      pitfallTagSelectionLabel: "Tags de pieges",
+      correctOptionIndexesLabel:
+        "Indexes des bonnes options (exemple: 2 ou 1,3)",
+      optionLabelsFrLabel: "Libelles options FR",
+      optionExplanationsFrLabel: "Explications options FR",
+      optionLabelsEnLabel: "Libelles options EN",
+      optionExplanationsEnLabel: "Explications options EN",
+      titleFrLabel: "Titre FR",
+      titleEnLabel: "Titre EN",
+      descriptionFrLabel: "Description FR",
+      descriptionEnLabel: "Description EN",
+      summaryFrLabel: "Resume FR",
+      summaryEnLabel: "Resume EN",
+      promptFrLabel: "Prompt FR",
+      promptEnLabel: "Prompt EN",
+      explanationFrLabel: "Explication FR",
+      explanationEnLabel: "Explication EN",
+      takeawaysFrLabel: "Takeaways FR",
+      takeawaysEnLabel: "Takeaways EN",
+      takeawaysHint: "Un takeaway par ligne.",
+      createModuleAction: "Creer le module",
+      createSkillAction: "Creer la skill",
+      createQuestionAction: "Creer la question",
+      createPitfallTagAction: "Creer le tag de piege",
+      editAction: "Editer les details",
+      saveChangesAction: "Enregistrer les changements",
+      exportAction: "Exporter le JSON",
+      importTitle: "Importer un JSON",
+      importDescription:
+        "Importe un fichier ou colle le contrat d'export pour upserter modules, skills, tags de pieges et questions sans supprimer les lignes absentes.",
+      importPayloadPlaceholder: "Colle ici le payload JSON admin contenu.",
+      importAction: "Importer le contenu",
+      updateStatusAction: "Mettre a jour le statut",
+      openAction: "Ouvrir",
+      applyFiltersAction: "Appliquer les filtres",
+      clearFiltersAction: "Effacer les filtres",
+      allStatusesOption: "Tous les statuts",
+      allFormatsOption: "Tous les formats",
+      optionsCountLabel: "Options",
+      attemptsCountLabel: "Tentatives",
+      questionLinksCountLabel: "Questions liees",
+      publishableState: "Prete a publier",
+      blockedState: "Bloquee",
+      emptyInventory: "Aucun contenu trouve pour l'instant.",
+      pitfallTagSelectionHint:
+        "Rattache les confusions les plus probables pour garder les plans de recovery et les exports coherents.",
+      noPitfallTagsHint:
+        "Aucun tag de piege pour l'instant. Cree-en un avant de le rattacher aux questions.",
+      formatScopeHint:
+        "Les questions fermees attendent des libelles/explications bilingues et la liste des indexes corrects.",
+      optionEditorHint:
+        "Pour les formats fermes, mets une option par ligne et garde le meme nombre de lignes entre libelles et explications.",
+      correctOptionIndexesHint:
+        "Les indexes sont 1-based et separent par des virgules. Le single-choice attend exactement un index correct.",
+      optionsLockedHint:
+        "Les options sont verrouillees des qu'une question fermee a deja des tentatives, pour ne pas casser l'historique des reponses.",
+      telemetry: {
+        title: "Telemetry produit et operations",
+        description:
+          "Une lecture compacte du funnel reel, des activations utiles et des incidents recents sur les endpoints critiques.",
+        analyticsWindowLabel: "Derniers {count} jours",
+        operationalWindowLabel: "Derniers {count} jours",
+        totalEventsLabel: "Evenements produits",
+        activeUsersLabel: "Utilisateurs actifs",
+        onboardingCompletedLabel: "Onboardings completes",
+        mockCompletedLabel: "Mocks completes",
+        questionAnsweredLabel: "Questions repondues",
+        subscriptionStartedLabel: "Abonnements demarres",
+        checkoutCompletedLabel: "Checkouts completes",
+        errorCountLabel: "Erreurs",
+        warningCountLabel: "Warnings",
+        infoCountLabel: "Infos",
+        billingWebhookLabel: "Events billing webhook",
+        contentImportLabel: "Imports contenu",
+        funnelTitle: "Funnel activation",
+        funnelDescription:
+          "Du compte cree au premier mock, pour voir ou la boucle d'apprentissage se casse vraiment.",
+        conversionLabel: "Conversion",
+        recentProductEventsTitle: "Evenements produit recents",
+        recentOperationalEventsTitle: "Evenements operationnels recents",
+        topSourcesTitle: "Sources les plus bruyantes",
+        emptyProductEvents:
+          "Aucun evenement produit capture dans la fenetre actuelle.",
+        emptyOperationalEvents:
+          "Aucun evenement operationnel capture dans la fenetre actuelle.",
+        emptySources: "Aucune source operationnelle a remonter pour l'instant.",
+        notAvailableLabel: "n/a",
+        funnelStepLabels: {
+          signup: "Signup",
+          onboarding: "Onboarding",
+          firstPractice: "Premier practice",
+          repeatPractice: "Deuxieme practice",
+          firstMock: "Premier mock",
+        },
+        levelLabels: {
+          INFO: "Info",
+          WARN: "Warning",
+          ERROR: "Erreur",
+        },
+        eventLabels: {
+          ACCOUNT_CREATED: "Compte cree",
+          ONBOARDING_COMPLETED: "Onboarding complete",
+          SESSION_STARTED: "Session demarree",
+          SESSION_COMPLETED: "Session terminee",
+          REVIEW_LAUNCHED: "Review lancee",
+          QUESTION_ANSWERED: "Question repondue",
+          BOOKMARK_CREATED: "Bookmark cree",
+          NOTE_CREATED: "Note creee",
+          UPGRADE_CLICKED: "Upgrade clique",
+          CHECKOUT_COMPLETED: "Checkout complete",
+          SUBSCRIPTION_STARTED: "Abonnement demarre",
+          MOCK_COMPLETED: "Mock termine",
+        },
+      },
+      statusLabels: {
+        DRAFT: "Brouillon",
+        IN_REVIEW: "En review",
+        PUBLISHED: "Publie",
+        ARCHIVED: "Archive",
+      },
+      translationStatusLabels: {
+        MISSING: "Manquante",
+        IN_PROGRESS: "En cours",
+        REVIEW: "En review",
+        READY: "Prete",
+      },
+      issueLabels: {
+        missingFrCore: "Prompt ou explication FR manquant",
+        missingEnCore: "Prompt ou explication EN manquant",
+        missingFrTakeaways: "Takeaways FR manquants",
+        missingEnTakeaways: "Takeaways EN manquants",
+        missingClosedOptions:
+          "La question fermee demande au moins deux options",
+        missingClosedCorrectOption:
+          "La configuration des bonnes options est invalide",
+        missingClosedDistractors:
+          "La question fermee doit garder au moins un distracteur",
+        missingClosedFrOptions:
+          "Des libelles ou explications FR manquent sur les options",
+        missingClosedEnOptions:
+          "Des libelles ou explications EN manquent sur les options",
       },
     },
     session: {
@@ -740,7 +1177,8 @@ const fr = {
       timeBudgetLabel: "Budget temps",
       timeSpentLabel: "Temps utilise",
       timedModeBadge: "Simulation chronometree",
-      timerExpiredToast: "Le temps est ecoule. Le mock est en train d'etre cloture.",
+      timerExpiredToast:
+        "Le temps est ecoule. Le mock est en train d'etre cloture.",
       completedBadge: "Session terminee",
       completedTitle: "Session terminee",
       mockReportTitle: "Rapport de mock",
@@ -748,7 +1186,8 @@ const fr = {
         "Un premier signal de pression pour verifier si la qualite de reponse tient sous la contrainte du template.",
       mockPressureLabel: "Lecture de pression",
       mockSkillsTitle: "Skills testees dans ce mock",
-      mockSkillsSummary: "{correct} bonnes reponses sur {total} questions pour cette skill.",
+      mockSkillsSummary:
+        "{correct} bonnes reponses sur {total} questions pour cette skill.",
       mockSkillsPendingSummary:
         "{correct} bonnes reponses sur {graded} auto-corrigees, {pending} en attente de review sur cette skill.",
       mockRiskTitle: "Principales chutes a revoir",
@@ -795,7 +1234,8 @@ const fr = {
       errors: {
         unauthorized: "Ta session a expire. Reconnecte-toi.",
         invalid: "Cet item de session n'est plus valide.",
-        unsupported: "Ce format de question n'est pas encore pris en charge dans le player live.",
+        unsupported:
+          "Ce format de question n'est pas encore pris en charge dans le player live.",
         expired: "Cette session chronometree est deja terminee.",
         unknown: "Impossible d'enregistrer cette reponse pour l'instant.",
       },
@@ -811,6 +1251,7 @@ const fr = {
         "Les compétences les plus robustes et les poches de doute encore visibles.",
       emptyModuleAction: "Ouvrir le module recommande",
       emptyReviewAction: "Ouvrir le review lab",
+      emptyLearnAction: "Ouvrir la bibliotheque learn",
       distributionTitle: "Répartition de maîtrise",
       distributionDescription:
         "Acquis, en cours et questions à revoir immédiatement.",
@@ -830,10 +1271,32 @@ const fr = {
         medium: "signal moyen",
         low: "signal mince",
       },
+      masteryCapLabel: "Cap actuel {score}/100",
       confidenceLabel: "Confiance {score}/100",
+      recentAttemptsLabel: "Attempts recentes: {count}",
       questionsCoveredLabel: "Questions couvertes: {count}",
       recentFailuresLabel: "Echecs recents: {count}",
       lastSignalLabel: "Dernier signal: {date}",
+      weightedAccuracyLabel: "Precision ponderee: {score}",
+      boostScoreLabel: "Boosts actuels: +{score}",
+      penaltyScoreLabel: "Penalites actuelles: -{score}",
+      freshnessCapDetailLabel:
+        "Cap de fraicheur: {score}/100 apres {days} jours",
+      confidenceDriversLabel:
+        "Confiance construite via couverture {coverage}, largeur {breadth}, fraicheur {freshness}",
+      actions: {
+        startRecoveryReview: "Lancer une review ciblee",
+        openPendingReview: "Ouvrir les reviews en attente",
+        openRecoveryModule: "Ouvrir le module",
+      },
+      recoveryReasons: {
+        dueNow: "{count} cartes dues attendent deja sur ce skill.",
+        pendingReview:
+          "{count} reponses ouvertes demandent encore un verdict avant de fiabiliser le signal.",
+        weakSignal:
+          "La couverture reste trop mince ou trop recente pour faire confiance a ce skill sous pression.",
+      },
+      recoveryQuestionsLabel: "Questions de rattrapage",
       emptyTitle: "Aucun signal d'apprentissage pour l'instant",
       emptyDescription:
         "Les graphiques de progression deviendront utiles apres tes premieres vraies tentatives. Commence par un module pour generer les premiers points de donnees.",
@@ -860,7 +1323,8 @@ const fr = {
       momentumDescriptions: {
         up: "{count} pts au-dessus de la moyenne des mocks precedents.",
         down: "{count} pts en dessous de la moyenne des mocks precedents.",
-        steady: "Dans une zone de {count} pts autour de la moyenne des mocks precedents.",
+        steady:
+          "Dans une zone de {count} pts autour de la moyenne des mocks precedents.",
       },
       templateSignalsTitle: "Signaux par template",
       templateSignalsDescription:
@@ -871,6 +1335,39 @@ const fr = {
       criterionReviewCountLabel: "Reponses reviewees",
       criterionMissingLabel: "Verdicts manquants",
       criterionPartialLabel: "Verdicts partiels",
+      recommendedTemplateTitle: "Prochain mock recommande",
+      recommendedTemplateDescription:
+        "Le preset chronometre suivant derive du template le plus fragile et des frictions actuellement detectees.",
+      recommendedTemplateReasons: {
+        repeatWeakest:
+          "Refais le template qui casse encore le plus souvent avant que le pattern d'echec ne se fixe.",
+        trackRecovery:
+          "Remets le track le plus fragile sous pression avec un round de rattrapage plus court.",
+        defenseRecovery:
+          "Remonte sous pression l'explication de code, l'analyse de bug et la defense des tradeoffs.",
+        coreRecovery:
+          "Reconstruis le socle React coeur avant d'elargir de nouveau la surface.",
+      },
+      launchRecommendedTemplate: "Lancer le mock recommande",
+      weaknessTitle: "Carte de faiblesse transverse",
+      weaknessDescription:
+        "Les zones fragiles ou les verdicts mock, les reviews dues et la curation personnelle pointent encore ensemble.",
+      weaknessAverageLabel: "Score moyen",
+      weaknessDueLabel: "Cartes dues",
+      weaknessBookmarksLabel: "Bookmarks",
+      weaknessNotesLabel: "Notes",
+      weaknessCriterionLabel: "Critere sous pression",
+      weaknessPromptLabel: "Questions a recycler",
+      openWeaknessModuleAction: "Ouvrir le module",
+      openLessonAction: "Lire le cours",
+      recoveryTitle: "Prompts de rattrapage a relancer maintenant",
+      recoveryDescription:
+        "Les questions qui doivent alimenter la prochaine boucle de correction parce que la pression mock et le reste du workspace convergent dessus.",
+      recoveryStatusLabels: {
+        due: "due maintenant",
+        saved: "signal sauvegarde",
+      },
+      launchRecoveryReviewAction: "Lancer la review ciblee",
       strongestTemplateLabel: "Template le plus stable",
       needsWorkTemplateLabel: "Template a retravailler",
       templateSessionsSummary: "{count} mocks termines",
@@ -932,6 +1429,7 @@ const fr = {
       },
       rubricTitle: "Rubric de review",
       rubricFocusTitle: "Points a entendre ou verifier",
+      openLessonAction: "Lire le cours",
       rubricCriteriaLabels: {
         accuracy: "exactitude technique",
         mechanism: "mecanisme explique",
@@ -979,6 +1477,21 @@ const fr = {
         "correction expliquée avec mécanisme et edge cases",
         "question reprogrammée après un intervalle de spacing",
       ],
+      shortcutTitle: "Raccourcis de rattrapage",
+      shortcutDescription:
+        "Va directement vers les cartes et verdicts qui bloquent encore les signaux les plus fragiles.",
+      shortcutReasons: {
+        dueNow: "{count} cartes dues s'accumulent deja sur ce skill.",
+        pendingReview:
+          "{count} reponses ouvertes attendent encore un verdict manuel sur ce skill.",
+        weakSignal:
+          "Ce skill demande encore une passe avant que le signal devienne fiable.",
+      },
+      shortcutActions: {
+        startRecoveryReview: "Lancer la review skill",
+        openPendingReview: "Ouvrir l'attente",
+        openModule: "Ouvrir le module",
+      },
     },
     settings: {
       introBadge: "Personnalise ta boucle d'entrainement",
@@ -1024,7 +1537,8 @@ const fr = {
         saving: "Enregistrement...",
       },
       errors: {
-        targetRoleRequired: "Definis le role que React Mentor doit vraiment optimiser",
+        targetRoleRequired:
+          "Definis le role que React Mentor doit vraiment optimiser",
         targetRoleTooLong: "Garde le role cible sous 120 caracteres",
         weeklyGoalTooSmall: "Definis un objectif d'au moins 5 questions",
         weeklyGoalTooBig: "Garde l'objectif a 150 questions maximum",
@@ -1060,7 +1574,12 @@ const fr = {
         title: "React Rendering Systems",
         summary:
           "Comprendre comment React décide de re-render, diff et réconcilie les arbres pour répondre sans folklore.",
-        focus: ["reconciliation", "keys", "referential equality", "derived state"],
+        focus: [
+          "reconciliation",
+          "keys",
+          "referential equality",
+          "derived state",
+        ],
       },
       {
         track: "Hooks",
@@ -1113,13 +1632,11 @@ const fr = {
       },
       {
         title: "Review Drill · TypeScript",
-        summary:
-          "Generics solides, encore trop prudent sur les utility types.",
+        summary: "Generics solides, encore trop prudent sur les utility types.",
       },
       {
         title: "Practice Sprint · React Native",
-        summary:
-          "Layout correct, perf FlatList encore à muscler.",
+        summary: "Layout correct, perf FlatList encore à muscler.",
       },
     ],
     mockTemplates: [
@@ -1157,6 +1674,73 @@ const fr = {
       mastered: "Acquis",
       inProgress: "En cours",
       review: "À revoir",
+    },
+  },
+  learn: {
+    formatLabels: {
+      SINGLE_CHOICE: "Choix simple",
+      MULTIPLE_CHOICE: "Choix multiple",
+      CODE_OUTPUT: "Sketch de code",
+      BUG_HUNT: "Bug hunt",
+      OPEN_ENDED: "Reponse ouverte",
+    },
+    index: {
+      badge: "Bibliotheque learn",
+      title: "Des cours d'entretien detailles, relies a la pratique.",
+      description:
+        "Une bibliotheque structuree de questions d'entretien, d'explications plus profondes et de boucles de pratique pensees pour rester tres pedagogiques pour les debutants sans devenir superficielles.",
+      collectionsTitle: "Collections editoriales",
+      collectionsDescription:
+        "Des series curiees qui regroupent les questions par cluster de skill, pas seulement par frontiere de module.",
+      questionCountLabel: "Questions",
+      previewQuestionsLabel: "Apercu des questions",
+      openCollection: "Ouvrir la collection",
+      emptyTitle: "Aucune collection publiee pour l'instant",
+      emptyDescription:
+        "Au fur et a mesure que la bibliotheque editoriale grandit, les collections publiees apparaitront ici avec leurs cours et leurs pratiques ciblees.",
+    },
+    collection: {
+      backToLibrary: "Retour a la bibliotheque learn",
+      questionCountLabel: "Questions dans la collection",
+      openQuestion: "Ouvrir le cours",
+      focusedPractice: "Pratiquer cette question",
+      startCollectionPractice: "Lancer une practice de collection",
+      practiceCardTitle: "Boucle de pratique ciblee",
+      practiceCardDescription:
+        "Passe directement de la lecture a une courte pile de pratique construite depuis cette collection.",
+      emptyTitle:
+        "Aucune question publiee n'est encore disponible dans cette collection",
+      emptyDescription:
+        "La collection est prete a etre curationnee, mais il lui manque encore du contenu de question publie.",
+    },
+    question: {
+      backToLibrary: "Retour a la bibliotheque learn",
+      relatedCollectionsTitle: "Apparait aussi dans",
+      tlDrTitle: "TL;DR",
+      shortAnswerTitle: "Reponse prete pour entretien",
+      lessonTitle: "Explication detaillee",
+      exampleTitleFallback: "Exemple commente",
+      commonMistakesTitle: "Erreurs frequentes",
+      takeawaysTitle: "A retenir",
+      optionBreakdownTitle: "Lecture des options",
+      bugHuntSnippetTitle: "Snippet a relire",
+      verbalizePointsTitle: "Ce qu'il faut verbaliser en entretien",
+      focusedPracticeTitle: "Transformer ce cours en pratique",
+      focusedPracticeDescription:
+        "Lance une session d'une seule question pour consolider l'explication tout de suite.",
+      focusedPracticeAction: "Lancer une practice ciblee",
+      openModuleAction: "Ouvrir le module",
+      continueCollectionTitle: "Continuer dans cette collection",
+      previousQuestionAction: "Question precedente",
+      nextQuestionAction: "Question suivante",
+      openCollectionAction: "Ouvrir la sequence",
+      collectionProgressLabel: "{current} / {total}",
+      startOfCollectionLabel: "Tu es au debut de cette collection.",
+      endOfCollectionLabel: "Tu es a la fin de cette collection.",
+      estimatedReadMinutesLabel: "{count} min de lecture",
+      moduleLabel: "Module",
+      skillLabel: "Skill principale",
+      collectionLabel: "Collection",
     },
   },
 } as const;
