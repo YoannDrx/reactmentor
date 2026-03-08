@@ -1,8 +1,11 @@
+import { BRAND_LOGO_PATH } from "@/lib/brand";
+
 export const SiteConfig = {
   title: "React Mentor",
   description:
     "Le cockpit d'entraînement pour préparer les entretiens React, React Native et TypeScript avec des explications profondes, un dashboard premium et une progression par compétence.",
   prodUrl: "https://reactmentor.dev",
+  logoPath: BRAND_LOGO_PATH,
   appId: "react-mentor",
   domain: "reactmentor.dev",
   company: {
@@ -19,7 +22,7 @@ export const SiteConfig = {
   team: {
     name: "React Mentor Studio",
     website: "https://reactmentor.dev",
-    image: "",
+    image: BRAND_LOGO_PATH,
     twitter: "",
   },
   features: {

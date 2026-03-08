@@ -3,9 +3,17 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { SiteConfig } from "@/site-config";
 import { getI18n } from "@/i18n/server";
+import {
+  BRAND_LOGO_ALT,
+  BRAND_LOGO_HEIGHT,
+  BRAND_LOGO_PATH,
+  BRAND_LOGO_WIDTH,
+  getBrandLogoUrl,
+} from "@/lib/brand";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { locale, t } = await getI18n();
+  const brandLogoUrl = getBrandLogoUrl();
 
   return {
     metadataBase: new URL(SiteConfig.prodUrl),
@@ -15,6 +23,23 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     description: t("metadata.description"),
     applicationName: SiteConfig.title,
+    icons: {
+      icon: [
+        {
+          url: BRAND_LOGO_PATH,
+          type: "image/png",
+          sizes: `${BRAND_LOGO_WIDTH}x${BRAND_LOGO_HEIGHT}`,
+        },
+      ],
+      apple: [
+        {
+          url: BRAND_LOGO_PATH,
+          type: "image/png",
+          sizes: `${BRAND_LOGO_WIDTH}x${BRAND_LOGO_HEIGHT}`,
+        },
+      ],
+      shortcut: [BRAND_LOGO_PATH],
+    },
     openGraph: {
       title: SiteConfig.title,
       description: t("metadata.description"),
@@ -22,11 +47,20 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: SiteConfig.title,
       locale: locale === "fr" ? "fr_FR" : "en_US",
       type: "website",
+      images: [
+        {
+          url: brandLogoUrl,
+          width: BRAND_LOGO_WIDTH,
+          height: BRAND_LOGO_HEIGHT,
+          alt: BRAND_LOGO_ALT,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title: SiteConfig.title,
       description: t("metadata.description"),
+      images: [brandLogoUrl],
     },
   };
 }
