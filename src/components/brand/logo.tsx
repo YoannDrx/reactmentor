@@ -1,6 +1,5 @@
 import Image from "next/image";
 import {
-  BRAND_LOGO_ALT,
   BRAND_LOGO_HEIGHT,
   BRAND_LOGO_PATH,
   BRAND_LOGO_WIDTH,
@@ -12,7 +11,7 @@ export function LogoMark({ className }: { className?: string }) {
     <span className={cn("relative inline-flex size-12 shrink-0", className)}>
       <Image
         src={BRAND_LOGO_PATH}
-        alt={BRAND_LOGO_ALT}
+        alt=""
         width={BRAND_LOGO_WIDTH}
         height={BRAND_LOGO_HEIGHT}
         sizes="(max-width: 640px) 40px, 48px"
