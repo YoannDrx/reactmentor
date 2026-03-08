@@ -14,7 +14,7 @@ export const mockTemplateKeys = [
 
 export type MockTemplateKey = (typeof mockTemplateKeys)[number];
 
-export type SessionSource = "module" | "mock_template";
+export type SessionSource = "module" | "mock_template" | "playlist";
 
 export type TrainingSessionConfig = {
   source: SessionSource;
@@ -25,6 +25,7 @@ export type TrainingSessionConfig = {
   tracks?: Track[];
   level?: QuestionLevel | null;
   templateKey?: MockTemplateKey | null;
+  questionIds?: string[];
 };
 
 export function parseTrainingSessionConfig(
@@ -36,12 +37,16 @@ export function parseTrainingSessionConfig(
 
   const config = value as Record<string, unknown>;
   const source =
-    config.source === "module" || config.source === "mock_template"
+    config.source === "module" ||
+    config.source === "mock_template" ||
+    config.source === "playlist"
       ? config.source
       : null;
-  const locale = config.locale === "fr" || config.locale === "en" ? config.locale : null;
+  const locale =
+    config.locale === "fr" || config.locale === "en" ? config.locale : null;
   const questionCount =
-    typeof config.questionCount === "number" && Number.isFinite(config.questionCount)
+    typeof config.questionCount === "number" &&
+    Number.isFinite(config.questionCount)
       ? config.questionCount
       : null;
 
@@ -75,6 +80,12 @@ export function parseTrainingSessionConfig(
       mockTemplateKeys.includes(config.templateKey as MockTemplateKey)
         ? (config.templateKey as MockTemplateKey)
         : undefined,
+    questionIds: Array.isArray(config.questionIds)
+      ? config.questionIds.filter(
+          (questionId): questionId is string =>
+            typeof questionId === "string" && questionId.trim().length > 0,
+        )
+      : undefined,
   };
 }
 
@@ -87,6 +98,7 @@ export type CreateTrainingSessionInput = {
   tracks?: Track[];
   level?: QuestionLevel;
   templateKey?: MockTemplateKey;
+  questionIds?: string[];
 };
 
 export const mockTemplateDefinitions: Record<
@@ -172,9 +184,9 @@ export const mockTemplateDefinitions: Record<
   },
 };
 
-export function resolveTrainingSessionInput(
-  input: CreateTrainingSessionInput,
-) {
+export function resolveTrainingSessionInput(input: CreateTrainingSessionInput) {
+  const questionIds = Array.from(new Set(input.questionIds ?? []));
+
   if (!input.templateKey) {
     return {
       ...input,
@@ -183,6 +195,7 @@ export function resolveTrainingSessionInput(
       durationMinutes: undefined,
       tracks: input.tracks,
       level: input.level,
+      questionIds,
     };
   }
 
@@ -195,5 +208,6 @@ export function resolveTrainingSessionInput(
     durationMinutes: template.durationMinutes,
     tracks: input.tracks ?? template.tracks,
     level: input.level ?? template.level,
+    questionIds,
   };
 }

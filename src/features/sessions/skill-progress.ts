@@ -50,7 +50,34 @@ function getFreshnessCap(ageInDays: number) {
   return 74;
 }
 
-function getConfidenceScore(params: {
+export type SkillProgressSignalDetails = {
+  weightedAccuracyScore: number;
+  rawMasteryScore: number;
+  adjustedMasteryScore: number;
+  boostScore: number;
+  penaltyScore: number;
+  recentFailurePenalty: number;
+  streakBonus: number;
+  coverageBonus: number;
+  difficultyCoverageBonus: number;
+  stalenessPenalty: number;
+  baseMasteryCap: number;
+  freshnessCap: number;
+  masteryCap: number;
+  lastAttemptAgeInDays: number;
+  confidence: {
+    score: number;
+    coverageConfidence: number;
+    breadthConfidence: number;
+    difficultyConfidence: number;
+    recentActivityConfidence: number;
+    freshnessBonus: number;
+    stalenessPenalty: number;
+    recentFailurePenalty: number;
+  };
+};
+
+function getConfidenceDetails(params: {
   coverageCount: number;
   uniqueQuestionCount: number;
   uniqueDifficultyCount: number;
@@ -100,15 +127,24 @@ function getConfidenceScore(params: {
             : 22;
   const recentFailurePenalty = Math.min(14, params.recentFailureCount * 4);
 
-  return clampSkillScore(
-    coverageConfidence +
-      breadthConfidence +
-      difficultyConfidence +
-      recentActivityConfidence +
-      freshnessBonus -
-      stalenessPenalty -
-      recentFailurePenalty,
-  );
+  return {
+    coverageConfidence,
+    breadthConfidence,
+    difficultyConfidence,
+    recentActivityConfidence,
+    freshnessBonus,
+    stalenessPenalty,
+    recentFailurePenalty,
+    score: clampSkillScore(
+      coverageConfidence +
+        breadthConfidence +
+        difficultyConfidence +
+        recentActivityConfidence +
+        freshnessBonus -
+        stalenessPenalty -
+        recentFailurePenalty,
+    ),
+  };
 }
 
 export type SkillAttemptSignal = {
@@ -127,12 +163,14 @@ export function computeSkillProgressSnapshot(
       masteryScore: 0,
       correctRate: 0,
       coverageCount: 0,
+      recentAttemptCount: 0,
       uniqueQuestionCount: 0,
       uniqueDifficultyCount: 0,
       recentFailureCount: 0,
       confidenceScore: 0,
       lastAttemptAt: null,
       masteryCap: 0,
+      signalDetails: null,
     };
   }
 
@@ -219,8 +257,20 @@ export function computeSkillProgressSnapshot(
           : 72) +
       (uniqueDifficultyCount >= 3 ? 6 : uniqueDifficultyCount === 2 ? 2 : 0),
   );
-  const masteryCap = Math.min(baseMasteryCap, getFreshnessCap(lastAttemptAgeInDays));
-  const confidenceScore = getConfidenceScore({
+  const freshnessCap = getFreshnessCap(lastAttemptAgeInDays);
+  const masteryCap = Math.min(baseMasteryCap, freshnessCap);
+  const roundedRecentFailurePenalty = Math.round(recentFailurePenalty);
+  const weightedAccuracyScore = clampSkillScore(weightedCorrectRate * 100);
+  const rawMasteryScore = clampSkillScore(
+    weightedCorrectRate * 100 -
+      recentFailurePenalty +
+      streakBonus +
+      coverageBonus +
+      difficultyCoverageBonus -
+      getStalenessPenalty(lastAttemptAgeInDays),
+  );
+  const adjustedMasteryScore = Math.min(masteryCap, rawMasteryScore);
+  const confidence = getConfidenceDetails({
     coverageCount: sortedAttempts.length,
     uniqueQuestionCount,
     uniqueDifficultyCount,
@@ -228,26 +278,36 @@ export function computeSkillProgressSnapshot(
     recentFailureCount,
     lastAttemptAgeInDays,
   });
+  const stalenessPenalty = getStalenessPenalty(lastAttemptAgeInDays);
+  const signalDetails: SkillProgressSignalDetails = {
+    weightedAccuracyScore,
+    rawMasteryScore,
+    adjustedMasteryScore,
+    boostScore: streakBonus + coverageBonus + difficultyCoverageBonus,
+    penaltyScore: roundedRecentFailurePenalty + stalenessPenalty,
+    recentFailurePenalty: roundedRecentFailurePenalty,
+    streakBonus,
+    coverageBonus,
+    difficultyCoverageBonus,
+    stalenessPenalty,
+    baseMasteryCap,
+    freshnessCap,
+    masteryCap,
+    lastAttemptAgeInDays,
+    confidence,
+  };
 
   return {
-    masteryScore: Math.min(
-      masteryCap,
-      clampSkillScore(
-        weightedCorrectRate * 100 -
-          recentFailurePenalty +
-          streakBonus +
-          coverageBonus +
-          difficultyCoverageBonus -
-          getStalenessPenalty(lastAttemptAgeInDays),
-      ),
-    ),
+    masteryScore: adjustedMasteryScore,
     correctRate: Number(weightedCorrectRate.toFixed(4)),
     coverageCount: sortedAttempts.length,
+    recentAttemptCount,
     uniqueQuestionCount,
     uniqueDifficultyCount,
     recentFailureCount,
-    confidenceScore,
+    confidenceScore: confidence.score,
     lastAttemptAt,
     masteryCap,
+    signalDetails,
   };
 }

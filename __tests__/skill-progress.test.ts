@@ -7,12 +7,14 @@ describe("computeSkillProgressSnapshot", () => {
       masteryScore: 0,
       correctRate: 0,
       coverageCount: 0,
+      recentAttemptCount: 0,
       uniqueQuestionCount: 0,
       uniqueDifficultyCount: 0,
       recentFailureCount: 0,
       confidenceScore: 0,
       lastAttemptAt: null,
       masteryCap: 0,
+      signalDetails: null,
     });
   });
 
@@ -38,10 +40,15 @@ describe("computeSkillProgressSnapshot", () => {
     expect(snapshot.correctRate).toBeCloseTo(0.8333, 4);
     expect(snapshot.masteryScore).toBeGreaterThan(70);
     expect(snapshot.coverageCount).toBe(2);
+    expect(snapshot.recentAttemptCount).toBe(2);
     expect(snapshot.uniqueQuestionCount).toBe(2);
     expect(snapshot.uniqueDifficultyCount).toBe(2);
     expect(snapshot.confidenceScore).toBeGreaterThanOrEqual(40);
     expect(snapshot.lastAttemptAt).toEqual(new Date("2026-03-07T11:00:00.000Z"));
+    expect(snapshot.signalDetails).toMatchObject({
+      weightedAccuracyScore: 83,
+      masteryCap: 86,
+    });
   });
 
   it("penalizes recent failures more than older ones", () => {
@@ -185,5 +192,11 @@ describe("computeSkillProgressSnapshot", () => {
     expect(stale.masteryScore).toBeLessThan(recent.masteryScore);
     expect(stale.masteryCap).toBeLessThan(recent.masteryCap);
     expect(stale.confidenceScore).toBeLessThan(recent.confidenceScore);
+    expect(stale.signalDetails?.stalenessPenalty).toBeGreaterThan(
+      recent.signalDetails?.stalenessPenalty ?? 0,
+    );
+    expect(stale.signalDetails?.freshnessCap).toBeLessThan(
+      recent.signalDetails?.freshnessCap ?? 100,
+    );
   });
 });

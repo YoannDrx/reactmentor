@@ -34,7 +34,7 @@ function normalizeSummary(summary: string | null | undefined) {
   return normalizedSummary.length > 0 ? normalizedSummary : null;
 }
 
-function getReviewVerdictScore(verdict: AttemptReviewVerdict) {
+export function getAttemptReviewVerdictScore(verdict: AttemptReviewVerdict) {
   if (verdict === "solid") {
     return 100;
   }
@@ -44,6 +44,33 @@ function getReviewVerdictScore(verdict: AttemptReviewVerdict) {
   }
 
   return 0;
+}
+
+export function getAttemptReviewCriterionWeight(
+  format: QuestionFormat,
+  criterion: SessionRubricCriterion,
+) {
+  if (format === "CODE_OUTPUT") {
+    return criterion === "accuracy"
+      ? 0.5
+      : criterion === "mechanism"
+        ? 0.3
+        : 0.2;
+  }
+
+  if (format === "BUG_HUNT") {
+    return criterion === "rootCause"
+      ? 0.45
+      : criterion === "evidence"
+        ? 0.3
+        : 0.25;
+  }
+
+  return criterion === "accuracy"
+    ? 0.45
+    : criterion === "mechanism"
+      ? 0.35
+      : 0.2;
 }
 
 export function buildAttemptReview(params: {
@@ -82,8 +109,16 @@ export function buildAttemptReview(params: {
   }
 
   const criteria = normalizedCriteria as AttemptReviewData["criteria"];
-  const totalScore = criteria.reduce(
-    (sum, criterion) => sum + getReviewVerdictScore(criterion.verdict),
+  const totalWeight = criteria.reduce(
+    (sum, criterion) =>
+      sum + getAttemptReviewCriterionWeight(params.format, criterion.criterion),
+    0,
+  );
+  const weightedScore = criteria.reduce(
+    (sum, criterion) =>
+      sum +
+      getAttemptReviewVerdictScore(criterion.verdict) *
+        getAttemptReviewCriterionWeight(params.format, criterion.criterion),
     0,
   );
 
@@ -91,8 +126,7 @@ export function buildAttemptReview(params: {
     kind: "rubric_review",
     criteria,
     summary: normalizeSummary(params.summary),
-    scorePercent:
-      criteria.length > 0 ? Math.round(totalScore / criteria.length) : 0,
+    scorePercent: totalWeight > 0 ? Math.round(weightedScore / totalWeight) : 0,
   };
 }
 
@@ -144,10 +178,11 @@ export function parseAttemptReviewData(
 
   const scorePercent =
     typeof value.scorePercent === "number" && Number.isFinite(value.scorePercent)
-      ? Math.round(value.scorePercent)
-      : Math.round(
-          criteria.reduce(
-            (sum, criterion) => sum + getReviewVerdictScore(criterion.verdict),
+          ? Math.round(value.scorePercent)
+          : Math.round(
+              criteria.reduce(
+            (sum, criterion) =>
+              sum + getAttemptReviewVerdictScore(criterion.verdict),
             0,
           ) / criteria.length,
         );

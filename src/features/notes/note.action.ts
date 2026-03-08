@@ -1,8 +1,10 @@
 "use server";
 
+import { ProductAnalyticsEventName } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { captureProductAnalyticsEvent } from "@/features/telemetry/telemetry";
 import { getUser } from "@/lib/auth/auth-user";
 import { prisma } from "@/lib/prisma";
 
@@ -68,6 +70,16 @@ export async function saveQuestionNoteAction(formData: FormData) {
         userId: user.id,
         questionId: parsed.data.questionId,
         body: nextBody,
+      },
+    });
+
+    await captureProductAnalyticsEvent({
+      userId: user.id,
+      name: ProductAnalyticsEventName.NOTE_CREATED,
+      source: "note.action",
+      questionId: parsed.data.questionId,
+      metadata: {
+        bodyLength: nextBody.length,
       },
     });
   }

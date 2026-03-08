@@ -29,7 +29,7 @@ describe("attempt-review helpers", () => {
         { criterion: "evidence", verdict: "solid" },
         { criterion: "repair", verdict: "partial" },
       ],
-      scorePercent: 83,
+      scorePercent: 88,
     });
     expect(review && isPassingAttemptReview(review)).toBe(true);
   });

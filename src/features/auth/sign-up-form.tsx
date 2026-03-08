@@ -21,7 +21,7 @@ type SignUpValues = {
 };
 
 export function SignUpForm({ callbackUrl }: { callbackUrl?: string }) {
-  const { messages } = useI18n();
+  const { locale, messages } = useI18n();
   const auth = messages.auth;
   const safeCallbackUrl = sanitizeCallbackUrl(callbackUrl);
   const router = useRouter();
@@ -65,6 +65,17 @@ export function SignUpForm({ callbackUrl }: { callbackUrl?: string }) {
           }
 
           toast.success(auth.toasts.workspaceCreated);
+          await fetch("/api/analytics/client-events", {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+            },
+            body: JSON.stringify({
+              name: "ACCOUNT_CREATED",
+              source: "auth.signup.email",
+              locale,
+            }),
+          }).catch(() => null);
           router.push(safeCallbackUrl);
           router.refresh();
         } catch (error) {

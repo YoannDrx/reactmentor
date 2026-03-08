@@ -1,12 +1,29 @@
 "use server";
 
-import { Prisma, SessionMode } from "@prisma/client";
+import {
+  OperationalEventLevel,
+  Prisma,
+  ProductAnalyticsEventName,
+  SessionMode,
+} from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getUser } from "@/lib/auth/auth-user";
 import type { Locale } from "@/i18n/config";
 import { prisma } from "@/lib/prisma";
+import {
+  canAccessModuleSlug,
+  canAccessQuestionIds,
+  getUserEntitlementSnapshot,
+} from "@/features/billing/user-entitlements";
+import {
+  captureOperationalEvent,
+  captureProductAnalyticsEvent,
+  getErrorMessage,
+  getErrorMetadata,
+  toContentLocale,
+} from "@/features/telemetry/telemetry";
 import { createTrainingSession } from "./session-builder";
 import {
   buildAttemptResponse,
@@ -18,14 +35,17 @@ import {
 import {
   attemptReviewVerdicts,
   buildAttemptReview,
-  getAttemptScorePercent,
   isPassingAttemptReview,
   toAttemptReviewData,
 } from "./attempt-review";
 import type { RecordAttemptActionState } from "./session-attempt.state";
 import { computeQuestionProgressUpdate } from "./session-progress";
 import { computeSkillProgressSnapshot } from "./skill-progress";
-import { mockTemplateKeys, parseTrainingSessionConfig } from "./session-contract";
+import {
+  mockTemplateKeys,
+  parseTrainingSessionConfig,
+} from "./session-contract";
+import { calculateTrainingSessionScore } from "./session-score";
 import { getSessionRubricCriteria } from "./session-rubric";
 
 const localeSchema = z.enum(["fr", "en"]);
@@ -36,6 +56,7 @@ const createSessionSchema = z.object({
   questionCount: z.coerce.number().int().min(1).max(20).optional(),
   moduleSlug: z.string().trim().optional(),
   templateKey: z.enum(mockTemplateKeys).optional(),
+  questionIds: z.array(z.string().trim().min(1)).default([]),
 });
 
 const recordAttemptSchema = z.object({
@@ -46,9 +67,7 @@ const recordAttemptSchema = z.object({
   responseCode: z.string().optional(),
   responseLanguage: z.string().optional(),
   responseSummary: z.string().optional(),
-  selectedLineNumbers: z
-    .array(z.coerce.number().int().min(1))
-    .default([]),
+  selectedLineNumbers: z.array(z.coerce.number().int().min(1)).default([]),
   timeSpentMs: z.coerce.number().int().min(0).max(7_200_000).optional(),
 });
 
@@ -57,29 +76,6 @@ const reviewPendingAttemptSchema = z.object({
   reviewSummary: z.string().trim().max(1000).optional(),
   presetVerdict: z.enum(attemptReviewVerdicts).optional(),
 });
-
-function calculateTrainingSessionScore(
-  attempts: Array<{
-    isCorrect: boolean | null;
-    reviewData: Prisma.JsonValue | null;
-  }>,
-) {
-  const scoredAttempts = attempts.flatMap((attempt) => {
-    const scorePercent = getAttemptScorePercent({
-      isCorrect: attempt.isCorrect,
-      reviewData: attempt.reviewData,
-    });
-
-    return scorePercent === null ? [] : [scorePercent];
-  });
-
-  return scoredAttempts.length > 0
-    ? Math.round(
-        scoredAttempts.reduce((sum, scorePercent) => sum + scorePercent, 0) /
-          scoredAttempts.length,
-      )
-    : null;
-}
 
 async function refreshTrainingSessionScore(
   tx: Prisma.TransactionClient,
@@ -101,6 +97,12 @@ async function refreshTrainingSessionScore(
         select: {
           isCorrect: true,
           reviewData: true,
+          question: {
+            select: {
+              format: true,
+              difficulty: true,
+            },
+          },
         },
       },
     },
@@ -115,7 +117,35 @@ async function refreshTrainingSessionScore(
       id: params.sessionId,
     },
     data: {
-      score: calculateTrainingSessionScore(session.attempts),
+      score: calculateTrainingSessionScore({
+        attempts: session.attempts,
+        mode: session.mode,
+        config: parseTrainingSessionConfig(session.config),
+      }),
+    },
+  });
+}
+
+async function captureSessionCompletionTelemetry(params: {
+  userId: string;
+  sessionId: string;
+  mode: SessionMode;
+  score: number | null;
+  source: string;
+  completionType: "manual_finish" | "auto_completion";
+}) {
+  await captureProductAnalyticsEvent({
+    userId: params.userId,
+    name:
+      params.mode === SessionMode.MOCK_INTERVIEW
+        ? ProductAnalyticsEventName.MOCK_COMPLETED
+        : ProductAnalyticsEventName.SESSION_COMPLETED,
+    source: params.source,
+    sessionMode: params.mode,
+    trainingSessionId: params.sessionId,
+    metadata: {
+      score: params.score,
+      completionType: params.completionType,
     },
   });
 }
@@ -191,6 +221,7 @@ async function refreshQuestionAndSkillProgress(
     })),
     params.now,
   );
+  const signalDetails = skillProgressSnapshot.signalDetails as Prisma.InputJsonValue;
 
   await tx.skillProgress.upsert({
     where: {
@@ -201,24 +232,30 @@ async function refreshQuestionAndSkillProgress(
     },
     update: {
       masteryScore: skillProgressSnapshot.masteryScore,
+      masteryCap: skillProgressSnapshot.masteryCap,
       correctRate: skillProgressSnapshot.correctRate,
       coverageCount: skillProgressSnapshot.coverageCount,
+      recentAttemptCount: skillProgressSnapshot.recentAttemptCount,
       uniqueQuestionCount: skillProgressSnapshot.uniqueQuestionCount,
       uniqueDifficultyCount: skillProgressSnapshot.uniqueDifficultyCount,
       recentFailureCount: skillProgressSnapshot.recentFailureCount,
       confidenceScore: skillProgressSnapshot.confidenceScore,
+      signalDetails,
       lastAttemptAt: skillProgressSnapshot.lastAttemptAt,
     },
     create: {
       userId: params.userId,
       skillId: params.primarySkillId,
       masteryScore: skillProgressSnapshot.masteryScore,
+      masteryCap: skillProgressSnapshot.masteryCap,
       correctRate: skillProgressSnapshot.correctRate,
       coverageCount: skillProgressSnapshot.coverageCount,
+      recentAttemptCount: skillProgressSnapshot.recentAttemptCount,
       uniqueQuestionCount: skillProgressSnapshot.uniqueQuestionCount,
       uniqueDifficultyCount: skillProgressSnapshot.uniqueDifficultyCount,
       recentFailureCount: skillProgressSnapshot.recentFailureCount,
       confidenceScore: skillProgressSnapshot.confidenceScore,
+      signalDetails,
       lastAttemptAt: skillProgressSnapshot.lastAttemptAt,
     },
   });
@@ -248,6 +285,12 @@ async function finalizeTrainingSession(params: {
           select: {
             isCorrect: true,
             reviewData: true,
+            question: {
+              select: {
+                format: true,
+                difficulty: true,
+              },
+            },
           },
         },
       },
@@ -262,7 +305,11 @@ async function finalizeTrainingSession(params: {
       },
       data: {
         endedAt: params.endedAt,
-        score: calculateTrainingSessionScore(session.attempts),
+        score: calculateTrainingSessionScore({
+          attempts: session.attempts,
+          mode: session.mode,
+          config: parseTrainingSessionConfig(session.config),
+        }),
       },
     });
   });
@@ -280,6 +327,17 @@ export async function finishTrainingSessionAction(sessionId: string) {
     userId: user.id,
     endedAt: new Date(),
   });
+
+  if (result) {
+    await captureSessionCompletionTelemetry({
+      userId: user.id,
+      sessionId: result.id,
+      mode: result.mode,
+      score: result.score ?? null,
+      source: "session.action.finish",
+      completionType: "manual_finish",
+    });
+  }
 
   revalidatePath(`/dashboard/session/${sessionId}`);
   revalidatePath("/dashboard");
@@ -305,9 +363,41 @@ export async function createTrainingSessionAction(formData: FormData) {
     questionCount: formData.get("questionCount") ?? undefined,
     moduleSlug: String(formData.get("moduleSlug") ?? "") || undefined,
     templateKey: String(formData.get("templateKey") ?? "") || undefined,
+    questionIds: formData.getAll("questionIds").map(String),
   });
 
   if (!parsed.success) {
+    redirect("/dashboard");
+  }
+
+  const entitlement = await getUserEntitlementSnapshot(user.id);
+
+  if (
+    parsed.data.mode === SessionMode.MOCK_INTERVIEW &&
+    !entitlement.canStartMockInterview
+  ) {
+    redirect("/dashboard/mock-interviews");
+  }
+
+  if (
+    parsed.data.mode !== SessionMode.REVIEW &&
+    parsed.data.moduleSlug &&
+    !(await canAccessModuleSlug({
+      userId: user.id,
+      moduleSlug: parsed.data.moduleSlug,
+    }))
+  ) {
+    redirect("/dashboard/modules");
+  }
+
+  if (
+    parsed.data.mode !== SessionMode.REVIEW &&
+    parsed.data.questionIds.length > 0 &&
+    !(await canAccessQuestionIds({
+      userId: user.id,
+      questionIds: parsed.data.questionIds,
+    }))
+  ) {
     redirect("/dashboard");
   }
 
@@ -318,6 +408,26 @@ export async function createTrainingSessionAction(formData: FormData) {
     questionCount: parsed.data.questionCount,
     moduleSlug: parsed.data.moduleSlug,
     templateKey: parsed.data.templateKey,
+    questionIds: parsed.data.questionIds,
+  });
+
+  await captureProductAnalyticsEvent({
+    userId: user.id,
+    name:
+      parsed.data.mode === SessionMode.REVIEW
+        ? ProductAnalyticsEventName.REVIEW_LAUNCHED
+        : ProductAnalyticsEventName.SESSION_STARTED,
+    source: "session.action.create",
+    sessionMode: session.mode,
+    locale: toContentLocale(parsed.data.locale),
+    trainingSessionId: session.id,
+    moduleSlug: parsed.data.moduleSlug ?? null,
+    metadata: {
+      questionCount: session.questionCount,
+      templateKey: parsed.data.templateKey ?? null,
+      selectedQuestionCount: parsed.data.questionIds.length,
+      resumed: session.resumed,
+    },
   });
 
   redirect(`/dashboard/session/${session.id}`);
@@ -343,7 +453,8 @@ export async function recordTrainingSessionAttemptAction(
     selectedOptionIds: formData.getAll("selectedOptionIds").map(String),
     responseText: String(formData.get("responseText") ?? "") || undefined,
     responseCode: String(formData.get("responseCode") ?? "") || undefined,
-    responseLanguage: String(formData.get("responseLanguage") ?? "") || undefined,
+    responseLanguage:
+      String(formData.get("responseLanguage") ?? "") || undefined,
     responseSummary: String(formData.get("responseSummary") ?? "") || undefined,
     selectedLineNumbers: formData.getAll("selectedLineNumbers").map(Number),
     timeSpentMs: formData.get("timeSpentMs") ?? undefined,
@@ -387,6 +498,12 @@ export async function recordTrainingSessionAttemptAction(
             questionId: true,
             isCorrect: true,
             reviewData: true,
+            question: {
+              select: {
+                format: true,
+                difficulty: true,
+              },
+            },
           },
         },
       },
@@ -399,6 +516,7 @@ export async function recordTrainingSessionAttemptAction(
       select: {
         id: true,
         format: true,
+        difficulty: true,
         primarySkillId: true,
         options: {
           select: {
@@ -512,7 +630,7 @@ export async function recordTrainingSessionAttemptAction(
           ? "incorrect"
           : "pending_review";
 
-    await prisma.$transaction(async (tx) => {
+    const transactionResult = await prisma.$transaction(async (tx) => {
       const existingAttempt = await tx.attempt.findFirst({
         where: {
           userId: user.id,
@@ -550,38 +668,78 @@ export async function recordTrainingSessionAttemptAction(
         ...session.attempts.map((attempt) => attempt.questionId),
         parsed.data.questionId,
       ]);
-      const correctAnswers = session.attempts.filter(
-        (attempt) => attempt.isCorrect === true,
-      ).length;
-      const gradedAnswers = session.attempts.filter(
-        (attempt) =>
-          getAttemptScorePercent({
-            isCorrect: attempt.isCorrect,
-            reviewData: attempt.reviewData,
-          }) !== null,
-      ).length;
-      const nextCorrectAnswers = existingAttempt
-        ? correctAnswers
-        : correctAnswers + (isCorrect === true ? 1 : 0);
-      const nextGradedAnswers = existingAttempt
-        ? gradedAnswers
-        : gradedAnswers + (isCorrect !== null ? 1 : 0);
+      const nextAttempts = existingAttempt
+        ? session.attempts
+        : [
+            ...session.attempts,
+            {
+              questionId: parsed.data.questionId,
+              isCorrect,
+              reviewData: null,
+              question: {
+                format: question.format,
+                difficulty: question.difficulty,
+              },
+            },
+          ];
 
       if (answeredQuestionIds.size >= session.items.length) {
-        await tx.trainingSession.update({
+        const completedSession = await tx.trainingSession.update({
           where: {
             id: parsed.data.sessionId,
           },
           data: {
             endedAt: now,
-            score:
-              nextGradedAnswers > 0
-                ? Math.round((nextCorrectAnswers / nextGradedAnswers) * 100)
-                : null,
+            score: calculateTrainingSessionScore({
+              attempts: nextAttempts,
+              mode: session.mode,
+              config: sessionConfig,
+            }),
           },
         });
+
+        return {
+          createdAttempt: !existingAttempt,
+          completedSession: {
+            id: completedSession.id,
+            mode: completedSession.mode,
+            score: completedSession.score ?? null,
+          },
+        };
       }
+
+      return {
+        createdAttempt: !existingAttempt,
+        completedSession: null,
+      };
     });
+
+    if (transactionResult.createdAttempt) {
+      await captureProductAnalyticsEvent({
+        userId: user.id,
+        name: ProductAnalyticsEventName.QUESTION_ANSWERED,
+        source: "session.action.record_attempt",
+        sessionMode: session.mode,
+        trainingSessionId: parsed.data.sessionId,
+        questionId: parsed.data.questionId,
+        metadata: {
+          feedbackStatus,
+          automaticScoring: evaluation !== null,
+          timeSpentMs: parsed.data.timeSpentMs ?? null,
+        },
+      });
+    }
+
+    if (transactionResult.completedSession) {
+      await captureSessionCompletionTelemetry({
+        userId: user.id,
+        sessionId: transactionResult.completedSession.id,
+        mode: transactionResult.completedSession.mode,
+        score: transactionResult.completedSession.score,
+        source: "session.action.record_attempt",
+        completionType: "auto_completion",
+      });
+    }
 
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/progress");
@@ -593,7 +751,21 @@ export async function recordTrainingSessionAttemptAction(
       feedbackStatus,
       formError: null,
     };
-  } catch {
+  } catch (error) {
+    await captureOperationalEvent({
+      userId: user.id,
+      source: "session.action",
+      eventType: "record_attempt_failed",
+      level: OperationalEventLevel.ERROR,
+      status: "failed",
+      message: getErrorMessage(error),
+      metadata: {
+        error: getErrorMetadata(error) ?? null,
+        sessionId: parsed.data.sessionId,
+        questionId: parsed.data.questionId,
+      },
+    });
+
     return {
       status: "error",
       feedbackStatus: null,

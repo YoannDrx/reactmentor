@@ -13,6 +13,7 @@ import {
 import { getAttemptScorePercent } from "./attempt-review";
 import { parseTrainingSessionConfig } from "./session-contract";
 import { computeMockSessionReport } from "./session-mock-report";
+import { calculateTrainingSessionScore } from "./session-score";
 
 type SessionWithItems = Prisma.TrainingSessionGetPayload<{
   include: {
@@ -106,41 +107,41 @@ export async function getTrainingSessionView(params: {
                   order: "asc",
                 },
               },
-            primarySkill: {
-              include: {
-                translations: true,
+              primarySkill: {
+                include: {
+                  translations: true,
+                },
               },
-            },
-            module: {
-              include: {
-                translations: true,
+              module: {
+                include: {
+                  translations: true,
+                },
               },
-            },
-            bookmarks: {
-              where: {
-                userId: params.userId,
+              bookmarks: {
+                where: {
+                  userId: params.userId,
+                },
+                select: {
+                  id: true,
+                },
+                take: 1,
               },
-              select: {
-                id: true,
+              notes: {
+                where: {
+                  userId: params.userId,
+                },
+                select: {
+                  body: true,
+                  updatedAt: true,
+                },
+                orderBy: {
+                  updatedAt: "desc",
+                },
+                take: 1,
               },
-              take: 1,
-            },
-            notes: {
-              where: {
-                userId: params.userId,
-              },
-              select: {
-                body: true,
-                updatedAt: true,
-              },
-              orderBy: {
-                updatedAt: "desc",
-              },
-              take: 1,
             },
           },
         },
-      },
       },
       attempts: {
         where: {
@@ -163,10 +164,13 @@ export async function getTrainingSessionView(params: {
 function mapTrainingSessionView(session: SessionWithItems, locale: Locale) {
   const now = new Date();
   const sessionConfig = parseTrainingSessionConfig(session.config);
-  const answeredQuestionIds = new Set(session.attempts.map((attempt) => attempt.questionId));
+  const answeredQuestionIds = new Set(
+    session.attempts.map((attempt) => attempt.questionId),
+  );
   const currentItem = session.endedAt
     ? null
-    : session.items.find((item) => !answeredQuestionIds.has(item.questionId)) ?? null;
+    : session.items.find((item) => !answeredQuestionIds.has(item.questionId)) ??
+      null;
   const correctAnswers = session.attempts.filter(
     (attempt) => attempt.isCorrect === true,
   ).length;
@@ -205,13 +209,27 @@ function mapTrainingSessionView(session: SessionWithItems, locale: Locale) {
   const attemptMap = new Map(
     session.attempts.map((attempt) => [attempt.questionId, attempt]),
   );
-  const scoredAttemptPercents = session.attempts.flatMap((attempt) => {
-    const scorePercent = getAttemptScorePercent({
+  const questionMetaById = new Map(
+    session.items.map((item) => [
+      item.question.id,
+      {
+        format: item.question.format,
+        difficulty: item.question.difficulty,
+      },
+    ]),
+  );
+  const calculatedScore = calculateTrainingSessionScore({
+    attempts: session.attempts.map((attempt) => ({
       isCorrect: attempt.isCorrect,
       reviewData: attempt.reviewData,
-    });
-
-    return scorePercent === null ? [] : [scorePercent];
+      question:
+        questionMetaById.get(attempt.questionId) ?? {
+          format: "SINGLE_CHOICE",
+          difficulty: 1,
+        },
+    })),
+    mode: session.mode,
+    config: sessionConfig,
   });
   const currentQuestion = currentItem
     ? {
@@ -230,16 +248,7 @@ function mapTrainingSessionView(session: SessionWithItems, locale: Locale) {
     mode: session.mode as SessionMode,
     endedAt: session.endedAt,
     startedAt: session.startedAt,
-    score:
-      session.score ??
-      (scoredAttemptPercents.length > 0
-        ? Math.round(
-            scoredAttemptPercents.reduce(
-              (sum, scorePercent) => sum + scorePercent,
-              0,
-            ) / scoredAttemptPercents.length,
-          )
-        : null),
+    score: session.score ?? calculatedScore,
     totalQuestions,
     answeredCount,
     correctAnswers,
@@ -263,16 +272,7 @@ function mapTrainingSessionView(session: SessionWithItems, locale: Locale) {
             timeSpentMinutes,
             timeBudgetMinutes: timing.durationMinutes,
             pressureState: getMockPressureState({
-              score:
-                session.score ??
-                (scoredAttemptPercents.length > 0
-                  ? Math.round(
-                      scoredAttemptPercents.reduce(
-                        (sum, scorePercent) => sum + scorePercent,
-                        0,
-                      ) / scoredAttemptPercents.length,
-                    )
-                  : 0),
+              score: (session.score ?? calculatedScore) ?? 0,
               answeredCount,
               totalQuestions,
               timeSpentMinutes,
@@ -310,6 +310,8 @@ function mapTrainingSessionView(session: SessionWithItems, locale: Locale) {
         : null,
     currentQuestion,
     progressPercent:
-      totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0,
+      totalQuestions > 0
+        ? Math.round((answeredCount / totalQuestions) * 100)
+        : 0,
   };
 }

@@ -13,13 +13,14 @@ type ActiveSessionFixture = {
   mode: SessionMode;
   startedAt: Date;
   config: {
-    source: "module" | "mock_template";
+    source: "module" | "mock_template" | "playlist";
     locale: "fr" | "en";
     questionCount: number;
     moduleSlug?: string;
     tracks?: Track[];
     level?: QuestionLevel;
     templateKey?: string;
+    questionIds?: string[];
   };
 };
 
@@ -445,6 +446,69 @@ describe("createTrainingSession", () => {
           sessionId: "session_created",
           questionId: "mock_bug_1",
           order: 5,
+        },
+      ],
+    });
+  });
+
+  it("preserves explicit question selection order for generated playlists", async () => {
+    questionFindManyMock.mockResolvedValue([
+      {
+        id: "question_a",
+        format: QuestionFormat.SINGLE_CHOICE,
+        difficulty: 1,
+        progress: [],
+        attempts: [],
+      },
+      {
+        id: "question_b",
+        format: QuestionFormat.OPEN_ENDED,
+        difficulty: 4,
+        progress: [],
+        attempts: [],
+      },
+      {
+        id: "question_c",
+        format: QuestionFormat.CODE_OUTPUT,
+        difficulty: 3,
+        progress: [],
+        attempts: [],
+      },
+    ]);
+
+    const session = await createTrainingSession({
+      userId: "user_1",
+      mode: SessionMode.PRACTICE,
+      locale: "en",
+      questionCount: 3,
+      questionIds: ["question_b", "question_c", "question_a"],
+    });
+
+    expect(session).toMatchObject({
+      id: "session_created",
+      resumed: false,
+      questionCount: 3,
+      config: {
+        source: "playlist",
+        questionIds: ["question_b", "question_c", "question_a"],
+      },
+    });
+    expect(trainingSessionItemCreateManyMock).toHaveBeenCalledWith({
+      data: [
+        {
+          sessionId: "session_created",
+          questionId: "question_b",
+          order: 1,
+        },
+        {
+          sessionId: "session_created",
+          questionId: "question_c",
+          order: 2,
+        },
+        {
+          sessionId: "session_created",
+          questionId: "question_a",
+          order: 3,
         },
       ],
     });

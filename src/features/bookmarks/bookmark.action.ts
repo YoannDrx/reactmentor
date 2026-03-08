@@ -1,8 +1,10 @@
 "use server";
 
+import { ProductAnalyticsEventName } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { captureProductAnalyticsEvent } from "@/features/telemetry/telemetry";
 import { getUser } from "@/lib/auth/auth-user";
 import { prisma } from "@/lib/prisma";
 
@@ -48,6 +50,13 @@ export async function toggleBookmarkAction(formData: FormData) {
         userId: user.id,
         questionId: parsed.data.questionId,
       },
+    });
+
+    await captureProductAnalyticsEvent({
+      userId: user.id,
+      name: ProductAnalyticsEventName.BOOKMARK_CREATED,
+      source: "bookmark.action",
+      questionId: parsed.data.questionId,
     });
   }
 
