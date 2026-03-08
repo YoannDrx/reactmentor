@@ -61,6 +61,52 @@ enum ContentStatus {
   ARCHIVED
 }
 
+enum PlaylistKind {
+  MANUAL
+  GENERATED
+}
+
+enum BillingPlan {
+  STARTER
+  MENTOR_PRO
+  HIRING_SPRINT
+}
+
+enum BillingStatus {
+  FREE
+  ACTIVE
+  TRIALING
+  PAST_DUE
+  CANCELED
+  EXPIRED
+}
+
+enum AnalysisDepth {
+  CORE
+  ADVANCED
+}
+
+enum ProductAnalyticsEventName {
+  ACCOUNT_CREATED
+  ONBOARDING_COMPLETED
+  SESSION_STARTED
+  SESSION_COMPLETED
+  REVIEW_LAUNCHED
+  QUESTION_ANSWERED
+  BOOKMARK_CREATED
+  NOTE_CREATED
+  UPGRADE_CLICKED
+  CHECKOUT_COMPLETED
+  SUBSCRIPTION_STARTED
+  MOCK_COMPLETED
+}
+
+enum OperationalEventLevel {
+  INFO
+  WARN
+  ERROR
+}
+
 model User {
   id            String   @id
   name          String
@@ -79,12 +125,16 @@ model User {
   accounts Account[]
 
   preferences      UserPreference?
+  entitlement      UserEntitlement?
   attempts         Attempt[]
   questionProgress QuestionProgress[]
   skillProgress    SkillProgress[]
   bookmarks        Bookmark[]
   notes            Note[]
+  playlists        Playlist[]
   trainingSessions TrainingSession[]
+  analyticsEvents  ProductAnalyticsEvent[]
+  operationalEvents OperationalEvent[]
 
   @@map("user")
 }
@@ -152,6 +202,28 @@ model UserPreference {
   @@map("user_preference")
 }
 
+model UserEntitlement {
+  id                    String         @id @default(cuid())
+  userId                String         @unique
+  plan                  BillingPlan    @default(STARTER)
+  billingStatus         BillingStatus  @default(FREE)
+  moduleAccessLimit     Int?           @default(2)
+  monthlyMockLimit      Int?           @default(1)
+  analysisDepth         AnalysisDepth  @default(CORE)
+  playlistsEnabled      Boolean        @default(false)
+  sprintModeEnabled     Boolean        @default(false)
+  currentPeriodStartsAt DateTime?
+  currentPeriodEndsAt   DateTime?
+  billingCustomerId     String?        @unique
+  billingSubscriptionId String?        @unique
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_entitlement")
+}
+
 model LearningModule {
   id          String        @id @default(cuid())
   slug        String        @unique
@@ -194,31 +266,36 @@ model Skill {
 }
 
 model Question {
-  id             String         @id @default(cuid())
-  slug           String         @unique
-  moduleId       String
-  primarySkillId String
-  difficulty     Int
-  level          QuestionLevel
-  format         QuestionFormat
-  prompt         String?
-  explanation    String?
-  takeaways      Json?
-  status         ContentStatus  @default(PUBLISHED)
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  id               String         @id @default(cuid())
+  slug             String         @unique
+  moduleId         String
+  primarySkillId   String
+  difficulty       Int
+  level            QuestionLevel
+  format           QuestionFormat
+  estimatedTimeSec Int?
+  sourceType       String?
+  version          Int            @default(1)
+  prompt           String?
+  explanation      String?
+  takeaways        Json?
+  status           ContentStatus  @default(PUBLISHED)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 
-  module       LearningModule        @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  primarySkill Skill                 @relation("PrimarySkill", fields: [primarySkillId], references: [id], onDelete: Restrict)
-  options      QuestionOption[]
-  skillLinks   QuestionSkill[]
-  pitfallLinks QuestionPitfallTag[]
-  attempts     Attempt[]
-  progress     QuestionProgress[]
-  bookmarks    Bookmark[]
-  notes        Note[]
-  sessionItems TrainingSessionItem[]
-  translations QuestionTranslation[]
+  module          LearningModule           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  primarySkill    Skill                    @relation("PrimarySkill", fields: [primarySkillId], references: [id], onDelete: Restrict)
+  options         QuestionOption[]
+  skillLinks      QuestionSkill[]
+  pitfallLinks    QuestionPitfallTag[]
+  attempts        Attempt[]
+  progress        QuestionProgress[]
+  bookmarks       Bookmark[]
+  notes           Note[]
+  playlistItems   PlaylistItem[]
+  collectionItems QuestionCollectionItem[]
+  sessionItems    TrainingSessionItem[]
+  translations    QuestionTranslation[]
 
   @@index([status])
   @@map("question")
@@ -273,23 +350,82 @@ model SkillTranslation {
 }
 
 model QuestionTranslation {
-  id              String            @id @default(cuid())
-  questionId      String
-  locale          ContentLocale
-  status          TranslationStatus @default(READY)
-  prompt          String
-  explanation     String
-  takeaways       Json?
-  contextData     Json?
-  interviewSignal String?
-  verbalizePoints Json?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  id                   String            @id @default(cuid())
+  questionId           String
+  locale               ContentLocale
+  status               TranslationStatus @default(READY)
+  prompt               String
+  explanation          String
+  takeaways            Json?
+  tlDr                 String?
+  shortAnswer          String?
+  lessonBody           String?
+  commonMistakes       Json?
+  exampleTitle         String?
+  exampleCode          String?
+  exampleLanguage      String?
+  exampleExplanation   String?
+  estimatedReadMinutes Int?
+  contextData          Json?
+  interviewSignal      String?
+  verbalizePoints      Json?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
 
   question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
   @@unique([questionId, locale])
   @@map("question_translation")
+}
+
+model QuestionCollection {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  title       String?
+  description String?
+  summary     String?
+  order       Int           @default(0)
+  status      ContentStatus @default(PUBLISHED)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  items        QuestionCollectionItem[]
+  translations QuestionCollectionTranslation[]
+
+  @@index([status])
+  @@map("question_collection")
+}
+
+model QuestionCollectionTranslation {
+  id           String            @id @default(cuid())
+  collectionId String
+  locale       ContentLocale
+  status       TranslationStatus @default(READY)
+  title        String
+  description  String
+  summary      String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  collection QuestionCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, locale])
+  @@map("question_collection_translation")
+}
+
+model QuestionCollectionItem {
+  id           String   @id @default(cuid())
+  collectionId String
+  questionId   String
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  collection QuestionCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  question   Question           @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, questionId])
+  @@index([collectionId, order])
+  @@map("question_collection_item")
 }
 
 model QuestionOptionTranslation {
@@ -395,18 +531,18 @@ model Attempt {
 }
 
 model QuestionProgress {
-  id            String       @id @default(cuid())
-  userId        String
-  questionId    String
-  ease          Float        @default(2.3)
-  intervalDays  Int          @default(1)
-  streakCorrect Int          @default(0)
-  reviewCount   Int          @default(0)
-  lapseCount    Int          @default(0)
+  id                 String       @id @default(cuid())
+  userId             String
+  questionId         String
+  ease               Float        @default(2.3)
+  intervalDays       Int          @default(1)
+  streakCorrect      Int          @default(0)
+  reviewCount        Int          @default(0)
+  lapseCount         Int          @default(0)
   lastOutcomeCorrect Boolean?
-  lastAttemptAt DateTime?
-  nextReviewAt  DateTime?
-  masteryState  MasteryState @default(NEW)
+  lastAttemptAt      DateTime?
+  nextReviewAt       DateTime?
+  masteryState       MasteryState @default(NEW)
 
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
@@ -417,24 +553,60 @@ model QuestionProgress {
 }
 
 model SkillProgress {
-  id            String   @id @default(cuid())
-  userId        String
-  skillId       String
-  masteryScore  Int      @default(0)
-  correctRate   Float    @default(0)
-  coverageCount Int      @default(0)
-  uniqueQuestionCount Int @default(0)
-  uniqueDifficultyCount Int @default(0)
-  recentFailureCount Int @default(0)
-  confidenceScore Int @default(0)
-  lastAttemptAt DateTime?
-  lastUpdatedAt DateTime @updatedAt
+  id                    String    @id @default(cuid())
+  userId                String
+  skillId               String
+  masteryScore          Int       @default(0)
+  masteryCap            Int       @default(0)
+  correctRate           Float     @default(0)
+  coverageCount         Int       @default(0)
+  recentAttemptCount    Int       @default(0)
+  uniqueQuestionCount   Int       @default(0)
+  uniqueDifficultyCount Int       @default(0)
+  recentFailureCount    Int       @default(0)
+  confidenceScore       Int       @default(0)
+  signalDetails         Json?
+  lastAttemptAt         DateTime?
+  lastUpdatedAt         DateTime  @updatedAt
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
 
   @@unique([userId, skillId])
   @@map("skill_progress")
+}
+
+model Playlist {
+  id          String       @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  kind        PlaylistKind @default(MANUAL)
+  mode        SessionMode  @default(PRACTICE)
+  sourceKey   String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items PlaylistItem[]
+
+  @@index([userId, updatedAt])
+  @@map("playlist")
+}
+
+model PlaylistItem {
+  id         String   @id @default(cuid())
+  playlistId String
+  questionId String
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  playlist Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([playlistId, questionId])
+  @@index([playlistId, order])
+  @@map("playlist_item")
 }
 
 model Bookmark {
@@ -462,4 +634,48 @@ model Note {
   question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
   @@map("note")
+}
+
+model ProductAnalyticsEvent {
+  id                String                    @id @default(cuid())
+  userId            String?
+  name              ProductAnalyticsEventName
+  source            String?
+  sessionMode       SessionMode?
+  billingPlan       BillingPlan?
+  locale            ContentLocale?
+  trainingSessionId String?
+  questionId        String?
+  moduleSlug        String?
+  metadata          Json?
+  occurredAt        DateTime                  @default(now())
+  createdAt         DateTime                  @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([name, occurredAt])
+  @@index([userId, occurredAt])
+  @@index([sessionMode, occurredAt])
+  @@index([billingPlan, occurredAt])
+  @@map("product_analytics_event")
+}
+
+model OperationalEvent {
+  id         String                @id @default(cuid())
+  userId     String?
+  source     String
+  eventType  String
+  level      OperationalEventLevel @default(INFO)
+  status     String?
+  message    String?
+  metadata   Json?
+  occurredAt DateTime              @default(now())
+  createdAt  DateTime              @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([source, occurredAt])
+  @@index([level, occurredAt])
+  @@index([status, occurredAt])
+  @@map("operational_event")
 }
