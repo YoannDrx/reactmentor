@@ -734,8 +734,14 @@ function LandingHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/40 bg-[rgba(246,239,230,0.82)] backdrop-blur-xl">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-        <LogoLockup compact tagline={t("common.brandTagline")} />
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+        <LogoLockup
+          compact
+          tagline={t("common.brandTagline")}
+          variant="navbar"
+          className="gap-3 sm:gap-4"
+          markClassName="size-14 lg:size-16"
+        />
         <nav className="hidden items-center gap-8 text-sm text-slate-600 lg:flex">
           <Link href="/learn" className="hover:text-slate-950">
             {t("landing.nav.learn")}

@@ -18,10 +18,16 @@ export function LearnHeader({
 }: LearnHeaderProps) {
   return (
     <header className="sticky top-0 z-40 border-b border-white/50 bg-[rgba(246,239,230,0.86)] backdrop-blur-xl">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <div className="flex items-center gap-4">
           <Link href="/">
-            <LogoLockup compact tagline={brandTagline} />
+            <LogoLockup
+              compact
+              tagline={brandTagline}
+              variant="navbar"
+              className="gap-3 sm:gap-4"
+              markClassName="size-14 lg:size-16"
+            />
           </Link>
           <Link
             href="/learn"
