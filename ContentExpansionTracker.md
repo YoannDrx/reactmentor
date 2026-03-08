@@ -22,6 +22,10 @@ Regles de travail:
 - chaque lot contenu doit vivre en FR puis en EN
 - les checkboxes ne doivent etre cochees que quand le contenu est reellement produit et integre
 
+Document associe:
+
+- [LearningSystemImprovements.md](./LearningSystemImprovements.md) couvre les ameliorations cross-surface du systeme d'apprentissage, du tracking et de la partie cours, au-dela du seul volume editorial
+
 ## 2. Etat reel du produit learn
 
 ### 2.1 Ce qui est deja livre
@@ -50,6 +54,10 @@ Modules actuellement poses dans le seed:
 - `react-rendering-systems`
 - `react-core-first-steps`
 - `effects-without-superstition`
+- `react-advanced-concepts-lab`
+- `react-router-and-navigation`
+- `react-i18n-and-localization`
+- `react-testing-foundations`
 - `typescript-for-components`
 - `react-native-interview-cases`
 - `frontend-javascript-foundations`
@@ -80,6 +88,10 @@ Collections editoriales actuellement posees:
 - [x] `frontend-foundations-beyond-react`
 - [x] `react-coding-patterns-starter`
 - [x] `react-interaction-and-accessibility-cases`
+- [x] `react-advanced-concepts-core`
+- [x] `react-router-navigation-basics`
+- [x] `react-i18n-interview-basics`
+- [x] `react-testing-interview-basics`
 
 ### 2.3 Ce que ce socle couvre deja
 
@@ -87,6 +99,10 @@ Couverture deja presente dans React Mentor:
 
 - React debutant: JSX, props, state, controlled inputs, lifting state, context
 - React hooks: `useEffect`, `useLayoutEffect`, `useRef`, custom hooks, deps arrays
+- React advanced: reconciliation, Fiber, Strict Mode, portals, Suspense, hydration, code splitting, SSR vs generation statique
+- React Router: `BrowserRouter` vs `HashRouter`, `useParams`, `Outlet`, `useSearchParams`, `useNavigate`, guards, route active, 404, redirects
+- React i18n: `react-intl`, `useIntl`, `FormattedMessage`, formatage date/nombre/monnaie, pluralisation, comparaison de bibliotheques
+- React testing: Jest vs React Testing Library, tests async, contexte, frontiere API, `renderHook`, snapshots, Redux, shallow vs full DOM
 - React debugging: stale async work, cleanup, bug hunts, identity issues
 - React coding interview: immutable updates, tabs, modal, custom hook API, `useMemo`
 - TypeScript applique a React: `unknown`, inference, frontieres de types
@@ -98,10 +114,10 @@ Couverture deja presente dans React Mentor:
 
 Le programme contenu reste encore incomplet sur:
 
-- React advanced a grande echelle: reconciliation, fiber, suspense, hydration, portals, strict mode, SSR, static generation, HOC, render props, composition
-- React Router: routing, nested routes, params, redirects, guards, query params
-- React i18n: `react-intl`, `react-i18next`, locale formatting, placeholders
-- React testing: Jest, React Testing Library, hooks testing, mocking API, context, Redux, snapshots
+- React advanced a grande echelle: context performance, HOC, render props, composition, concurrent rendering, long tasks / UI responsiveness
+- React Router: scenarios de navigation plus complexes, strategies de redirection a plus grande echelle, cas layout plus profonds
+- React i18n: `react-i18next` plus en profondeur, architecture de catalogues, chargement de namespaces et workflows de traduction plus riches
+- React testing: tests de composants plus complexes, strategie d'integration plus large, helpers de rendu partages et articulation avec l'e2e
 - JavaScript interview theorique plus large: hoisting, prototype chain, `this`, coercion, event loop avancee, classes, modules
 - JavaScript coding library plus profonde: debounce/throttle, promises utilitaires, DOM helpers, data transforms
 - frontend HTML/CSS/JS coverage beaucoup plus large pour atteindre le niveau benchmark
@@ -182,16 +198,22 @@ Encore a produire:
 
 Etat:
 
+- [x] trois lots semes
 - [ ] encore largement sous-couvert
 
-Priorites:
+Deja couvert:
 
+- reconciliation
 - Fiber
+- Strict Mode
+- portals
 - Suspense
 - hydration
-- portals
-- strict mode
 - code splitting
+- SSR / static generation
+
+Encore a produire:
+
 - context performance
 - Flux
 - render props
@@ -199,59 +221,76 @@ Priorites:
 - composition
 - concurrent rendering
 - long tasks / UI responsiveness
-- SSR / static generation
 
 ### 4.4 React Router
 
 Etat:
 
-- [ ] non commence comme vrai mini-curriculum
+- [x] trois lots semes
+- [ ] mini-curriculum encore incomplet
 
-Priorites:
+Deja couvert:
 
 - `BrowserRouter` / `HashRouter`
-- route params
-- nested routes
-- programmatic navigation
+- `useParams` / segments dynamiques
+- `Outlet` / nested routes
+- `useSearchParams` / query params
+- `useNavigate` / navigation programmatique
 - guards / private routes
 - active route state
-- 404
-- query params
-- redirects
+- 404 via wildcard route
+- redirects / history replace
+
+Encore a produire:
+
+- scenarios plus complexes de layouts et de redirections
 
 ### 4.5 React i18n
 
 Etat:
 
-- [ ] non commence cote bibliotheque pedagogique, malgre l'i18n produit interne
+- [x] trois lots semes
+- [ ] bibliotheque encore tres partielle
 
-Priorites:
+Deja couvert:
 
 - localiser une app React
 - `react-intl`
+- `useIntl`
 - `FormattedMessage`
-- acces locale courante
 - formatage date / nombre
 - comparaison `react-intl` / `react-i18next`
+- formatage monnaie
+- pluralisation
+
+Encore a produire:
+
+- architecture de catalogues et chargement plus large
+- workflows de traduction plus riches cote produit
 
 ### 4.6 React testing
 
 Etat:
 
-- [ ] non commence comme programme learn dedie
+- [x] trois lots semes
+- [ ] programme learn encore tres incomplet
 
-Priorites:
+Deja couvert:
 
 - Jest
 - React Testing Library
 - tests async
+- contexte
 - mocks API
-- tests de hooks
-- custom hooks
-- context
-- Redux
+- tests de hooks / `renderHook`
 - snapshot testing
+- Redux
 - shallow vs full DOM
+
+Encore a produire:
+
+- strategie de tests d'integration plus large
+- helpers de rendu partages et conventions produit
 
 ### 4.7 JavaScript debutant et theorique
 
@@ -356,16 +395,20 @@ Livrables attendus:
 
 Statut:
 
-- [ ] non commence
+- [x] demarrage effectif
+- [ ] vague complete
 
 Livrables attendus:
 
-- [ ] hub React advanced
-- [ ] hub React Router
-- [ ] hub React i18n
-- [ ] hub React testing
-- [ ] pages cours detaillees pour chaque sous-famille
+- [x] premiere collection React advanced posee
+- [x] premiere collection React Router posee
+- [x] premiere collection React i18n posee
+- [x] premiere collection React testing posee
+- [x] premieres pages cours detaillees pour chaque sous-famille
+- [x] deuxieme lot de densification livre dans les 4 familles
+- [x] troisieme lot de densification livre sur les trous les plus visibles
 - [ ] premiers exercices pratiques relies
+- [ ] densification pour atteindre un niveau comparable au benchmark
 
 ### 5.3 Vague C - JavaScript fundamentals pour candidats React
 
@@ -587,12 +630,12 @@ Etat benchmark:
 
 Categories a couvrir cote React Mentor:
 
-- [ ] fundamentals
-- [ ] hooks
-- [ ] advanced concepts
-- [ ] router
-- [ ] internationalization
-- [ ] testing
+- [x] fundamentals: socle livre, densification encore necessaire
+- [x] hooks: socle livre, densification encore necessaire
+- [x] advanced concepts: trois lots livres
+- [x] router: trois lots livres
+- [x] internationalization: trois lots livres
+- [x] testing: trois lots livres
 
 ## 8. Decision produit
 

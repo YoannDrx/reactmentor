@@ -28,6 +28,7 @@ Documents de pilotage associes:
 - [MasterDevelopmentPlan.md](./MasterDevelopmentPlan.md)
 - [BuildTracker.md](./BuildTracker.md)
 - [ContentExpansionTracker.md](./ContentExpansionTracker.md)
+- [LearningSystemImprovements.md](./LearningSystemImprovements.md)
 - [Taxonomy.md](./Taxonomy.md)
 - [ContentContract.md](./ContentContract.md)
 - [DashboardReadModel.md](./DashboardReadModel.md)
@@ -35,6 +36,7 @@ Documents de pilotage associes:
 Note:
 
 - [ContentExpansionTracker.md](./ContentExpansionTracker.md) est la source de verite pour le programme editorial `learn`, le benchmark GreatFrontEnd et le backlog detaille du contenu pedagogique a produire
+- [LearningSystemImprovements.md](./LearningSystemImprovements.md) est la source de verite pour les ameliorations cross-surface du systeme d'apprentissage, du tracking et de la partie cours
 
 ## 2. Etat des lieux du projet
 
@@ -64,13 +66,13 @@ Le projet n'est plus une simple demo, mais plusieurs zones restent inachevees:
 
 - certains residus de `demo-data.ts` subsistent encore dans la couche marketing et quelques view models de transition
 - le modele legacy monolingue reste encore present dans le schema et certains fallbacks
-- le player reste limite au format single-choice; multi-choice, code output, bug hunt et open-ended ne sont pas encore jouables
-- le builder mock s'appuie encore sur des presets single-choice et n'assemble pas encore de formats mixtes
+- le player couvre deja `SINGLE_CHOICE`, `MULTIPLE_CHOICE`, `OPEN_ENDED`, `CODE_OUTPUT` et `BUG_HUNT`, mais pas encore les formats plus riches du type `architecture choice` ou `explain this snippet`
+- le builder mock est deja mixed-format, mais la boucle cours -> mini verification -> practice ciblee -> review reste encore inachevee
 - la calibration long terme de `SkillProgress` reste a enrichir par davantage de signaux et de seuils d'acceptation
-- il n'existe pas encore d'admin de contenu exploitable, ni d'operations editoriales robustes
-- notes, bookmarks, playlists et appropriation personnelle ne sont pas encore ouvertes
-- il n'existe pas encore de billing Stripe, mais une premiere couche d'entitlements produit et de gating interne est maintenant en place
-- les reponses ouvertes guidees et les rubrics mock ne sont pas encore disponibles
+- l'admin de contenu v1 existe, mais les operations editoriales bulk, la deduplication benchmark et la QA pedagogique restent a industrialiser
+- notes, bookmarks et playlists sont ouverts, mais ne forment pas encore un vrai workspace d'apprentissage personnel et recommande
+- billing Stripe, entitlements, lifecycle emails, telemetry produit et Sentry sont poses, mais la couche ops/performance reste encore partielle
+- les reponses ouvertes guidees, la review structuree et les rubrics mock existent deja, mais leur exploitation dans les recommandations et le coaching reste encore trop limitee
 
 ### 2.3 Conclusion de l'audit
 
@@ -79,9 +81,10 @@ React Mentor n'est plus seulement une fondation credible. C'est deja une vertica
 Le chantier principal n'est donc plus "brancher les premieres vraies donnees". Le chantier principal devient:
 
 - terminer la sortie du legacy demo / monolingue
-- etendre les formats pedagogiques et les mocks au-dela du single-choice
+- densifier fortement le contenu `learn` et la profondeur pedagogique question par question
+- relier plus etroitement la bibliotheque `learn`, les sessions, la review et les recommandations
 - industrialiser la production de contenu et les operations editoriales
-- ouvrir les couches d'appropriation personnelle et, plus tard, la monetisation
+- renforcer le tracking, l'observabilite et la qualite produit sur les surfaces deja live
 
 ### 2.4 Points d'ancrage actuels du repo
 
@@ -125,6 +128,31 @@ Ce qui reste a faire, c'est d'augmenter fortement:
 - la deduplication editoriale entre sources benchmark
 
 Le plan detaille de ce programme est maintenu dans [ContentExpansionTracker.md](./ContentExpansionTracker.md).
+
+### 2.6 Etat consolide au 8 mars 2026
+
+Vue produit:
+
+- fondation SaaS solide et exploitable en public
+- vertical slices onboarding, dashboard, practice, review, mock, notes, bookmarks, playlists, billing et admin deja ouvertes
+- bibliotheque `learn` publique reelle avec collections editoriales et pages cours detaillees
+
+Vue contenu:
+
+- couverture `learn` deja semee sur React fundamentals, hooks, advanced, router, i18n, testing, JavaScript, React Native et Frontend Systems
+- benchmark GreatFrontEnd cartographie et suivi dans [ContentExpansionTracker.md](./ContentExpansionTracker.md)
+- principal manque actuel: volume, profondeur et reliaisons pedagogiques entre cours, verification, practice et review
+
+Vue plateforme:
+
+- telemetry produit, logs operationnels, lifecycle emails et Sentry sont branches
+- la matrice e2e est en place
+- principal manque actuel: monitoring performance plus profond, alertes endpoint et fermeture des derniers trous analytics
+
+Vue apprentissage:
+
+- le produit sait deja recommander, scorer, reviser et prioriser
+- il ne sait pas encore assez bien transformer la consommation de cours en plan adaptatif, en checkpoints de comprehension et en progression visible par concept
 
 ## 3. These produit
 
@@ -341,15 +369,13 @@ Mission:
 
 Routes cibles:
 
-- `/admin`
-- `/admin/modules`
-- `/admin/skills`
-- `/admin/questions`
-- `/admin/questions/new`
-- `/admin/questions/[id]`
-- `/admin/translations`
-- `/admin/reviews`
-- `/admin/import`
+- `/dashboard/admin`
+- `/dashboard/admin?tab=modules`
+- `/dashboard/admin?tab=skills`
+- `/dashboard/admin?tab=questions`
+- `/dashboard/admin?tab=imports`
+- `/dashboard/admin?tab=analytics`
+- `/dashboard/admin?tab=operations`
 
 Mission:
 
@@ -455,65 +481,75 @@ La maitrise doit dependre de:
 - confiance eventuelle
 - repetition sur plusieurs sessions
 
-## 9. Gaps techniques a adresser avant les grosses features
+## 9. Gaps techniques a adresser avant les prochaines grosses features
 
-### 9.1 Fin des donnees de demo
+### 9.1 Fin du legacy demo et cleanup final du monolingue
 
-Le dashboard doit progressivement migrer de `demo-data.ts` vers des queries server-side reelles.
+Le projet est deja majoritairement branche sur de vraies donnees, mais il reste:
 
-### 9.2 Localisation du contenu pedagogique
+- quelques residus de `demo-data.ts`
+- des champs legacy monolingues encore presents pour compatibilite
+- des zones de transition a simplifier dans certains read models
 
-Le schema Prisma actuel localise bien la chrome UI via l'i18n applicative, mais pas encore le contenu vivant.
+### 9.2 Rich content et structure pedagogique plus forte
 
-Il faudra introduire soit:
+Le contenu `learn` est deja assez riche, mais il reste encore limite par une structure essentiellement textuelle.
 
-- des tables de traduction
+Evolutions probables:
 
-ou
+- markdown / mdx ou structure bloc plus riche
+- callouts pedagogiques standardises
+- mini checks integres dans les pages cours
+- references croisees entre cours, questions et exercices
 
-- des colonnes JSON localisees
+### 9.3 Tracking d'apprentissage plus fin
 
-Recommandation:
+Le produit suit deja sessions, attempts, `QuestionProgress`, `SkillProgress`, analytics produit et evenements ops.
 
-- tables de traduction dediees pour modules, skills, questions et options
+Le gap actuel n'est plus "avoir du tracking".
+Le gap actuel est:
 
-### 9.3 Rich content
+- mieux distinguer consommation de cours, comprehension, memorisation et restitution
+- relier la lecture d'un cours a un veritable signal d'apprentissage
+- expliciter davantage le "pourquoi" derriere les recommandations et les plans de review
 
-Les champs `prompt` et `explanation` devront probablement evoluer vers:
+### 9.4 Analytics, observabilite et performance
 
-- markdown / mdx
-- ou structure JSON de blocs
+Les fondations sont la:
 
-pour supporter:
+- `ProductAnalyticsEvent`
+- `OperationalEvent`
+- Sentry
+- monitoring jobs/webhooks
+- matrice e2e CI
 
-- snippets de code
-- listes
-- callouts
-- references
-- exemples compares
+Les vrais gaps restants sont:
 
-### 9.4 Tracking produit
+- monitoring performance plus pousse
+- alertes endpoint / cron plus robustes
+- quelques trous analytics de surface
+- meilleure lecture produit de l'efficacite pedagogique
 
-Il manque encore une couche d'evenements produit.
-Il faudra suivre:
+### 9.5 Industrialisation editoriale
 
-- session started
-- question answered
-- answer corrected
-- review completed
-- mock completed
-- conversion events
+L'admin contenu v1 existe deja, mais il faut encore:
+
+- batcher la production et la QA
+- dedupliquer proprement le benchmark externe
+- mieux piloter la couverture par famille, niveau et format
+- faciliter les mises a jour editoriales a grand volume
 
 ## 10. Phases de roadmap
 
-| Phase   | Objectif                    | Resultat concret                                                    |
-| ------- | --------------------------- | ------------------------------------------------------------------- |
-| Phase 0 | Fondation deja en place     | landing, auth, i18n UI, dashboard shell, schema, tests auth, CI     |
-| Phase 1 | Rendre le produit reel      | onboarding, vrai catalogue, vraies requetes, vrai moteur de session |
-| Phase 2 | Installer la pedagogie      | player de questions, corrections profondes, review queue, mastery   |
-| Phase 3 | Installer la valeur premium | mock interviews, notes, recommandations, plan de revision           |
-| Phase 4 | Industrialiser le contenu   | admin, import, traduction, QA editoriale, versioning                |
-| Phase 5 | Activer le business         | billing, emails lifecycle, acquisition SEO, analytics               |
+| Phase   | Objectif                                    | Resultat concret                                                    | Etat au 8 mars 2026 |
+| ------- | ------------------------------------------- | ------------------------------------------------------------------- | ------------------- |
+| Phase 0 | Fondation deja en place                     | landing, auth, i18n UI, dashboard shell, schema, tests auth, CI     | DONE                |
+| Phase 1 | Rendre le produit reel                      | onboarding, vrai catalogue, vraies requetes, vrai moteur de session | DONE                |
+| Phase 2 | Installer la pedagogie                      | player de questions, corrections profondes, review queue, mastery   | DONE                |
+| Phase 3 | Installer la valeur premium                 | mock interviews, notes, recommandations, plan de revision           | DONE                |
+| Phase 4 | Industrialiser le contenu                   | admin, import, traduction, QA editoriale, versioning                | PARTIAL             |
+| Phase 5 | Activer le business et la couche plateforme | billing, emails lifecycle, acquisition SEO, analytics               | PARTIAL             |
+| Phase 6 | Renforcer le learning system                | cours relies au tracking, checkpoints, plans adaptatifs, densite    | IN_PROGRESS         |
 
 ## 11. Backlog detaille par epic et tickets
 
@@ -1174,7 +1210,8 @@ Etat au 8 mars 2026:
 
 - couche d'entitlements interne posee
 - gating modules, mocks et playlists visible dans le dashboard
-- Stripe et lifecycle billing encore absents
+- Stripe, lifecycle emails et gating premium sont deja relies
+- restent surtout l'exploitation reelle en production, les parcours upgrade plus riches et le monitoring billing
 
 ### RM-1002 - Billing Stripe [P1]
 
@@ -1219,6 +1256,14 @@ Criteres d'acceptation:
 - emails localises
 - segmentation simple
 - desactivation possible
+
+Etat repo au 8 mars 2026:
+
+- provider Resend branche serveur
+- welcome email localise declenche a la fin de l'onboarding
+- job protege `review-due-reminders` disponible pour les rappels de review
+- opt-out lifecycle persistant dans les settings
+- weekly summary, nudge inactivite et upgrade prompt restent a produire
 
 ## EPIC RM-1100 - Marketing et acquisition
 
@@ -1301,8 +1346,11 @@ Etat repo au 8 mars 2026:
 
 - journal structure `OperationalEvent` en base
 - monitoring admin v1 pour webhook Stripe et imports contenu
+- monitoring admin et jobs lifecycle etendu aux emails Resend et au batch review reminder
 - traces d'erreur ajoutees sur onboarding, sessions, billing webhook et import admin
-- restent Sentry ou equivalent, monitoring performance et couverture des jobs emails
+- Sentry Next.js est maintenant branche au runtime App Router avec `instrumentation.ts`, capture client/server/edge et `global-error`
+- la matrice e2e CI repo passe maintenant de bout en bout
+- restent surtout le monitoring performance plus profond, les alertes endpoint et quelques trous analytics de surface
 
 Besoin:
 
@@ -1401,25 +1449,18 @@ Prevoir une structure dediee:
 
 Preparer la couche billing sans la coupler trop tot au coeur pedagogique.
 
-## 13. Ordre de developpement recommande
+## 13. Ordre de developpement recommande a partir de maintenant
 
-Si on optimise pour le ratio valeur / effort, l'ordre recommande est:
+Si on optimise pour le ratio valeur / effort depuis l'etat actuel du repo, l'ordre recommande devient:
 
-1. onboarding utilisateur et preferences
-2. vraies requetes dashboard
-3. catalogue reel des modules
-4. page detail module
-5. session builder
-6. question player
-7. correction profonde
-8. review queue reelle
-9. engine de spaced repetition
-10. progression reelle
-11. templates mock
-12. notes et bookmarks
-13. admin de contenu
-14. localisation du contenu
-15. billing et lifecycle
+1. densifier fortement `learn` jusqu'a une couverture benchmark credibe sur React, JavaScript et Frontend Systems
+2. relier chaque cours a des mini verifications, de la pratique ciblee et des parcours associes
+3. enrichir le tracking d'apprentissage pour distinguer lecture, comprehension, restitution et rechute
+4. transformer notes, bookmarks, playlists et recovery plans en vrai workspace personnel d'apprentissage
+5. industrialiser l'admin contenu pour la production en volume, la QA pedagogique et la deduplication benchmark
+6. fermer les derniers gaps analytics, monitoring perf et alertes endpoint
+7. renforcer billing/lifecycle/retenion avec des parcours d'upgrade et de reactivation plus intelligents
+8. ouvrir plus tard les couches SEO/resources/lead magnet quand la densite pedagogique est suffisante
 
 ## 14. Ce qu'il faut explicitement ne pas faire trop tot
 
@@ -1469,3 +1510,7 @@ C'est un produit ou:
 En une phrase:
 
 React Mentor doit devenir le produit qui transforme des lacunes diffuses en preparation front-end structuree, mesurable et defendable en entretien.
+
+Document associe pour le prochain niveau d'execution:
+
+- [LearningSystemImprovements.md](./LearningSystemImprovements.md)

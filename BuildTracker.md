@@ -15,12 +15,13 @@ Regle de travail:
 
 ## 2. Statut global
 
-- current_phase: `Lot 12 in progress`
-- current_focus: `la couche telemetry produit est persistee, le monitoring admin v1 existe et les flux critiques sont instrumentes; restent le vendor error tracking, le monitoring email/jobs et la matrice e2e`
+- current_phase: `Lot 13 in progress (Lot 12 reste partiel)`
+- current_focus: `densification de la bibliotheque learn, definition du prochain niveau du learning system et fermeture progressive des derniers trous analytics/perf`
 - last_completed_lot: `Lot 11`
-- active_ticket: `L12-03 observabilite vendor / L12-05 matrice de tests`
+- active_ticket: `L13-01 densification contenu / L13-03 tracking d'apprentissage`
 - continuation_plan: [ContinuationPlan.md](./ContinuationPlan.md)
 - master_plan: [MasterDevelopmentPlan.md](./MasterDevelopmentPlan.md)
+- learning_system_plan: [LearningSystemImprovements.md](./LearningSystemImprovements.md)
 
 ## 3. Statut des lots
 
@@ -39,6 +40,7 @@ Regle de travail:
 | 10  | Admin et operations contenu       | DONE        | guard RBAC `admin`/`editor`, route `/dashboard/admin`, create/edit forms modules/skills/questions/pitfall tags, options bilingues pour formats fermes, filtres d'inventaire, statuts FR/EN, import/export JSON seed-compatible et quality dashboard editorial relies |
 | 11  | Billing et entitlements           | DONE        | schema `UserEntitlement`, provision starter par defaut, gating modules/mocks/playlists, recap settings, checkout Stripe, billing portal et webhook de synchronisation abonnement relies                                                                   |
 | 12  | Growth, analytics et plateforme   | PARTIAL     | telemetry produit persistee, funnel admin et monitoring webhook/import v1 relies; observabilite vendor, jobs lifecycle et matrice e2e encore ouverts                                                                                                        |
+| 13  | Learning system et content scale  | IN_PROGRESS | bibliotheque `learn` publique en forte densification, plusieurs vagues seedees sur React/JS/Frontend Systems et travail en cours sur le lien cours -> tracking -> practice -> review                                                                        |
 
 ## 4. Statut des tickets immediats
 
@@ -119,11 +121,31 @@ Regle de travail:
 | L11-04 | Gating produit premium                                | DONE    | protections server-side dans [src/features/sessions/session.action.ts](./src/features/sessions/session.action.ts) et [src/features/playlists/playlist.action.ts](./src/features/playlists/playlist.action.ts), surfaces UI lisibles dans [src/app/dashboard/modules/page.tsx](./src/app/dashboard/modules/page.tsx), [src/app/dashboard/modules/[slug]/page.tsx](./src/app/dashboard/modules/[slug]/page.tsx), [src/app/dashboard/mock-interviews/page.tsx](./src/app/dashboard/mock-interviews/page.tsx), [src/app/dashboard/playlists/page.tsx](./src/app/dashboard/playlists/page.tsx), [src/app/dashboard/playlists/[id]/page.tsx](./src/app/dashboard/playlists/[id]/page.tsx) et [src/app/dashboard/settings/page.tsx](./src/app/dashboard/settings/page.tsx) |
 | L12-01 | Instrumenter les evenements critiques                 | PARTIAL | ajout de `ProductAnalyticsEvent`, instrumentation signup email, onboarding, creation/completion session, answers, bookmarks, notes, upgrade click et abonnements Stripe dans [src/features/telemetry/telemetry.ts](./src/features/telemetry/telemetry.ts), [src/features/sessions/session.action.ts](./src/features/sessions/session.action.ts), [src/features/onboarding/onboarding.action.ts](./src/features/onboarding/onboarding.action.ts), [src/features/bookmarks/bookmark.action.ts](./src/features/bookmarks/bookmark.action.ts), [src/features/notes/note.action.ts](./src/features/notes/note.action.ts), [src/features/billing/billing.action.ts](./src/features/billing/billing.action.ts) et [src/app/api/billing/stripe-webhook/route.ts](./src/app/api/billing/stripe-webhook/route.ts) |
 | L12-02 | Funnel et activation                                  | DONE    | projection admin du funnel signup -> onboarding -> practice -> mock et lecture des evenements recents dans [src/features/telemetry/admin-telemetry-read-model.ts](./src/features/telemetry/admin-telemetry-read-model.ts) et [src/app/dashboard/admin/page.tsx](./src/app/dashboard/admin/page.tsx) |
-| L12-03 | Error tracking et logs structures                     | PARTIAL | ajout de `OperationalEvent` et journal structure sur onboarding/session/billing/import dans [src/features/telemetry/telemetry.ts](./src/features/telemetry/telemetry.ts), [src/features/onboarding/onboarding.action.ts](./src/features/onboarding/onboarding.action.ts), [src/features/sessions/session.action.ts](./src/features/sessions/session.action.ts), [src/features/admin/admin-content.action.ts](./src/features/admin/admin-content.action.ts) et [src/app/api/billing/stripe-webhook/route.ts](./src/app/api/billing/stripe-webhook/route.ts), sans Sentry ni monitoring performance pour l'instant |
-| L12-04 | Monitoring jobs et webhooks                           | PARTIAL | monitoring des imports admin et du webhook Stripe remonte dans l'admin, mais les emails lifecycle et autres jobs de fond restent a instrumenter |
-| L12-05 | Matrice de tests complete                             | PARTIAL | socle unitaire, build et nouvel e2e settings passes, mais la couverture e2e onboarding/review/billing et les integrations server actions restent a pousser |
+| L12-03 | Error tracking et logs structures                     | PARTIAL | `OperationalEvent` reste la base locale et Sentry Next.js est maintenant branche via [next.config.ts](./next.config.ts), [src/instrumentation.ts](./src/instrumentation.ts), [src/instrumentation-client.ts](./src/instrumentation-client.ts), [src/sentry.server.config.ts](./src/sentry.server.config.ts), [src/sentry.edge.config.ts](./src/sentry.edge.config.ts) et [src/app/global-error.tsx](./src/app/global-error.tsx); restent le monitoring perf plus pousse et les alertes endpoint |
+| L12-04 | Monitoring jobs et webhooks                           | DONE    | monitoring des imports admin et du webhook Stripe deja relies, emails lifecycle Resend et job `review_due_reminders` instrumentes dans [src/features/emails/lifecycle-email.ts](./src/features/emails/lifecycle-email.ts), [src/app/api/jobs/review-due-reminders/route.ts](./src/app/api/jobs/review-due-reminders/route.ts), [src/features/telemetry/admin-telemetry-read-model.ts](./src/features/telemetry/admin-telemetry-read-model.ts) et [src/app/dashboard/admin/page.tsx](./src/app/dashboard/admin/page.tsx) |
+| L12-05 | Matrice de tests complete                             | DONE    | suites Vitest completes, lint, build et matrice Playwright CI complete passent apres realignement des specs premium/practice/mock dans [e2e/test-helpers.ts](./e2e/test-helpers.ts), [e2e/practice.spec.ts](./e2e/practice.spec.ts), [e2e/mock-interviews.spec.ts](./e2e/mock-interviews.spec.ts) et [e2e/settings.spec.ts](./e2e/settings.spec.ts) |
+| L13-01 | Densifier la bibliotheque `learn`                     | IN_PROGRESS | vagues editoriales successives sur React fundamentals/hooks/advanced/router/i18n/testing, JavaScript et Frontend Systems pilotees par [ContentExpansionTracker.md](./ContentExpansionTracker.md) et [prisma/seed.ts](./prisma/seed.ts) |
+| L13-02 | Relier cours, pratique et review                      | TODO    | il faut encore ajouter mini checks, exercices relies, parcours associes et transitions plus visibles depuis `learn` vers practice/review |
+| L13-03 | Renforcer le tracking d'apprentissage                 | IN_PROGRESS | les bases `QuestionProgress`, `SkillProgress`, telemetry et recovery existent; restent les signaux de consommation de cours, comprehension, restitution et plans adaptatifs, formalises dans [LearningSystemImprovements.md](./LearningSystemImprovements.md) |
+| L13-04 | Industrialiser la QA pedagogique et editoriale        | TODO    | l'admin contenu v1 existe, mais la production en volume, la dedup benchmark, la freshness review et les garde-fous QA restent a renforcer |
 
 ## 5. Journal de travail
+
+### 2026-03-08 (learn content scale and roadmap refresh)
+
+Travail effectue:
+
+- densification successive de [prisma/seed.ts](./prisma/seed.ts) sur les familles `React advanced`, `React Router`, `React i18n` et `React testing`, avec nouvelles questions/cours bilingues et raccordement aux collections `learn`
+- enrichissement du seed sur les sujets `StrictMode`, hydration, code splitting, SSR/static generation, `useParams`, `useNavigate`, guards, route active, 404, history `replace`, `useIntl`, formatage nombre/monnaie, pluralisation, Redux testing et shallow vs full DOM
+- realignement de [ContentExpansionTracker.md](./ContentExpansionTracker.md) pour refleter l'etat reel du contenu deja livre, les trous restants et les vagues editoriales en cours
+- refonte de [Roadmap.md](./Roadmap.md) pour consolider l'etat du produit, corriger les zones devenues fausses et expliciter les priorites restantes
+- ajout de [LearningSystemImprovements.md](./LearningSystemImprovements.md) pour cadrer les ameliorations du systeme d'apprentissage, du tracking et de la partie cours
+
+Validation effectuee:
+
+- `pnpm prisma:seed`
+- `pnpm exec vitest run __tests__/content-repository.test.ts`
+- revue documentaire manuelle
 
 ### 2026-03-08
 
@@ -225,6 +247,48 @@ Validation effectuee:
 - `pnpm exec vitest run __tests__/telemetry.test.ts __tests__/admin-telemetry-read-model.test.ts`
 - `pnpm exec playwright test e2e/settings.spec.ts`
 - `pnpm typecheck`
+
+### 2026-03-08 (Sentry observability)
+
+Travail effectue:
+
+- ajout de la dependance `@sentry/nextjs` dans [package.json](./package.json) et [pnpm-lock.yaml](./pnpm-lock.yaml)
+- branchement de Sentry sur Next.js via [next.config.ts](./next.config.ts), [src/instrumentation.ts](./src/instrumentation.ts), [src/instrumentation-client.ts](./src/instrumentation-client.ts), [src/sentry.server.config.ts](./src/sentry.server.config.ts) et [src/sentry.edge.config.ts](./src/sentry.edge.config.ts)
+- ajout d'un `global-error` racine pour reporter les crashes App Router dans [src/app/global-error.tsx](./src/app/global-error.tsx)
+- ajout d'un helper de config dormant sans DSN dans [src/lib/sentry.ts](./src/lib/sentry.ts) et extension de l'env dans [src/lib/env.ts](./src/lib/env.ts), [.env.example](./.env.example) et [README.md](./README.md)
+- branchement de `Sentry.captureException(...)` dans les `catch` qui avalent aujourd'hui l'erreur dans [src/features/onboarding/onboarding.action.ts](./src/features/onboarding/onboarding.action.ts), [src/features/settings/settings.action.ts](./src/features/settings/settings.action.ts), [src/app/dashboard/settings/page.tsx](./src/app/dashboard/settings/page.tsx), [src/features/sessions/session.action.ts](./src/features/sessions/session.action.ts), [src/features/admin/admin-content.action.ts](./src/features/admin/admin-content.action.ts) et [src/app/api/billing/stripe-webhook/route.ts](./src/app/api/billing/stripe-webhook/route.ts)
+- ajout du test [__tests__/sentry-config.test.ts](./__tests__/sentry-config.test.ts) pour verrouiller le mode dormant sans DSN et les options de base quand Sentry est configure
+
+Validation effectuee:
+
+- `pnpm exec vitest run __tests__/sentry-config.test.ts`
+- `pnpm lint`
+- `pnpm build`
+
+### 2026-03-08 (Lifecycle emails and review reminder jobs)
+
+Travail effectue:
+
+- ajout de la dependance `resend` dans [package.json](./package.json) et [pnpm-lock.yaml](./pnpm-lock.yaml), puis creation du client serveur [src/lib/resend.ts](./src/lib/resend.ts)
+- extension de [prisma/schema.prisma](./prisma/schema.prisma) avec `UserPreference.lifecycleEmailsEnabled` et migration [prisma/migrations/20260308193756_lifecycle_email_preferences/migration.sql](./prisma/migrations/20260308193756_lifecycle_email_preferences/migration.sql)
+- creation de la couche [src/features/emails/lifecycle-email.ts](./src/features/emails/lifecycle-email.ts) pour les templates localises, l'envoi welcome, le batch `review_due_email`, la resolution de locale et les logs operationnels associes
+- branchement de l'email welcome depuis [src/features/onboarding/onboarding.action.ts](./src/features/onboarding/onboarding.action.ts)
+- ajout du job serveur protege [src/app/api/jobs/review-due-reminders/route.ts](./src/app/api/jobs/review-due-reminders/route.ts) avec secret `LIFECYCLE_JOB_SECRET`
+- extension des settings dans [src/features/settings/settings-form.tsx](./src/features/settings/settings-form.tsx), [src/features/settings/settings.action.ts](./src/features/settings/settings.action.ts), [src/features/settings/settings.validation.ts](./src/features/settings/settings.validation.ts) et [src/features/settings/user-preferences.ts](./src/features/settings/user-preferences.ts) pour l'opt-out lifecycle persistant
+- extension du monitoring admin dans [src/features/telemetry/admin-telemetry-read-model.ts](./src/features/telemetry/admin-telemetry-read-model.ts) et [src/app/dashboard/admin/page.tsx](./src/app/dashboard/admin/page.tsx) avec compteurs `email.lifecycle` et `email.lifecycle.job`
+- extension des messages FR/EN dans [src/i18n/messages/fr.ts](./src/i18n/messages/fr.ts) et [src/i18n/messages/en.ts](./src/i18n/messages/en.ts), de [.env.example](./.env.example) et de [README.md](./README.md)
+- ajout de la couverture [__tests__/lifecycle-email.test.ts](./__tests__/lifecycle-email.test.ts), extension de [__tests__/admin-telemetry-read-model.test.ts](./__tests__/admin-telemetry-read-model.test.ts) et extension de [e2e/settings.spec.ts](./e2e/settings.spec.ts)
+
+Validation effectuee:
+
+- `pnpm prisma migrate dev --name lifecycle_email_preferences`
+- `pnpm exec vitest run __tests__/lifecycle-email.test.ts __tests__/admin-telemetry-read-model.test.ts`
+- `pnpm typecheck`
+- `pnpm lint`
+- `pnpm build`
+- `pnpm test:ci`
+- `CI=TRUE HEADLESS=TRUE PORT=3101 PLAYWRIGHT_TEST_BASE_URL=http://127.0.0.1:3101 pnpm exec playwright test e2e/settings.spec.ts`
+- `CI=TRUE HEADLESS=TRUE PORT=3108 PLAYWRIGHT_TEST_BASE_URL=http://127.0.0.1:3108 pnpm test:e2e:ci`
 
 ### 2026-03-07
 

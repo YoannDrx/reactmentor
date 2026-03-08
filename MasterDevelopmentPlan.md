@@ -1,6 +1,6 @@
 # React Mentor Master Development Plan
 
-Derniere mise a jour: 7 mars 2026
+Derniere mise a jour: 8 mars 2026
 
 Documents parents:
 
@@ -8,6 +8,8 @@ Documents parents:
 - [ExecutionPlan.md](./ExecutionPlan.md)
 - [BuildTracker.md](./BuildTracker.md)
 - [ContinuationPlan.md](./ContinuationPlan.md)
+- [ContentExpansionTracker.md](./ContentExpansionTracker.md)
+- [LearningSystemImprovements.md](./LearningSystemImprovements.md)
 - [Taxonomy.md](./Taxonomy.md)
 - [ContentContract.md](./ContentContract.md)
 - [DashboardReadModel.md](./DashboardReadModel.md)
@@ -38,6 +40,7 @@ Le plan suppose:
 - un mode de delivery founder-led avec une vitesse d'execution elevee
 - une priorite forte sur le coeur pedagogique avant la monetisation
 - une production de contenu progressive, pas un import massif d'un coup
+- une bibliotheque `learn` deja ouverte qu'il faut maintenant densifier et mieux relier au reste du produit
 - une exigence de coherence entre Prisma, i18n, seed, tests et UX
 
 Regle forte:
@@ -53,26 +56,26 @@ Regle forte:
 - dashboard overview/progress/review/mock relies aux vraies aggregations
 - catalogue modules et detail module relies au repository localise
 - moteur de session pour `PRACTICE`, `REVIEW` et `MOCK_INTERVIEW`
-- player single-choice stable
+- player multi-format v1 stable sur `SINGLE_CHOICE`, `MULTIPLE_CHOICE`, `OPEN_ENDED`, `CODE_OUTPUT` et `BUG_HUNT`
 - progression `QuestionProgress` et `SkillProgress` persistante
 - mocks v1 avec timer, expiration, rapport et historique reel
+- bibliotheque publique `learn` avec collections editoriales et pages cours detaillees
+- notes, bookmarks, playlists et workspace personnel v1 exposes
+- admin contenu v1 exploitable via `/dashboard/admin`
+- billing Stripe, entitlements, lifecycle email, telemetry produit et Sentry relies
 - i18n FR/EN UI et contenu
-- seed bilingue initial
+- seed bilingue deja significativement enrichi sur React, JavaScript, React Native et Frontend Systems
 - tests domaine, integration et e2e sur les slices principales
 
 ### 3.2 Ce qui est encore partiel ou absent
 
 - cleanup legacy monolingue incomplet
-- statuts editoriaux encore en `String` sur les entites de contenu
-- pitfall tags contractuellement prevus mais absents du schema
-- `Attempt` encore modele uniquement autour de `selectedOptionIds`
-- player encore pense pour un seul format joue
-- builder encore contraint aux questions `SINGLE_CHOICE`
-- calibration long terme de la progression encore partielle
-- admin contenu inexistant
-- bookmarks et notes non exposes en produit
-- playlists absentes
-- entitlements, billing, analytics, observabilite et lifecycle absents
+- structure pedagogique des cours encore tres textuelle et peu interactive
+- tracking d'apprentissage encore trop centre sur la tentative plutot que sur la comprehension, la restitution et la rechute
+- recovery plans et recommandations encore pas assez relies a la consommation des cours
+- QA editoriale, deduplication benchmark et operations bulk encore partielles
+- analytics de performance et mesure de l'efficacite pedagogique encore incomplets
+- entonnoirs de retention, reactivation et usage long terme encore a renforcer
 
 ### 3.3 Dettes structurelles a anticiper
 
@@ -80,9 +83,10 @@ Ces dettes doivent apparaitre dans le plan, meme si elles ne sont pas visibles e
 
 - migration des `status` string vers enums Prisma
 - enrichissement du schema contenu avec metadonnees editoriales
-- redesign du payload d'attempt pour les formats non fermes
-- preparation a du rich content ou markdown structure pour `prompt` et `explanation`
+- enrichissement du tracking pour distinguer lecture, comprehension, restitution et rechute
+- preparation a du rich content ou markdown structure pour `prompt`, `explanation` et `lessonBody`
 - separation claire entre previews marketing et donnees produit authentifiees
+- mesure plus fiable des recommandations, des plans de recovery et de l'efficacite du contenu
 
 ## 4. Contraintes transverses
 
@@ -118,15 +122,14 @@ Pour tout nouveau format de question:
 Ordre structurel recommande:
 
 1. cleanup legacy + hardening schema contenu
-2. refonte du modele de reponse et du player
-3. ouverture des nouveaux formats jouables
-4. recalibrage de la progression et de la review
-5. mocks mixed-format et scorecards
-6. bookmarks et notes
-7. admin contenu et operations editoriales
-8. lifecycle, analytics et observabilite
-9. billing et entitlements
-10. growth, conversion et SEO
+2. content scale sur `learn`
+3. boucle cours -> checkpoint -> pratique -> review
+4. tracking d'apprentissage et recommandations par concept
+5. workspace personnel d'apprentissage
+6. admin contenu, QA editoriale et deduplication benchmark
+7. analytics pedagogiques, observabilite et performance
+8. retention, lifecycle et billing intelligence
+9. growth, conversion et SEO
 
 Travaux parallelisables:
 
@@ -135,13 +138,28 @@ Travaux parallelisables:
 - durcissement des tests
 - pre-travail analytics/observabilite
 - spec admin contenu
+- instrumentation learning / recommendation
 
 Travaux a ne pas lancer trop tot:
 
-- billing
-- admin riche
-- open-ended pleinement note
-- lifecycle avance
+- SEO/growth a grande echelle tant que la densite pedagogique n'est pas suffisante
+- automatisations "IA" trop ambitieuses si les boucles pedagogiques de base restent floues
+- sophistication retention au-dela du signal pedagogique reel
+
+## 4.1 Phase active au 8 mars 2026
+
+Le repo n'est plus dans une phase "ouvrir les premieres vertical slices".
+La phase active est maintenant:
+
+- densifier le contenu `learn`
+- augmenter la profondeur pedagogique des reponses et mini-cours
+- mieux relier contenu, pratique, review et recommandations
+- rendre le tracking d'apprentissage plus lisible et plus utile
+
+Documents directeurs de cette phase:
+
+- [ContentExpansionTracker.md](./ContentExpansionTracker.md)
+- [LearningSystemImprovements.md](./LearningSystemImprovements.md)
 
 ## 6. Macro-plan par phases
 

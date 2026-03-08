@@ -1,6 +1,6 @@
 # React Mentor Continuation Plan
 
-Derniere mise a jour: 7 mars 2026
+Derniere mise a jour: 8 mars 2026
 
 Document parent:
 
@@ -8,6 +8,8 @@ Document parent:
 - [ExecutionPlan.md](./ExecutionPlan.md)
 - [BuildTracker.md](./BuildTracker.md)
 - [MasterDevelopmentPlan.md](./MasterDevelopmentPlan.md)
+- [ContentExpansionTracker.md](./ContentExpansionTracker.md)
+- [LearningSystemImprovements.md](./LearningSystemImprovements.md)
 
 ## 1. Role du document
 
@@ -33,34 +35,68 @@ Le coeur produit existe deja en version defendable:
 - dashboard, review, progress et mocks relies a Prisma
 - moteur de session live pour `PRACTICE`, `REVIEW` et `MOCK_INTERVIEW`
 - progression persistante `QuestionProgress` et `SkillProgress`
+- bibliotheque publique `learn` avec collections et pages cours detaillees
+- notes, bookmarks, playlists, billing Stripe, lifecycle email, telemetry et admin contenu v1 deja ouverts
 - i18n FR/EN et socle de tests deja en place
 
 Le chemin recommande n'est donc plus de "rajouter des pages".
 Le vrai chemin critique devient:
 
 1. sortir totalement du legacy demo et monolingue
-2. ouvrir le moteur pedagogique au-dela du `SINGLE_CHOICE`
-3. rendre la progression plus robuste et plus explicable
-4. faire des mocks multi-formats vraiment utiles
-5. ouvrir l'appropriation personnelle
-6. construire un admin contenu leger mais exploitable
+2. densifier fortement le contenu `learn`
+3. relier cours, verification, pratique, review et recommandations
+4. rendre la progression plus robuste, plus explicable et plus visible par concept
+5. transformer notes, bookmarks et playlists en vrai workspace d'apprentissage
+6. industrialiser la production, la QA et la maintenance editoriale
 
 ## 3. Priorites absolues
 
 ### P0
 
 - clore la migration legacy contenu/i18n
-- finaliser l'architecture multi-format du player
-- recalibrer proprement la progression par question et par skill
-- etendre les mocks a des compositions mixtes
-- poser le contrat fonctionnel de l'admin contenu
+- densifier la bibliotheque `learn` sur React, JavaScript et Frontend Systems
+- brancher des checkpoints de comprehension et de pratique autour des cours
+- enrichir le tracking d'apprentissage au-dela de la seule tentative
+- clarifier les recommandations et recovery plans par concept
 
 ### P1
 
-- bookmarks et notes
-- playlists par role cible ou sprint d'entretien
-- analytics produit et observabilite
-- billing et entitlements
+- workspace personnel d'apprentissage
+- QA editoriale, deduplication benchmark et production en volume
+- analytics pedagogiques et observabilite plus fines
+- billing, lifecycle et retention plus intelligents
+
+## 3.1 Ce qui est deja livre et qu'il ne faut plus planifier comme "a faire"
+
+- player multi-format v1 deja livre sur `SINGLE_CHOICE`, `MULTIPLE_CHOICE`, `OPEN_ENDED`, `CODE_OUTPUT` et `BUG_HUNT`
+- mocks mixed-format deja relies avec timer, reporting et review
+- notes, bookmarks et playlists deja exposes
+- admin contenu v1 deja exploitable via `/dashboard/admin`
+- entitlements, checkout Stripe, portal billing et lifecycle email deja relies
+
+## 3.2 Chantiers actifs recommandes a partir de maintenant
+
+### A. Content scale
+
+- produire des lots editoriaux plus denses dans `prisma/seed.ts`
+- suivre la couverture benchmark dans [ContentExpansionTracker.md](./ContentExpansionTracker.md)
+- prioriser React advanced, Router, i18n, testing, JavaScript coding et Frontend Systems
+
+### B. Learning system
+
+- relier chaque cours a un mini checkpoint, une pratique ciblee et un plan de recovery
+- faire remonter des signaux distincts de lecture, comprehension, restitution et rechute
+- expliciter davantage les recommandations du dashboard
+
+### C. Learning workspace
+
+- faire de notes, bookmarks, playlists et recovery plans une surface personnelle coherente
+- permettre de sauvegarder des parcours, des questions a retravailler et des points de blocage
+
+### D. Editorial operations
+
+- industrialiser QA, deduplication benchmark, relecture et maintenance du contenu
+- mieux piloter le coverage par niveau, format, surface et famille
 
 ## 4. Chantiers recommandes
 
