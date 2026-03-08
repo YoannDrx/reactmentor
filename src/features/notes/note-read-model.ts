@@ -100,6 +100,7 @@ export async function getNoteReadModel(params: {
     return {
       noteId: note.id,
       questionId: note.questionId,
+      questionSlug: note.question.slug,
       prompt: localizedQuestion.prompt,
       skill: localizedSkill.title,
       module: localizedModule.title,

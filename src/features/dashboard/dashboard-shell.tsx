@@ -10,13 +10,16 @@ import { useI18n } from "@/i18n/provider";
 import { cn } from "@/lib/utils";
 import {
   BookOpenCheck,
+  BookText,
   Bookmark,
   ChevronLeft,
   NotebookText,
   Gauge,
   LayoutDashboard,
+  ListChecks,
   Menu,
   Settings,
+  ShieldCheck,
   Sparkles,
   Target,
   UserRound,
@@ -29,11 +32,14 @@ import { useState } from "react";
 const navigationIcons = {
   overview: LayoutDashboard,
   modules: BookOpenCheck,
+  learn: BookText,
   bookmarks: Bookmark,
   notes: NotebookText,
+  playlists: ListChecks,
   progress: Gauge,
   mockInterviews: Target,
   review: Sparkles,
+  admin: ShieldCheck,
   settings: Settings,
 } as const;
 
@@ -46,6 +52,7 @@ export function DashboardShell({
   user: {
     name: string;
     email: string;
+    isContentAdmin: boolean;
   };
   sidebarSnapshot: {
     dueReviews: number;
@@ -80,6 +87,11 @@ export function DashboardShell({
       ...sidebar.nav.modules,
     },
     {
+      href: "/learn",
+      icon: navigationIcons.learn,
+      ...sidebar.nav.learn,
+    },
+    {
       href: "/dashboard/bookmarks",
       icon: navigationIcons.bookmarks,
       ...sidebar.nav.bookmarks,
@@ -88,6 +100,11 @@ export function DashboardShell({
       href: "/dashboard/notes",
       icon: navigationIcons.notes,
       ...sidebar.nav.notes,
+    },
+    {
+      href: "/dashboard/playlists",
+      icon: navigationIcons.playlists,
+      ...sidebar.nav.playlists,
     },
     {
       href: "/dashboard/progress",
@@ -104,6 +121,15 @@ export function DashboardShell({
       icon: navigationIcons.review,
       ...sidebar.nav.review,
     },
+    ...(user.isContentAdmin
+      ? [
+          {
+            href: "/dashboard/admin",
+            icon: navigationIcons.admin,
+            ...sidebar.nav.admin,
+          },
+        ]
+      : []),
     {
       href: "/dashboard/settings",
       icon: navigationIcons.settings,
@@ -115,18 +141,23 @@ export function DashboardShell({
     "/dashboard/modules": pages.modules,
     "/dashboard/bookmarks": pages.bookmarks,
     "/dashboard/notes": pages.notes,
+    "/dashboard/playlists": pages.playlists,
     "/dashboard/progress": pages.progress,
     "/dashboard/mock-interviews": pages.mockInterviews,
     "/dashboard/review": pages.review,
+    "/dashboard/admin": pages.admin,
     "/dashboard/session": pages.session,
     "/dashboard/settings": pages.settings,
   } as const;
-  const currentMeta =
-    pathname.startsWith("/dashboard/modules/")
-      ? pageMeta["/dashboard/modules"]
-      : pathname.startsWith("/dashboard/session/")
-        ? pageMeta["/dashboard/session"]
-      : pageMeta[pathname as keyof typeof pageMeta] ?? pageMeta["/dashboard"];
+  const currentMeta = pathname.startsWith("/dashboard/modules/")
+    ? pageMeta["/dashboard/modules"]
+    : pathname.startsWith("/dashboard/playlists/")
+      ? pageMeta["/dashboard/playlists"]
+    : pathname.startsWith("/dashboard/admin")
+      ? pageMeta["/dashboard/admin"]
+    : pathname.startsWith("/dashboard/session/")
+      ? pageMeta["/dashboard/session"]
+      : (pageMeta[pathname as keyof typeof pageMeta] ?? pageMeta["/dashboard"]);
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window === "undefined") {
       return false;
@@ -303,8 +334,12 @@ export function DashboardShell({
                 <UserRound className="size-5" />
               </div>
               <div className={cn("min-w-0", collapsed && "hidden")}>
-                <div className="truncate font-medium text-white">{user.name}</div>
-                <div className="truncate text-sm text-slate-400">{user.email}</div>
+                <div className="truncate font-medium text-white">
+                  {user.name}
+                </div>
+                <div className="truncate text-sm text-slate-400">
+                  {user.email}
+                </div>
               </div>
             </div>
           </div>

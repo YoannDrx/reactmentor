@@ -124,6 +124,12 @@ export default async function DashboardNotesPage() {
                     variant="secondary"
                   />
                   <Link
+                    href={`/learn/questions/${item.questionSlug}`}
+                    className={buttonVariants({ variant: "secondary", size: "sm" })}
+                  >
+                    {notes.openLessonAction}
+                  </Link>
+                  <Link
                     href={`/dashboard/modules/${item.moduleSlug}`}
                     className={buttonVariants({ variant: "secondary", size: "sm" })}
                   >

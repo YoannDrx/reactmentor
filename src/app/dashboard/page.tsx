@@ -7,20 +7,21 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  getLocalizedMockTemplates,
-} from "@/features/dashboard/dashboard-view-model";
+import { getLocalizedMockTemplates } from "@/features/dashboard/dashboard-view-model";
 import {
   SkillRadarChart,
   WeeklyMomentumChart,
 } from "@/features/dashboard/dashboard-charts";
+import {
+  getDashboardReadModel,
+  getMockInterviewReadModel,
+} from "@/features/dashboard/dashboard-read-model";
 import { getDashboardRecommendation } from "@/features/dashboard/dashboard-recommendations";
 import { getMockTemplateAvailabilities } from "@/features/sessions/session-builder";
 import { createTrainingSessionAction } from "@/features/sessions/session.action";
 import { mockTemplateKeys } from "@/features/sessions/session-contract";
 import { getI18n } from "@/i18n/server";
 import { getRequiredUser } from "@/lib/auth/auth-user";
-import { getDashboardReadModel } from "@/features/dashboard/dashboard-read-model";
 import { Target } from "lucide-react";
 import Link from "next/link";
 
@@ -28,8 +29,12 @@ export default async function DashboardOverviewPage() {
   const user = await getRequiredUser("/dashboard");
   const { locale, messages, t } = await getI18n();
   const overview = messages.dashboard.overview;
-  const mockTemplates = getLocalizedMockTemplates(messages).slice(0, 2);
+  const localizedMockTemplates = getLocalizedMockTemplates(messages);
+  const mockTemplateMap = Object.fromEntries(
+    mockTemplateKeys.map((key, index) => [key, localizedMockTemplates[index]]),
+  );
   const readModel = await getDashboardReadModel(user.id, locale);
+  const mockReadModel = await getMockInterviewReadModel(user.id, locale);
   const recommendation = await getDashboardRecommendation(user.id, locale);
   const templateAvailabilities = await getMockTemplateAvailabilities();
   const reviewQueue = readModel.overview.dueItems;
@@ -46,6 +51,14 @@ export default async function DashboardOverviewPage() {
     skill: item.skill,
     score: item.score,
   }));
+  const prioritizedMockKeys = [
+    ...(mockReadModel.recommendedTemplate
+      ? [mockReadModel.recommendedTemplate.templateKey]
+      : []),
+    ...mockTemplateKeys.filter(
+      (key) => key !== mockReadModel.recommendedTemplate?.templateKey,
+    ),
+  ].slice(0, 2);
   const statCards = [
     {
       label: overview.stats[0]?.label ?? "",
@@ -166,23 +179,39 @@ export default async function DashboardOverviewPage() {
             </div>
 
             {recommendation.kind === "review" ? (
-              <form action={createTrainingSessionAction}>
-                <input type="hidden" name="mode" value="REVIEW" />
-                <input type="hidden" name="locale" value={locale} />
-                <input
-                  type="hidden"
-                  name="questionCount"
-                  value={String(recommendation.questionCount)}
-                />
-                <Button type="submit">{overview.startReviewAction}</Button>
-              </form>
+              <div className="flex flex-wrap gap-3">
+                <form action={createTrainingSessionAction}>
+                  <input type="hidden" name="mode" value="REVIEW" />
+                  <input type="hidden" name="locale" value={locale} />
+                  <input
+                    type="hidden"
+                    name="questionCount"
+                    value={String(recommendation.questionCount)}
+                  />
+                  <Button type="submit">{overview.startReviewAction}</Button>
+                </form>
+                <Link
+                  href="/learn"
+                  className={buttonVariants({ variant: "secondary", size: "md" })}
+                >
+                  {overview.openLearnLibraryAction}
+                </Link>
+              </div>
             ) : (
-              <Link
-                href={`/dashboard/modules/${recommendation.moduleSlug}`}
-                className={buttonVariants({ variant: "primary", size: "md" })}
-              >
-                {overview.recommendedModuleAction}
-              </Link>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  href={`/dashboard/modules/${recommendation.moduleSlug}`}
+                  className={buttonVariants({ variant: "primary", size: "md" })}
+                >
+                  {overview.recommendedModuleAction}
+                </Link>
+                <Link
+                  href="/learn"
+                  className={buttonVariants({ variant: "secondary", size: "md" })}
+                >
+                  {overview.openLearnLibraryAction}
+                </Link>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -208,7 +237,9 @@ export default async function DashboardOverviewPage() {
         <Card>
           <CardHeader>
             <CardTitle>{overview.weeklyMomentumTitle}</CardTitle>
-            <CardDescription>{overview.weeklyMomentumDescription}</CardDescription>
+            <CardDescription>
+              {overview.weeklyMomentumDescription}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <WeeklyMomentumChart data={weeklyMomentumData} />
@@ -218,7 +249,9 @@ export default async function DashboardOverviewPage() {
         <Card>
           <CardHeader>
             <CardTitle>{overview.skillReadinessTitle}</CardTitle>
-            <CardDescription>{overview.skillReadinessDescription}</CardDescription>
+            <CardDescription>
+              {overview.skillReadinessDescription}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <SkillRadarChart data={skillReadinessData} />
@@ -247,7 +280,9 @@ export default async function DashboardOverviewPage() {
                 </form>
               ) : (
                 <Link href="/dashboard/review">
-                  <Button variant="secondary">{overview.openReviewAction}</Button>
+                  <Button variant="secondary">
+                    {overview.openReviewAction}
+                  </Button>
                 </Link>
               )}
             </div>
@@ -263,14 +298,31 @@ export default async function DashboardOverviewPage() {
                     <Badge className="border-orange-200 bg-orange-50 text-orange-700">
                       {overview.urgencyLabels[item.urgency]}
                     </Badge>
-                    <div className="text-xs uppercase tracking-[0.22em] text-slate-400">
-                      {item.skill}
+                    <div className="flex flex-col items-end gap-1 text-right">
+                      <div className="text-xs uppercase tracking-[0.22em] text-slate-400">
+                        {item.skill}
+                      </div>
+                      <div className="text-xs text-slate-400">{item.module}</div>
                     </div>
                   </div>
                   <div className="font-medium text-slate-950">{item.title}</div>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
                     {overview.reasonLabels[item.reason]}
                   </p>
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <Link
+                      href={`/learn/questions/${item.questionSlug}`}
+                      className={buttonVariants({ variant: "secondary", size: "sm" })}
+                    >
+                      {overview.openLessonAction}
+                    </Link>
+                    <Link
+                      href={`/dashboard/modules/${item.moduleSlug}`}
+                      className={buttonVariants({ variant: "ghost", size: "sm" })}
+                    >
+                      {overview.openModuleAction}
+                    </Link>
+                  </div>
                 </div>
               ))
             ) : (
@@ -341,42 +393,83 @@ export default async function DashboardOverviewPage() {
               <CardDescription>{overview.nextMockDescription}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {mockTemplates.map((template, index) => {
-                const templateKey = mockTemplateKeys[index];
+              {prioritizedMockKeys.map((templateKey) => {
+                const template = mockTemplateMap[templateKey];
                 const availableQuestions = templateKey
                   ? templateAvailabilities[templateKey]
                   : 0;
+                const isRecommended =
+                  mockReadModel.recommendedTemplate?.templateKey ===
+                  templateKey;
+
+                if (!template) {
+                  return null;
+                }
 
                 return (
-                <div
-                  key={template.title}
-                  className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4"
-                >
-                  <div className="mb-2 flex items-center gap-2">
-                    <Target className="size-4 text-cyan-600" />
-                    <div className="font-medium text-slate-950">
-                      {template.title}
+                  <div
+                    key={templateKey}
+                    className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4"
+                  >
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <Target className="size-4 text-cyan-600" />
+                        <div className="font-medium text-slate-950">
+                          {template.title}
+                        </div>
+                      </div>
+                      {isRecommended ? (
+                        <Badge className="border-cyan-200 bg-cyan-50 text-cyan-700">
+                          {
+                            messages.dashboard.mockInterviews
+                              .recommendedTemplateTitle
+                          }
+                        </Badge>
+                      ) : null}
                     </div>
-                  </div>
-                  <p className="text-sm leading-6 text-slate-600">
-                    {template.description}
-                  </p>
-                  {templateKey ? (
-                    <form action={createTrainingSessionAction} className="mt-4">
-                      <input type="hidden" name="mode" value="MOCK_INTERVIEW" />
-                      <input type="hidden" name="locale" value={locale} />
-                      <input type="hidden" name="templateKey" value={templateKey} />
-                      <Button type="submit" disabled={availableQuestions === 0}>
-                        {overview.launchMockAction}
-                      </Button>
-                    </form>
-                  ) : null}
-                  {availableQuestions === 0 ? (
-                    <p className="mt-3 text-sm leading-6 text-slate-500">
-                      {overview.mockUnavailable}
+                    <p className="text-sm leading-6 text-slate-600">
+                      {template.description}
                     </p>
-                  ) : null}
-                </div>
+                    {isRecommended && mockReadModel.recommendedTemplate ? (
+                      <p className="mt-3 text-sm leading-6 text-slate-500">
+                        {
+                          messages.dashboard.mockInterviews
+                            .recommendedTemplateReasons[
+                            mockReadModel.recommendedTemplate.reason
+                          ]
+                        }
+                      </p>
+                    ) : null}
+                    {templateKey ? (
+                      <form
+                        action={createTrainingSessionAction}
+                        className="mt-4"
+                      >
+                        <input
+                          type="hidden"
+                          name="mode"
+                          value="MOCK_INTERVIEW"
+                        />
+                        <input type="hidden" name="locale" value={locale} />
+                        <input
+                          type="hidden"
+                          name="templateKey"
+                          value={templateKey}
+                        />
+                        <Button
+                          type="submit"
+                          disabled={availableQuestions === 0}
+                        >
+                          {overview.launchMockAction}
+                        </Button>
+                      </form>
+                    ) : null}
+                    {availableQuestions === 0 ? (
+                      <p className="mt-3 text-sm leading-6 text-slate-500">
+                        {overview.mockUnavailable}
+                      </p>
+                    ) : null}
+                  </div>
                 );
               })}
             </CardContent>

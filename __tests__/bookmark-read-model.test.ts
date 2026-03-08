@@ -42,6 +42,7 @@ describe("getBookmarkReadModel", () => {
         questionId: "question_pending",
         createdAt: new Date("2026-03-07T09:00:00.000Z"),
         question: {
+          slug: "cleanup-boundary",
           prompt: "Explain why a cleanup must come from useEffect itself.",
           format: "OPEN_ENDED",
           primarySkill: {
@@ -70,6 +71,7 @@ describe("getBookmarkReadModel", () => {
         questionId: "question_due",
         createdAt: new Date("2026-03-06T09:00:00.000Z"),
         question: {
+          slug: "unstable-references",
           prompt: "Why can unstable references retrigger memoized work?",
           format: "SINGLE_CHOICE",
           primarySkill: {
@@ -98,6 +100,7 @@ describe("getBookmarkReadModel", () => {
         questionId: "question_stable",
         createdAt: new Date("2026-03-05T09:00:00.000Z"),
         question: {
+          slug: "key-and-state-reset",
           prompt: "When does a key actually reset component state?",
           format: "MULTIPLE_CHOICE",
           primarySkill: {
@@ -135,6 +138,7 @@ describe("getBookmarkReadModel", () => {
       expect.objectContaining({
         bookmarkId: "bookmark_pending",
         questionId: "question_pending",
+        questionSlug: "cleanup-boundary",
         moduleSlug: "react-rendering",
         status: "pendingReview",
         isPendingReview: true,
@@ -143,6 +147,7 @@ describe("getBookmarkReadModel", () => {
       expect.objectContaining({
         bookmarkId: "bookmark_due",
         questionId: "question_due",
+        questionSlug: "unstable-references",
         moduleSlug: "react-rendering",
         status: "due",
         isPendingReview: false,
@@ -151,6 +156,7 @@ describe("getBookmarkReadModel", () => {
       expect.objectContaining({
         bookmarkId: "bookmark_stable",
         questionId: "question_stable",
+        questionSlug: "key-and-state-reset",
         moduleSlug: "react-rendering",
         status: "stable",
         isPendingReview: false,

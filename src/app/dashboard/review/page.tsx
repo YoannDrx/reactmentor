@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -17,6 +17,7 @@ import {
 import { getI18n } from "@/i18n/server";
 import { getRequiredUser } from "@/lib/auth/auth-user";
 import { BrainCircuit, CircleAlert, Repeat } from "lucide-react";
+import Link from "next/link";
 
 export default async function DashboardReviewPage() {
   const user = await getRequiredUser("/dashboard/review");
@@ -27,7 +28,10 @@ export default async function DashboardReviewPage() {
   const readModel = await getDashboardReadModel(user.id, locale);
   const reviewQueue = readModel.review.items;
   const pendingReviewItems = readModel.review.pendingItems;
-  const reviewQuestionCount = Math.min(10, Math.max(1, readModel.review.dueCount));
+  const reviewQuestionCount = Math.min(
+    10,
+    Math.max(1, readModel.review.dueCount),
+  );
   const howItWorks = [
     {
       icon: CircleAlert,
@@ -101,7 +105,96 @@ export default async function DashboardReviewPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      {readModel.progress.recoveryPlans.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>{review.shortcutTitle}</CardTitle>
+            <CardDescription>{review.shortcutDescription}</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 xl:grid-cols-3">
+            {readModel.progress.recoveryPlans.slice(0, 3).map((plan) => (
+              <div
+                key={plan.skillId}
+                className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="font-medium text-slate-950">{plan.skill}</div>
+                  <Badge className="border-slate-200 bg-white text-slate-700">
+                    {plan.score}%
+                  </Badge>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {plan.dueCount > 0 ? (
+                    <Badge className="border-amber-200 bg-amber-50 text-amber-700">
+                      {review.dueNowLabel}: {plan.dueCount}
+                    </Badge>
+                  ) : null}
+                  {plan.pendingCount > 0 ? (
+                    <Badge className="border-cyan-200 bg-cyan-50 text-cyan-700">
+                      {review.pendingCountLabel}: {plan.pendingCount}
+                    </Badge>
+                  ) : null}
+                </div>
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  {plan.reason === "dueNow"
+                    ? review.shortcutReasons.dueNow.replace(
+                        "{count}",
+                        String(plan.dueCount),
+                      )
+                    : plan.reason === "pendingReview"
+                      ? review.shortcutReasons.pendingReview.replace(
+                          "{count}",
+                          String(plan.pendingCount),
+                        )
+                      : review.shortcutReasons.weakSignal}
+                </p>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  {plan.recoveryQuestionIds.length > 0 ? (
+                    <form action={createTrainingSessionAction}>
+                      <input type="hidden" name="mode" value="REVIEW" />
+                      <input type="hidden" name="locale" value={locale} />
+                      <input
+                        type="hidden"
+                        name="questionCount"
+                        value={String(plan.recoveryQuestionIds.length)}
+                      />
+                      {plan.recoveryQuestionIds.map((questionId) => (
+                        <input
+                          key={`${plan.skillId}-${questionId}`}
+                          type="hidden"
+                          name="questionIds"
+                          value={questionId}
+                        />
+                      ))}
+                      <Button type="submit" size="sm">
+                        {review.shortcutActions.startRecoveryReview}
+                      </Button>
+                    </form>
+                  ) : null}
+                  {plan.pendingCount > 0 ? (
+                    <Link
+                      href="#pending-manual-reviews"
+                      className="inline-flex h-10 items-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:text-slate-950"
+                    >
+                      {review.shortcutActions.openPendingReview}
+                    </Link>
+                  ) : null}
+                  {plan.moduleSlug ? (
+                    <Link
+                      href={`/dashboard/modules/${plan.moduleSlug}`}
+                      className="inline-flex h-10 items-center rounded-2xl border border-transparent px-4 text-sm font-medium text-cyan-700 transition hover:text-cyan-800"
+                    >
+                      {review.shortcutActions.openModule}
+                    </Link>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      <Card id="pending-manual-reviews">
         <CardHeader>
           <CardTitle>{review.pendingTitle}</CardTitle>
           <CardDescription>{review.pendingDescription}</CardDescription>
@@ -148,28 +241,33 @@ export default async function DashboardReviewPage() {
                       <span>{review.selectedLinesLabel}</span>
                     </div>
                     <div className="divide-y divide-white/5">
-                      {item.contextData.code.split("\n").map((codeLine, index) => {
-                        const lineNumber = index + 1;
-                        const isSelected =
-                          item.responsePreview?.kind === "bug_hunt_response" &&
-                          item.responsePreview.selectedLineNumbers.includes(lineNumber);
+                      {item.contextData.code
+                        .split("\n")
+                        .map((codeLine, index) => {
+                          const lineNumber = index + 1;
+                          const isSelected =
+                            item.responsePreview?.kind ===
+                              "bug_hunt_response" &&
+                            item.responsePreview.selectedLineNumbers.includes(
+                              lineNumber,
+                            );
 
-                        return (
-                          <div
-                            key={lineNumber}
-                            className={`grid grid-cols-[auto_1fr] gap-4 px-4 py-2 ${
-                              isSelected ? "bg-rose-500/15" : ""
-                            }`}
-                          >
-                            <span className="font-mono text-xs text-slate-500">
-                              {lineNumber}
-                            </span>
-                            <span className="overflow-x-auto font-mono text-sm leading-6 text-slate-100">
-                              {codeLine.length > 0 ? codeLine : " "}
-                            </span>
-                          </div>
-                        );
-                      })}
+                          return (
+                            <div
+                              key={lineNumber}
+                              className={`grid grid-cols-[auto_1fr] gap-4 px-4 py-2 ${
+                                isSelected ? "bg-rose-500/15" : ""
+                              }`}
+                            >
+                              <span className="font-mono text-xs text-slate-500">
+                                {lineNumber}
+                              </span>
+                              <span className="overflow-x-auto font-mono text-sm leading-6 text-slate-100">
+                                {codeLine.length > 0 ? codeLine : " "}
+                              </span>
+                            </div>
+                          );
+                        })}
                     </div>
                   </div>
                 ) : null}
@@ -266,11 +364,30 @@ export default async function DashboardReviewPage() {
                   />
                 </div>
 
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <Link
+                    href={`/learn/questions/${item.questionSlug}`}
+                    className={buttonVariants({ variant: "secondary", size: "sm" })}
+                  >
+                    {review.openLessonAction}
+                  </Link>
+                  <Link
+                    href={`/dashboard/modules/${item.moduleSlug}`}
+                    className="inline-flex h-10 items-center rounded-full border border-transparent px-4 text-sm font-medium text-cyan-700 transition hover:text-cyan-800"
+                  >
+                    {bookmarks.openModuleAction}
+                  </Link>
+                </div>
+
                 <form
                   action={reviewPendingAttemptAction}
                   className="mt-4 rounded-[22px] border border-slate-200 bg-white p-4"
                 >
-                  <input type="hidden" name="attemptId" value={item.attemptId} />
+                  <input
+                    type="hidden"
+                    name="attemptId"
+                    value={item.attemptId}
+                  />
 
                   <div className="text-xs uppercase tracking-[0.18em] text-slate-400">
                     {review.rubricVerdictsTitle}
@@ -388,11 +505,21 @@ export default async function DashboardReviewPage() {
                   <p className="mt-2 text-sm leading-6 text-slate-600">
                     {review.reasonLabels[item.reason]}
                   </p>
+                  <div className="mt-4">
+                    <Link
+                      href={`/learn/questions/${item.questionSlug}`}
+                      className={buttonVariants({ variant: "secondary", size: "sm" })}
+                    >
+                      {review.openLessonAction}
+                    </Link>
+                  </div>
                 </div>
               ))
             ) : (
               <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4 text-sm leading-6 text-slate-600">
-                <div className="font-medium text-slate-950">{review.emptyTitle}</div>
+                <div className="font-medium text-slate-950">
+                  {review.emptyTitle}
+                </div>
                 <p className="mt-2">{review.emptyDescription}</p>
               </div>
             )}

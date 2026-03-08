@@ -122,6 +122,12 @@ export default async function DashboardBookmarksPage() {
                     variant="secondary"
                   />
                   <Link
+                    href={`/learn/questions/${item.questionSlug}`}
+                    className={buttonVariants({ variant: "secondary", size: "sm" })}
+                  >
+                    {bookmarks.openLessonAction}
+                  </Link>
+                  <Link
                     href={`/dashboard/modules/${item.moduleSlug}`}
                     className={buttonVariants({ variant: "secondary", size: "sm" })}
                   >

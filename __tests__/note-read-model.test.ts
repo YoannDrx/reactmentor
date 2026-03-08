@@ -43,6 +43,7 @@ describe("getNoteReadModel", () => {
         body: "Name the cleanup boundary explicitly.",
         updatedAt: new Date("2026-03-07T09:30:00.000Z"),
         question: {
+          slug: "async-cleanup-wrapper",
           prompt: "Why does an async wrapper hide the effect cleanup?",
           primarySkill: {
             title: "Effects",
@@ -72,6 +73,7 @@ describe("getNoteReadModel", () => {
         body: "Anchor the answer in identity and references.",
         updatedAt: new Date("2026-03-06T09:30:00.000Z"),
         question: {
+          slug: "unstable-references",
           prompt: "Why can unstable references retrigger memoized work?",
           primarySkill: {
             title: "Identity",
@@ -110,6 +112,7 @@ describe("getNoteReadModel", () => {
       expect.objectContaining({
         noteId: "note_pending",
         questionId: "question_pending",
+        questionSlug: "async-cleanup-wrapper",
         body: "Name the cleanup boundary explicitly.",
         status: "pendingReview",
         isBookmarked: true,
@@ -117,6 +120,7 @@ describe("getNoteReadModel", () => {
       expect.objectContaining({
         noteId: "note_due",
         questionId: "question_due",
+        questionSlug: "unstable-references",
         body: "Anchor the answer in identity and references.",
         status: "due",
         isBookmarked: false,

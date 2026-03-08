@@ -1,3 +1,4 @@
+import { isContentAdminRole } from "@/lib/auth/content-admin";
 import { DashboardShell } from "@/features/dashboard/dashboard-shell";
 import { getDashboardShellSnapshot } from "@/features/dashboard/dashboard-shell-data";
 import { getUserPreferences } from "@/features/settings/user-preferences";
@@ -25,6 +26,7 @@ export default async function DashboardLayout({
       user={{
         name: user.name,
         email: user.email,
+        isContentAdmin: isContentAdminRole(user.role),
       }}
       sidebarSnapshot={sidebarSnapshot}
     >

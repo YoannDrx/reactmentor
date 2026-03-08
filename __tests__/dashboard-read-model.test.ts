@@ -164,6 +164,13 @@ function createQuestionFixture(params: {
   promptFr: string;
   primarySkill: ReturnType<typeof createSkillFixture>;
 }) {
+  const learningModule = createModuleFixture({
+    id: "module_1",
+    slug: "react-rendering-systems",
+    titleEn: "React Rendering Systems",
+    titleFr: "Systemes de rendu React",
+  });
+
   return {
     id: params.id,
     slug: params.slug,
@@ -207,6 +214,10 @@ function createQuestionFixture(params: {
       },
     ],
     primarySkill: params.primarySkill,
+    module: learningModule,
+    progress: [] as Array<{
+      nextReviewAt: Date | null;
+    }>,
     bookmarks: [] as Array<{
       id: string;
     }>,
@@ -330,9 +341,9 @@ describe("getDashboardReadModel", () => {
     expect(readModel.review.pendingItems).toEqual([]);
     expect(readModel.overview.recentSessions).toEqual([]);
     expect(readModel.progress.weeklyMomentum).toHaveLength(7);
-    expect(readModel.progress.weeklyMomentum.every((item) => item.score === 0)).toBe(
-      true,
-    );
+    expect(
+      readModel.progress.weeklyMomentum.every((item) => item.score === 0),
+    ).toBe(true);
   });
 
   it("returns real mock interview history with duration and answer counts", async () => {
@@ -386,6 +397,48 @@ describe("getDashboardReadModel", () => {
   });
 
   it("builds mock interview summary and template-level signals", async () => {
+    const skillEffects = createSkillFixture({
+      id: "skill_effects",
+      slug: "effect-mental-model",
+      titleEn: "Effect Mental Model",
+      titleFr: "Modele mental des effects",
+    });
+    const firstQuestion = createQuestionFixture({
+      id: "question_effect_async_cleanup",
+      slug: "effect-async-cleanup",
+      promptEn: "Why can an async cleanup wrapper hide a lifecycle bug?",
+      promptFr:
+        "Pourquoi un wrapper de cleanup async peut-il masquer un bug de cycle de vie ?",
+      primarySkill: skillEffects,
+    });
+    const secondQuestion = createQuestionFixture({
+      id: "question_effect_tradeoffs",
+      slug: "effect-tradeoffs-language",
+      promptEn: "How would you explain effect synchronization tradeoffs?",
+      promptFr:
+        "Comment expliquerais-tu les tradeoffs de synchronisation d'un effect ?",
+      primarySkill: skillEffects,
+    });
+
+    firstQuestion.progress = [
+      {
+        nextReviewAt: new Date("2026-03-06T10:00:00.000Z"),
+      },
+    ];
+    firstQuestion.bookmarks = [{ id: "bookmark_1" }];
+    firstQuestion.notes = [
+      {
+        body: "Explain the cleanup boundary before naming the hook.",
+        updatedAt: new Date("2026-03-07T08:30:00.000Z"),
+      },
+    ];
+    secondQuestion.notes = [
+      {
+        body: "State the tradeoff before giving the API answer.",
+        updatedAt: new Date("2026-03-06T08:30:00.000Z"),
+      },
+    ];
+
     trainingSessionFindManyMock.mockResolvedValue([
       {
         id: "session_mock_3",
@@ -441,6 +494,8 @@ describe("getDashboardReadModel", () => {
     ] as never);
     attemptFindManyMock.mockResolvedValue([
       {
+        questionId: firstQuestion.id,
+        isCorrect: false,
         reviewData: {
           kind: "rubric_review",
           criteria: [
@@ -460,8 +515,11 @@ describe("getDashboardReadModel", () => {
           summary: "Still hand-wavy under pressure.",
           scorePercent: 50,
         },
+        question: firstQuestion,
       },
       {
+        questionId: secondQuestion.id,
+        isCorrect: false,
         reviewData: {
           kind: "rubric_review",
           criteria: [
@@ -481,10 +539,11 @@ describe("getDashboardReadModel", () => {
           summary: "Tradeoffs need sharper language.",
           scorePercent: 33,
         },
+        question: secondQuestion,
       },
     ] as never);
 
-    const readModel = await getMockInterviewReadModel("user_1");
+    const readModel = await getMockInterviewReadModel("user_1", "en");
 
     expect(readModel.summary).toEqual({
       completedCount: 3,
@@ -552,6 +611,68 @@ describe("getDashboardReadModel", () => {
         partialCount: 1,
       },
     ]);
+    expect(readModel.recommendedTemplate).toEqual({
+      templateKey: "frontend_senior_defense",
+      reason: "repeatWeakest",
+    });
+    expect(readModel.weaknessHighlights).toEqual([
+      {
+        skill: "Effect Mental Model",
+        skillSlug: "effect-mental-model",
+        module: "React Rendering Systems",
+        moduleSlug: "react-rendering-systems",
+        track: "REACT",
+        reviewedCount: 2,
+        averageScore: 42,
+        dueCount: 1,
+        bookmarkedCount: 1,
+        noteCount: 2,
+        dominantCriterion: "accuracy",
+        focusFormats: ["SINGLE_CHOICE"],
+        questionIds: [
+          "question_effect_async_cleanup",
+          "question_effect_tradeoffs",
+        ],
+        prompts: [
+          "Why can an async cleanup wrapper hide a lifecycle bug?",
+          "How would you explain effect synchronization tradeoffs?",
+        ],
+      },
+    ]);
+    expect(readModel.recoveryQuestions).toEqual([
+      {
+        questionId: "question_effect_async_cleanup",
+        questionSlug: "effect-async-cleanup",
+        prompt: "Why can an async cleanup wrapper hide a lifecycle bug?",
+        skill: "Effect Mental Model",
+        module: "React Rendering Systems",
+        moduleSlug: "react-rendering-systems",
+        format: "SINGLE_CHOICE",
+        isBookmarked: true,
+        noteBody: "Explain the cleanup boundary before naming the hook.",
+        noteUpdatedAt: new Date("2026-03-07T08:30:00.000Z"),
+        dominantCriterion: "accuracy",
+        averageScore: 50,
+        status: "due",
+        priority: 139,
+      },
+      {
+        questionId: "question_effect_tradeoffs",
+        questionSlug: "effect-tradeoffs-language",
+        prompt: "How would you explain effect synchronization tradeoffs?",
+        skill: "Effect Mental Model",
+        module: "React Rendering Systems",
+        moduleSlug: "react-rendering-systems",
+        format: "SINGLE_CHOICE",
+        isBookmarked: false,
+        noteBody: "State the tradeoff before giving the API answer.",
+        noteUpdatedAt: new Date("2026-03-06T08:30:00.000Z"),
+        dominantCriterion: "mechanism",
+        averageScore: 33,
+        status: "saved",
+        priority: 33,
+      },
+    ]);
   });
 
   it("computes review urgency, mastery distribution and localized recent activity", async () => {
@@ -594,7 +715,8 @@ describe("getDashboardReadModel", () => {
       id: "question_mock_fallout",
       slug: "effect-cleanup-mock-fallout",
       promptEn: "Why can an async cleanup wrapper hide a lifecycle bug?",
-      promptFr: "Pourquoi un wrapper de cleanup async peut-il masquer un bug de cycle de vie ?",
+      promptFr:
+        "Pourquoi un wrapper de cleanup async peut-il masquer un bug de cycle de vie ?",
       primarySkill: skillRendering,
     });
     skillEffects.progress = [
@@ -885,7 +1007,8 @@ describe("getDashboardReadModel", () => {
       expect.objectContaining({
         questionId: "question_overdue",
         questionSlug: "effect-array-reference",
-        title: "Pourquoi un tableau recree dans les deps relance-t-il l effect ?",
+        title:
+          "Pourquoi un tableau recree dans les deps relance-t-il l effect ?",
         skill: "Modele mental des effects",
         urgency: "critical",
         reason: "overdue",
@@ -917,9 +1040,11 @@ describe("getDashboardReadModel", () => {
         attemptId: "attempt_pending_1",
         sessionId: "session_pending_1",
         questionId: "question_pending_bug_hunt",
+        questionSlug: "effect-cleanup-bug-hunt",
         prompt: "Trouve les lignes suspectes dans ce snippet de cleanup.",
         skill: "Modele mental des effects",
         module: "Systemes de rendu React",
+        moduleSlug: "react-rendering-systems",
         format: "BUG_HUNT",
         responsePreview: {
           kind: "bug_hunt_response",
@@ -956,5 +1081,112 @@ describe("getDashboardReadModel", () => {
       dayKey: "sat",
       score: 50,
     });
+  });
+
+  it("surfaces weak-skill recovery plans when the due card is stable but the parent signal is still fragile", async () => {
+    const weakSkill = createSkillFixture({
+      id: "skill_types",
+      slug: "typescript-variance",
+      titleEn: "Type Variance",
+      titleFr: "Variance TypeScript",
+    });
+    weakSkill.progress = [
+      {
+        userId: "user_1",
+        skillId: weakSkill.id,
+        masteryScore: 54,
+        confidenceScore: 39,
+      },
+    ];
+    const weakQuestion = createQuestionFixture({
+      id: "question_variance_due",
+      slug: "variance-mental-model",
+      promptEn: "Why does variance matter for callback types?",
+      promptFr:
+        "Pourquoi la variance compte-t-elle pour les types de callbacks ?",
+      primarySkill: weakSkill,
+    });
+    weakQuestion.attempts = [
+      {
+        mode: SessionMode.PRACTICE,
+        isCorrect: true,
+        createdAt: new Date("2026-03-06T09:00:00.000Z"),
+      },
+    ];
+
+    transactionMock.mockResolvedValue([
+      12,
+      3,
+      1,
+      1,
+      0,
+      { _avg: { masteryScore: 54 } },
+      [{ masteryState: MasteryState.MASTERED }],
+      [
+        {
+          createdAt: new Date("2026-03-07T08:00:00.000Z"),
+          isCorrect: true,
+        },
+      ],
+      [
+        {
+          skillId: weakSkill.id,
+          masteryScore: 54,
+          correctRate: 0.7,
+          coverageCount: 3,
+          uniqueQuestionCount: 2,
+          uniqueDifficultyCount: 2,
+          recentFailureCount: 0,
+          confidenceScore: 39,
+          lastAttemptAt: new Date("2026-03-06T09:00:00.000Z"),
+          skill: weakSkill,
+        },
+      ],
+      [],
+      [
+        {
+          questionId: weakQuestion.id,
+          masteryState: MasteryState.MASTERED,
+          lastOutcomeCorrect: true,
+          nextReviewAt: new Date("2026-03-07T08:00:00.000Z"),
+          question: weakQuestion,
+        },
+      ],
+      [],
+      [],
+    ]);
+
+    const readModel = await getDashboardReadModel("user_1", "en");
+
+    expect(readModel.review.items).toEqual([
+      expect.objectContaining({
+        questionId: "question_variance_due",
+        reason: "weakSkill",
+      }),
+    ]);
+    expect(readModel.progress.recoveryPlans).toEqual([
+      {
+        skillId: "skill_types",
+        skillSlug: "typescript-variance",
+        skill: "Type Variance",
+        score: 54,
+        confidenceScore: 39,
+        recentFailureCount: 0,
+        coverageCount: 3,
+        dueCount: 1,
+        pendingCount: 0,
+        moduleSlug: "react-rendering-systems",
+        moduleTitle: "React Rendering Systems",
+        recoveryQuestionIds: ["question_variance_due"],
+        recoveryQuestions: [
+          {
+            questionId: "question_variance_due",
+            questionSlug: "variance-mental-model",
+            prompt: "Why does variance matter for callback types?",
+          },
+        ],
+        reason: "dueNow",
+      },
+    ]);
   });
 });

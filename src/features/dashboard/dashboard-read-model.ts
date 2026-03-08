@@ -1,4 +1,10 @@
-import { MasteryState, Prisma, SessionMode } from "@prisma/client";
+import {
+  MasteryState,
+  Prisma,
+  QuestionFormat,
+  SessionMode,
+  Track,
+} from "@prisma/client";
 import type { Locale } from "@/i18n/config";
 import {
   localizeModule,
@@ -6,13 +12,18 @@ import {
   localizeSkill,
 } from "@/lib/content-repository";
 import { prisma } from "@/lib/prisma";
-import { parseTrainingSessionConfig } from "@/features/sessions/session-contract";
+import {
+  mockTemplateKeys,
+  parseTrainingSessionConfig,
+  type MockTemplateKey,
+} from "@/features/sessions/session-contract";
 import { parseAttemptResponseData } from "@/features/sessions/attempt-response";
 import {
   buildSessionRubric,
   type SessionRubricCriterion,
 } from "@/features/sessions/session-rubric";
 import { parseAttemptReviewData } from "@/features/sessions/attempt-review";
+import type { SkillProgressSignalDetails } from "@/features/sessions/skill-progress";
 
 const dayKeys = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
 
@@ -25,6 +36,13 @@ type ReviewReason =
   | "weakSkill"
   | "mockFallout"
   | "scheduled";
+
+type RecoveryPlanReason = "dueNow" | "pendingReview" | "weakSignal";
+type MockRecommendationReason =
+  | "repeatWeakest"
+  | "trackRecovery"
+  | "defenseRecovery"
+  | "coreRecovery";
 
 type SessionHistoryRow = {
   id: string;
@@ -85,28 +103,26 @@ function getReviewUrgency(nextReviewAt: Date | null, now: Date): ReviewUrgency {
   return "normal";
 }
 
-function getReviewReason(
-  params: {
-    masteryState: MasteryState;
-    nextReviewAt: Date | null;
-    lastOutcomeCorrect: boolean | null;
-    latestAttempt:
-      | {
-          mode: SessionMode;
-          isCorrect: boolean | null;
-        }
-      | null
-      | undefined;
-    skillSignal:
-      | {
-          masteryScore: number;
-          confidenceScore: number;
-        }
-      | null
-      | undefined;
-    now: Date;
-  },
-): ReviewReason {
+function getReviewReason(params: {
+  masteryState: MasteryState;
+  nextReviewAt: Date | null;
+  lastOutcomeCorrect: boolean | null;
+  latestAttempt:
+    | {
+        mode: SessionMode;
+        isCorrect: boolean | null;
+      }
+    | null
+    | undefined;
+  skillSignal:
+    | {
+        masteryScore: number;
+        confidenceScore: number;
+      }
+    | null
+    | undefined;
+  now: Date;
+}): ReviewReason {
   if (!params.nextReviewAt) {
     return "scheduled";
   }
@@ -132,7 +148,8 @@ function getReviewReason(
 
   if (
     params.skillSignal &&
-    (params.skillSignal.masteryScore < 60 || params.skillSignal.confidenceScore < 45)
+    (params.skillSignal.masteryScore < 60 ||
+      params.skillSignal.confidenceScore < 45)
   ) {
     return "weakSkill";
   }
@@ -173,7 +190,9 @@ function roundAverage(values: number[]) {
     return 0;
   }
 
-  return Math.round(values.reduce((total, value) => total + value, 0) / values.length);
+  return Math.round(
+    values.reduce((total, value) => total + value, 0) / values.length,
+  );
 }
 
 function getTrendDirection(delta: number | null) {
@@ -227,6 +246,208 @@ function buildPendingAttemptPreview(responseData: Prisma.JsonValue | null) {
   }
 
   return null;
+}
+
+function isObjectLike(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function readNumber(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function parseSkillProgressSignalDetails(
+  value: Prisma.JsonValue | null | undefined,
+): SkillProgressSignalDetails | null {
+  if (!isObjectLike(value)) {
+    return null;
+  }
+
+  const confidence = isObjectLike(value.confidence) ? value.confidence : null;
+
+  if (!confidence) {
+    return null;
+  }
+
+  const weightedAccuracyScore = readNumber(value.weightedAccuracyScore);
+  const rawMasteryScore = readNumber(value.rawMasteryScore);
+  const adjustedMasteryScore = readNumber(value.adjustedMasteryScore);
+  const boostScore = readNumber(value.boostScore);
+  const penaltyScore = readNumber(value.penaltyScore);
+  const recentFailurePenalty = readNumber(value.recentFailurePenalty);
+  const streakBonus = readNumber(value.streakBonus);
+  const coverageBonus = readNumber(value.coverageBonus);
+  const difficultyCoverageBonus = readNumber(value.difficultyCoverageBonus);
+  const stalenessPenalty = readNumber(value.stalenessPenalty);
+  const baseMasteryCap = readNumber(value.baseMasteryCap);
+  const freshnessCap = readNumber(value.freshnessCap);
+  const masteryCap = readNumber(value.masteryCap);
+  const lastAttemptAgeInDays = readNumber(value.lastAttemptAgeInDays);
+  const confidenceScore = readNumber(confidence.score);
+  const coverageConfidence = readNumber(confidence.coverageConfidence);
+  const breadthConfidence = readNumber(confidence.breadthConfidence);
+  const difficultyConfidence = readNumber(confidence.difficultyConfidence);
+  const recentActivityConfidence = readNumber(confidence.recentActivityConfidence);
+  const freshnessBonus = readNumber(confidence.freshnessBonus);
+  const confidenceStalenessPenalty = readNumber(confidence.stalenessPenalty);
+  const confidenceRecentFailurePenalty = readNumber(
+    confidence.recentFailurePenalty,
+  );
+
+  if (
+    weightedAccuracyScore === null ||
+    rawMasteryScore === null ||
+    adjustedMasteryScore === null ||
+    boostScore === null ||
+    penaltyScore === null ||
+    recentFailurePenalty === null ||
+    streakBonus === null ||
+    coverageBonus === null ||
+    difficultyCoverageBonus === null ||
+    stalenessPenalty === null ||
+    baseMasteryCap === null ||
+    freshnessCap === null ||
+    masteryCap === null ||
+    lastAttemptAgeInDays === null ||
+    confidenceScore === null ||
+    coverageConfidence === null ||
+    breadthConfidence === null ||
+    difficultyConfidence === null ||
+    recentActivityConfidence === null ||
+    freshnessBonus === null ||
+    confidenceStalenessPenalty === null ||
+    confidenceRecentFailurePenalty === null
+  ) {
+    return null;
+  }
+
+  return {
+    weightedAccuracyScore,
+    rawMasteryScore,
+    adjustedMasteryScore,
+    boostScore,
+    penaltyScore,
+    recentFailurePenalty,
+    streakBonus,
+    coverageBonus,
+    difficultyCoverageBonus,
+    stalenessPenalty,
+    baseMasteryCap,
+    freshnessCap,
+    masteryCap,
+    lastAttemptAgeInDays,
+    confidence: {
+      score: confidenceScore,
+      coverageConfidence,
+      breadthConfidence,
+      difficultyConfidence,
+      recentActivityConfidence,
+      freshnessBonus,
+      stalenessPenalty: confidenceStalenessPenalty,
+      recentFailurePenalty: confidenceRecentFailurePenalty,
+    },
+  };
+}
+
+function isWeakSkillSignal(skill: {
+  score: number;
+  confidenceScore: number;
+  recentFailureCount: number;
+}) {
+  return (
+    skill.score < 68 ||
+    skill.confidenceScore < 50 ||
+    skill.recentFailureCount > 0
+  );
+}
+
+function getDominantCriterion(
+  counts: Map<SessionRubricCriterion, number>,
+): SessionRubricCriterion | null {
+  return (
+    [...counts.entries()].sort((left, right) => {
+      if (right[1] !== left[1]) {
+        return right[1] - left[1];
+      }
+
+      return left[0].localeCompare(right[0]);
+    })[0]?.[0] ?? null
+  );
+}
+
+function getFocusFormats(counts: Map<QuestionFormat, number>) {
+  return [...counts.entries()]
+    .sort((left, right) => {
+      if (right[1] !== left[1]) {
+        return right[1] - left[1];
+      }
+
+      return left[0].localeCompare(right[0]);
+    })
+    .map(([format]) => format)
+    .slice(0, 2);
+}
+
+function getMockRecommendation(params: {
+  weakestTemplate: {
+    templateKey: string;
+    averageScore: number;
+  } | null;
+  weaknessHighlights: Array<{
+    track: Track;
+    dominantCriterion: SessionRubricCriterion | null;
+    focusFormats: QuestionFormat[];
+  }>;
+}) {
+  if (
+    params.weakestTemplate &&
+    params.weakestTemplate.averageScore < 80 &&
+    mockTemplateKeys.includes(
+      params.weakestTemplate.templateKey as MockTemplateKey,
+    )
+  ) {
+    return {
+      templateKey: params.weakestTemplate.templateKey as MockTemplateKey,
+      reason: "repeatWeakest" as MockRecommendationReason,
+    };
+  }
+
+  const primaryWeakness = params.weaknessHighlights[0] ?? null;
+  const defenseFormats: QuestionFormat[] = [
+    QuestionFormat.BUG_HUNT,
+    QuestionFormat.CODE_OUTPUT,
+    QuestionFormat.OPEN_ENDED,
+  ];
+
+  if (!primaryWeakness) {
+    return null;
+  }
+
+  if (primaryWeakness.track === Track.REACT_NATIVE) {
+    return {
+      templateKey: "react_native_sprint" as MockTemplateKey,
+      reason: "trackRecovery" as MockRecommendationReason,
+    };
+  }
+
+  if (
+    primaryWeakness.dominantCriterion === "rootCause" ||
+    primaryWeakness.dominantCriterion === "evidence" ||
+    primaryWeakness.dominantCriterion === "repair" ||
+    primaryWeakness.focusFormats.some((format) =>
+      defenseFormats.includes(format),
+    )
+  ) {
+    return {
+      templateKey: "frontend_senior_defense" as MockTemplateKey,
+      reason: "defenseRecovery" as MockRecommendationReason,
+    };
+  }
+
+  return {
+    templateKey: "react_mid_30" as MockTemplateKey,
+    reason: "coreRecovery" as MockRecommendationReason,
+  };
 }
 
 export async function getDashboardReadModel(userId: string, locale: Locale) {
@@ -342,6 +563,14 @@ export async function getDashboardReadModel(userId: string, locale: Locale) {
         question: {
           include: {
             translations: true,
+            options: {
+              include: {
+                translations: true,
+              },
+              orderBy: {
+                order: "asc",
+              },
+            },
             primarySkill: {
               include: {
                 translations: true,
@@ -380,12 +609,9 @@ export async function getDashboardReadModel(userId: string, locale: Locale) {
               },
               take: 1,
             },
-            options: {
+            module: {
               include: {
                 translations: true,
-              },
-              orderBy: {
-                order: "asc",
               },
             },
           },
@@ -405,6 +631,14 @@ export async function getDashboardReadModel(userId: string, locale: Locale) {
         question: {
           include: {
             translations: true,
+            options: {
+              include: {
+                translations: true,
+              },
+              orderBy: {
+                order: "asc",
+              },
+            },
             primarySkill: {
               include: {
                 translations: true,
@@ -413,14 +647,6 @@ export async function getDashboardReadModel(userId: string, locale: Locale) {
             module: {
               include: {
                 translations: true,
-              },
-            },
-            options: {
-              include: {
-                translations: true,
-              },
-              orderBy: {
-                order: "asc",
               },
             },
             bookmarks: {
@@ -546,32 +772,44 @@ export async function getDashboardReadModel(userId: string, locale: Locale) {
     skillProgress.length > 0
       ? skillProgress.map((item) => ({
           id: item.skillId,
+          skillSlug: item.skill.slug,
           skill: localizeSkill(item.skill, locale).title,
           score: item.masteryScore,
+          masteryCap: item.masteryCap,
           correctRate: item.correctRate,
           coverageCount: item.coverageCount,
+          recentAttemptCount: item.recentAttemptCount,
           uniqueQuestionCount: item.uniqueQuestionCount,
           uniqueDifficultyCount: item.uniqueDifficultyCount,
           recentFailureCount: item.recentFailureCount,
           confidenceScore: item.confidenceScore,
+          signalDetails: parseSkillProgressSignalDetails(item.signalDetails),
           lastAttemptAt: item.lastAttemptAt,
         }))
       : fallbackSkills.map((skill) => ({
           id: skill.id,
+          skillSlug: skill.slug,
           skill: localizeSkill(skill, locale).title,
           score: 0,
+          masteryCap: 0,
           correctRate: 0,
           coverageCount: 0,
+          recentAttemptCount: 0,
           uniqueQuestionCount: 0,
           uniqueDifficultyCount: 0,
           recentFailureCount: 0,
           confidenceScore: 0,
+          signalDetails: null,
           lastAttemptAt: null,
         }));
 
   const reviewItems = dueProgressRows.map((progressRow) => {
     const localizedQuestion = localizeQuestion(progressRow.question, locale);
-    const localizedSkill = localizeSkill(progressRow.question.primarySkill, locale);
+    const localizedSkill = localizeSkill(
+      progressRow.question.primarySkill,
+      locale,
+    );
+    const localizedModule = localizeModule(progressRow.question.module, locale);
     const latestAttempt = progressRow.question.attempts[0] ?? null;
     const skillSignal = progressRow.question.primarySkill.progress[0] ?? null;
 
@@ -580,6 +818,8 @@ export async function getDashboardReadModel(userId: string, locale: Locale) {
       questionSlug: progressRow.question.slug,
       title: localizedQuestion.prompt,
       skill: localizedSkill.title,
+      module: localizedModule.title,
+      moduleSlug: progressRow.question.module.slug,
       urgency: getReviewUrgency(progressRow.nextReviewAt, now),
       reason: getReviewReason({
         masteryState: progressRow.masteryState,
@@ -593,6 +833,41 @@ export async function getDashboardReadModel(userId: string, locale: Locale) {
       isBookmarked: progressRow.question.bookmarks.length > 0,
     };
   });
+
+  const dueBySkillId = new Map<
+    string,
+    {
+      moduleSlug: string;
+      moduleTitle: string;
+      questionIds: string[];
+      questions: Array<{
+        questionId: string;
+        questionSlug: string;
+        prompt: string;
+      }>;
+      dueCount: number;
+    }
+  >();
+
+  for (const progressRow of dueProgressRows) {
+    const localizedQuestion = localizeQuestion(progressRow.question, locale);
+    const current = dueBySkillId.get(progressRow.question.primarySkillId) ?? {
+      moduleSlug: progressRow.question.module.slug,
+      moduleTitle: localizeModule(progressRow.question.module, locale).title,
+      questionIds: [],
+      questions: [],
+      dueCount: 0,
+    };
+
+    current.dueCount += 1;
+    current.questionIds.push(progressRow.questionId);
+    current.questions.push({
+      questionId: progressRow.questionId,
+      questionSlug: progressRow.question.slug,
+      prompt: localizedQuestion.prompt,
+    });
+    dueBySkillId.set(progressRow.question.primarySkillId, current);
+  }
 
   const pendingReviewItems = pendingReviewAttempts.map((attempt) => {
     const localizedQuestion = localizeQuestion(attempt.question, locale);
@@ -618,13 +893,16 @@ export async function getDashboardReadModel(userId: string, locale: Locale) {
       attemptId: attempt.id,
       sessionId: attempt.sessionId,
       questionId: attempt.questionId,
+      questionSlug: attempt.question.slug,
       prompt: localizedQuestion.prompt,
       skill: localizedSkill.title,
       module: localizedModule.title,
+      moduleSlug: attempt.question.module.slug,
       format: attempt.question.format,
       createdAt: attempt.createdAt,
       responsePreview: buildPendingAttemptPreview(attempt.responseData),
-      reviewSummary: parseAttemptReviewData(attempt.reviewData)?.summary ?? null,
+      reviewSummary:
+        parseAttemptReviewData(attempt.reviewData)?.summary ?? null,
       explanation: localizedQuestion.explanation,
       takeaways,
       verbalizePoints,
@@ -636,6 +914,81 @@ export async function getDashboardReadModel(userId: string, locale: Locale) {
       noteUpdatedAt: attempt.question.notes[0]?.updatedAt ?? null,
     };
   });
+
+  const pendingBySkillId = new Map<
+    string,
+    {
+      pendingCount: number;
+    }
+  >();
+
+  for (const attempt of pendingReviewAttempts) {
+    const current = pendingBySkillId.get(attempt.question.primarySkillId) ?? {
+      pendingCount: 0,
+    };
+
+    current.pendingCount += 1;
+    pendingBySkillId.set(attempt.question.primarySkillId, current);
+  }
+
+  const recoveryPlans = skillBreakdownSource
+    .map((skill) => {
+      const dueSignal = dueBySkillId.get(skill.id) ?? null;
+      const pendingSignal = pendingBySkillId.get(skill.id) ?? null;
+      const weakSignal = isWeakSkillSignal(skill);
+
+      if (!dueSignal && !pendingSignal && !weakSignal) {
+        return null;
+      }
+
+      const reason: RecoveryPlanReason = dueSignal
+        ? "dueNow"
+        : pendingSignal
+          ? "pendingReview"
+          : "weakSignal";
+
+      return {
+        skillId: skill.id,
+        skillSlug: skill.skillSlug,
+        skill: skill.skill,
+        score: skill.score,
+        confidenceScore: skill.confidenceScore,
+        recentFailureCount: skill.recentFailureCount,
+        coverageCount: skill.coverageCount,
+        dueCount: dueSignal?.dueCount ?? 0,
+        pendingCount: pendingSignal?.pendingCount ?? 0,
+        moduleSlug: dueSignal?.moduleSlug ?? null,
+        moduleTitle: dueSignal?.moduleTitle ?? null,
+        recoveryQuestionIds: dueSignal?.questionIds.slice(0, 6) ?? [],
+        recoveryQuestions: dueSignal?.questions.slice(0, 3) ?? [],
+        reason,
+      };
+    })
+    .flatMap((plan) => (plan ? [plan] : []))
+    .sort((left, right) => {
+      if (right.dueCount !== left.dueCount) {
+        return right.dueCount - left.dueCount;
+      }
+
+      if (right.pendingCount !== left.pendingCount) {
+        return right.pendingCount - left.pendingCount;
+      }
+
+      if (left.score !== right.score) {
+        return left.score - right.score;
+      }
+
+      if (left.confidenceScore !== right.confidenceScore) {
+        return left.confidenceScore - right.confidenceScore;
+      }
+
+      if (right.recentFailureCount !== left.recentFailureCount) {
+        return right.recentFailureCount - left.recentFailureCount;
+      }
+
+      return left.skill.localeCompare(right.skill);
+    })
+    .slice(0, 4);
 
   const recentSessionItems = mapSessionHistoryRows(recentSessions);
 
@@ -658,10 +1011,12 @@ export async function getDashboardReadModel(userId: string, locale: Locale) {
       masteryDistribution: masteryMap,
       weeklyMomentum,
       skillBreakdown: skillBreakdownSource,
+      recoveryPlans,
     },
     review: {
       dueCount,
-      urgentCount: reviewItems.filter((item) => item.urgency !== "normal").length,
+      urgentCount: reviewItems.filter((item) => item.urgency !== "normal")
+        .length,
       items: reviewItems,
       pendingCount: pendingReviewItems.length,
       pendingItems: pendingReviewItems,
@@ -694,7 +1049,11 @@ export async function getMockInterviewHistory(userId: string) {
   return mapSessionHistoryRows(sessions);
 }
 
-export async function getMockInterviewReadModel(userId: string) {
+export async function getMockInterviewReadModel(
+  userId: string,
+  locale: Locale,
+) {
+  const now = new Date();
   const [sessions, reviewedAttempts] = await Promise.all([
     getMockInterviewHistory(userId),
     prisma.attempt.findMany({
@@ -712,6 +1071,62 @@ export async function getMockInterviewReadModel(userId: string) {
       },
       select: {
         reviewData: true,
+        questionId: true,
+        isCorrect: true,
+        question: {
+          include: {
+            translations: true,
+            options: {
+              include: {
+                translations: true,
+              },
+              orderBy: {
+                order: "asc",
+              },
+            },
+            primarySkill: {
+              include: {
+                translations: true,
+              },
+            },
+            module: {
+              include: {
+                translations: true,
+              },
+            },
+            progress: {
+              where: {
+                userId,
+              },
+              select: {
+                nextReviewAt: true,
+              },
+              take: 1,
+            },
+            bookmarks: {
+              where: {
+                userId,
+              },
+              select: {
+                id: true,
+              },
+              take: 1,
+            },
+            notes: {
+              where: {
+                userId,
+              },
+              select: {
+                body: true,
+                updatedAt: true,
+              },
+              orderBy: {
+                updatedAt: "desc",
+              },
+              take: 1,
+            },
+          },
+        },
       },
       take: 100,
     }),
@@ -728,7 +1143,9 @@ export async function getMockInterviewReadModel(userId: string) {
   const previousAverage =
     previousScores.length > 0 ? roundAverage(previousScores) : null;
   const latestDelta =
-    latestScore !== null && previousAverage !== null ? latestScore - previousAverage : null;
+    latestScore !== null && previousAverage !== null
+      ? latestScore - previousAverage
+      : null;
 
   const templateGroups = new Map<
     string,
@@ -861,6 +1278,201 @@ export async function getMockInterviewReadModel(userId: string) {
       return right.reviewCount - left.reviewCount;
     });
 
+  const weaknessMap = new Map<
+    string,
+    {
+      skill: string;
+      skillSlug: string;
+      module: string;
+      moduleSlug: string;
+      track: Track;
+      reviewedCount: number;
+      totalScore: number;
+      dueCount: number;
+      bookmarkedCount: number;
+      noteCount: number;
+      questionIds: string[];
+      prompts: string[];
+      criterionCounts: Map<SessionRubricCriterion, number>;
+      formatCounts: Map<QuestionFormat, number>;
+    }
+  >();
+  const recoveryQuestionMap = new Map<
+    string,
+    {
+      questionId: string;
+      questionSlug: string;
+      prompt: string;
+      skill: string;
+      module: string;
+      moduleSlug: string;
+      format: QuestionFormat;
+      isBookmarked: boolean;
+      noteBody: string | null;
+      noteUpdatedAt: Date | null;
+      dominantCriterion: SessionRubricCriterion | null;
+      averageScore: number;
+      status: "due" | "saved";
+      priority: number;
+    }
+  >();
+
+  for (const attempt of reviewedAttempts) {
+    const review = parseAttemptReviewData(attempt.reviewData);
+
+    if (!review) {
+      continue;
+    }
+
+    const localizedQuestion = localizeQuestion(attempt.question, locale);
+    const localizedSkill = localizeSkill(attempt.question.primarySkill, locale);
+    const localizedModule = localizeModule(attempt.question.module, locale);
+    const criterionCounts = new Map<SessionRubricCriterion, number>();
+
+    for (const criterion of review.criteria) {
+      if (criterion.verdict === "solid") {
+        continue;
+      }
+
+      criterionCounts.set(
+        criterion.criterion,
+        (criterionCounts.get(criterion.criterion) ?? 0) +
+          (criterion.verdict === "missing" ? 2 : 1),
+      );
+    }
+
+    const dominantCriterion = getDominantCriterion(criterionCounts);
+    const isDue = attempt.question.progress[0]?.nextReviewAt
+      ? attempt.question.progress[0]!.nextReviewAt! <= now
+      : false;
+    const note = attempt.question.notes[0] ?? null;
+    const bookmarkCount = attempt.question.bookmarks.length > 0 ? 1 : 0;
+    const noteCount = note ? 1 : 0;
+    const weaknessKey = attempt.question.primarySkillId;
+    const current = weaknessMap.get(weaknessKey) ?? {
+      skill: localizedSkill.title,
+      skillSlug: attempt.question.primarySkill.slug,
+      module: localizedModule.title,
+      moduleSlug: attempt.question.module.slug,
+      track: attempt.question.module.track,
+      reviewedCount: 0,
+      totalScore: 0,
+      dueCount: 0,
+      bookmarkedCount: 0,
+      noteCount: 0,
+      questionIds: [],
+      prompts: [],
+      criterionCounts: new Map<SessionRubricCriterion, number>(),
+      formatCounts: new Map<QuestionFormat, number>(),
+    };
+
+    current.reviewedCount += 1;
+    current.totalScore += review.scorePercent;
+    current.dueCount += isDue ? 1 : 0;
+    current.bookmarkedCount += bookmarkCount;
+    current.noteCount += noteCount;
+
+    if (!current.questionIds.includes(attempt.questionId)) {
+      current.questionIds.push(attempt.questionId);
+    }
+
+    if (!current.prompts.includes(localizedQuestion.prompt)) {
+      current.prompts.push(localizedQuestion.prompt);
+    }
+
+    current.formatCounts.set(
+      attempt.question.format,
+      (current.formatCounts.get(attempt.question.format) ?? 0) + 1,
+    );
+
+    for (const [criterion, count] of criterionCounts.entries()) {
+      current.criterionCounts.set(
+        criterion,
+        (current.criterionCounts.get(criterion) ?? 0) + count,
+      );
+    }
+
+    weaknessMap.set(weaknessKey, current);
+
+    if (dominantCriterion || review.scorePercent < 100 || isDue) {
+      const priority =
+        (isDue ? 100 : 0) +
+        (review.scorePercent <= 50 ? 25 : review.scorePercent < 80 ? 10 : 0) +
+        noteCount * 8 +
+        bookmarkCount * 6;
+
+      recoveryQuestionMap.set(attempt.questionId, {
+        questionId: attempt.questionId,
+        questionSlug: attempt.question.slug,
+        prompt: localizedQuestion.prompt,
+        skill: localizedSkill.title,
+        module: localizedModule.title,
+        moduleSlug: attempt.question.module.slug,
+        format: attempt.question.format,
+        isBookmarked: bookmarkCount > 0,
+        noteBody: note?.body ?? null,
+        noteUpdatedAt: note?.updatedAt ?? null,
+        dominantCriterion,
+        averageScore: review.scorePercent,
+        status: isDue ? "due" : "saved",
+        priority,
+      });
+    }
+  }
+
+  const weaknessHighlights = [...weaknessMap.values()]
+    .map((weakness) => ({
+      skill: weakness.skill,
+      skillSlug: weakness.skillSlug,
+      module: weakness.module,
+      moduleSlug: weakness.moduleSlug,
+      track: weakness.track,
+      reviewedCount: weakness.reviewedCount,
+      averageScore: Math.round(weakness.totalScore / weakness.reviewedCount),
+      dueCount: weakness.dueCount,
+      bookmarkedCount: weakness.bookmarkedCount,
+      noteCount: weakness.noteCount,
+      dominantCriterion: getDominantCriterion(weakness.criterionCounts),
+      focusFormats: getFocusFormats(weakness.formatCounts),
+      questionIds: weakness.questionIds.slice(0, 6),
+      prompts: weakness.prompts.slice(0, 2),
+    }))
+    .sort((left, right) => {
+      if (right.dueCount !== left.dueCount) {
+        return right.dueCount - left.dueCount;
+      }
+
+      if (left.averageScore !== right.averageScore) {
+        return left.averageScore - right.averageScore;
+      }
+
+      if (right.reviewedCount !== left.reviewedCount) {
+        return right.reviewedCount - left.reviewedCount;
+      }
+
+      return left.skill.localeCompare(right.skill);
+    })
+    .slice(0, 3);
+
+  const recoveryQuestions = [...recoveryQuestionMap.values()]
+    .sort((left, right) => {
+      if (right.priority !== left.priority) {
+        return right.priority - left.priority;
+      }
+
+      if (left.averageScore !== right.averageScore) {
+        return left.averageScore - right.averageScore;
+      }
+
+      return left.prompt.localeCompare(right.prompt);
+    })
+    .slice(0, 6);
+
+  const recommendedTemplate = getMockRecommendation({
+    weakestTemplate,
+    weaknessHighlights,
+  });
+
   return {
     sessions,
     summary: {
@@ -875,5 +1487,8 @@ export async function getMockInterviewReadModel(userId: string) {
     },
     templateBreakdown,
     criterionBreakdown,
+    weaknessHighlights,
+    recoveryQuestions,
+    recommendedTemplate,
   };
 }

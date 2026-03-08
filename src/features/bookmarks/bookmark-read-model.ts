@@ -108,6 +108,7 @@ export async function getBookmarkReadModel(params: {
     return {
       bookmarkId: bookmark.id,
       questionId: bookmark.questionId,
+      questionSlug: bookmark.question.slug,
       prompt: localizedQuestion.prompt,
       skill: localizedSkill.title,
       module: localizedModule.title,
