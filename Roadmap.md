@@ -1,6 +1,6 @@
 # React Mentor Roadmap
 
-Derniere mise a jour: 7 mars 2026
+Derniere mise a jour: 8 mars 2026
 
 ## 1. Role du document
 
@@ -27,9 +27,14 @@ Documents de pilotage associes:
 - [ContinuationPlan.md](./ContinuationPlan.md)
 - [MasterDevelopmentPlan.md](./MasterDevelopmentPlan.md)
 - [BuildTracker.md](./BuildTracker.md)
+- [ContentExpansionTracker.md](./ContentExpansionTracker.md)
 - [Taxonomy.md](./Taxonomy.md)
 - [ContentContract.md](./ContentContract.md)
 - [DashboardReadModel.md](./DashboardReadModel.md)
+
+Note:
+
+- [ContentExpansionTracker.md](./ContentExpansionTracker.md) est la source de verite pour le programme editorial `learn`, le benchmark GreatFrontEnd et le backlog detaille du contenu pedagogique a produire
 
 ## 2. Etat des lieux du projet
 
@@ -40,6 +45,7 @@ Le projet dispose maintenant d'une vraie base produit exploitable:
 - landing page premium, brandee, bilingue FR/EN
 - auth Better Auth avec email/password et provider Google si configure
 - dashboard protege avec sidebar retractable, shell localise et recommandations dynamiques
+- bibliotheque publique `learn` avec index, collections, pages detail question et pratique ciblee
 - onboarding first-run et settings relies aux preferences utilisateur
 - catalogue modules, detail module et couche contenu Prisma localisee FR/EN
 - dashboard overview, progress, review et mock relies a de vraies agregations Prisma
@@ -63,7 +69,7 @@ Le projet n'est plus une simple demo, mais plusieurs zones restent inachevees:
 - la calibration long terme de `SkillProgress` reste a enrichir par davantage de signaux et de seuils d'acceptation
 - il n'existe pas encore d'admin de contenu exploitable, ni d'operations editoriales robustes
 - notes, bookmarks, playlists et appropriation personnelle ne sont pas encore ouvertes
-- il n'existe pas encore de billing, d'entitlements ou de plans d'abonnement
+- il n'existe pas encore de billing Stripe, mais une premiere couche d'entitlements produit et de gating interne est maintenant en place
 - les reponses ouvertes guidees et les rubrics mock ne sont pas encore disponibles
 
 ### 2.3 Conclusion de l'audit
@@ -99,6 +105,26 @@ Implication:
 - il faut faire evoluer le projet par extension de ces fondations
 - il faut eviter les doublons de patterns
 - il faut garder un alignement fort entre UX, schema Prisma, i18n et tests
+
+### 2.5 Etat du programme contenu
+
+Le chantier contenu n'est plus theorique.
+
+Il existe deja:
+
+- un modele editorial assez riche pour porter de vrais mini-cours par question
+- une premiere bibliotheque `learn` publique exploitable
+- plusieurs familles de contenu deja semees sur React, JavaScript, React Native et Frontend Systems
+
+Ce qui reste a faire maintenant n'est pas d'inventer la structure.
+Ce qui reste a faire, c'est d'augmenter fortement:
+
+- le volume
+- la couverture des familles React avancees
+- la profondeur pedagogique question par question
+- la deduplication editoriale entre sources benchmark
+
+Le plan detaille de ce programme est maintenu dans [ContentExpansionTracker.md](./ContentExpansionTracker.md).
 
 ## 3. These produit
 
@@ -480,14 +506,14 @@ Il faudra suivre:
 
 ## 10. Phases de roadmap
 
-| Phase | Objectif | Resultat concret |
-| --- | --- | --- |
-| Phase 0 | Fondation deja en place | landing, auth, i18n UI, dashboard shell, schema, tests auth, CI |
-| Phase 1 | Rendre le produit reel | onboarding, vrai catalogue, vraies requetes, vrai moteur de session |
-| Phase 2 | Installer la pedagogie | player de questions, corrections profondes, review queue, mastery |
-| Phase 3 | Installer la valeur premium | mock interviews, notes, recommandations, plan de revision |
-| Phase 4 | Industrialiser le contenu | admin, import, traduction, QA editoriale, versioning |
-| Phase 5 | Activer le business | billing, emails lifecycle, acquisition SEO, analytics |
+| Phase   | Objectif                    | Resultat concret                                                    |
+| ------- | --------------------------- | ------------------------------------------------------------------- |
+| Phase 0 | Fondation deja en place     | landing, auth, i18n UI, dashboard shell, schema, tests auth, CI     |
+| Phase 1 | Rendre le produit reel      | onboarding, vrai catalogue, vraies requetes, vrai moteur de session |
+| Phase 2 | Installer la pedagogie      | player de questions, corrections profondes, review queue, mastery   |
+| Phase 3 | Installer la valeur premium | mock interviews, notes, recommandations, plan de revision           |
+| Phase 4 | Industrialiser le contenu   | admin, import, traduction, QA editoriale, versioning                |
+| Phase 5 | Activer le business         | billing, emails lifecycle, acquisition SEO, analytics               |
 
 ## 11. Backlog detaille par epic et tickets
 
@@ -1144,6 +1170,12 @@ Criteres d'acceptation:
 - couche d'entitlements claire
 - UX lisible si limite atteinte
 
+Etat au 8 mars 2026:
+
+- couche d'entitlements interne posee
+- gating modules, mocks et playlists visible dans le dashboard
+- Stripe et lifecycle billing encore absents
+
 ### RM-1002 - Billing Stripe [P1]
 
 Objectif:
@@ -1161,6 +1193,13 @@ Tables futures possibles:
 - `Subscription`
 - `ProductEntitlement`
 - `InvoiceSnapshot`
+
+Etat au 8 mars 2026:
+
+- checkout abonnement branche
+- billing portal branche
+- webhook Stripe de synchronisation abonnement branche
+- configuration environnement et e2e billing encore a realiser en conditions reelles
 
 ### RM-1003 - Lifecycle emails avec Resend [P1]
 
@@ -1230,6 +1269,13 @@ Exemples:
 Objectif:
 Savoir ce qui marche vraiment.
 
+Etat repo au 8 mars 2026:
+
+- fondation Prisma `ProductAnalyticsEvent` en place
+- funnel admin v1 visible dans `/dashboard/admin`
+- instrumentation posee sur signup email, onboarding, creation/completion de session, answers, bookmarks, notes, upgrade click, checkout et abonnement Stripe
+- restent les trous sur certains parcours historiques et la generalisation a tous les signups sociaux / reviews completes
+
 Evenements indispensables:
 
 - account created
@@ -1251,6 +1297,13 @@ Outils possibles:
 Objectif:
 Voir les regressions avant les utilisateurs.
 
+Etat repo au 8 mars 2026:
+
+- journal structure `OperationalEvent` en base
+- monitoring admin v1 pour webhook Stripe et imports contenu
+- traces d'erreur ajoutees sur onboarding, sessions, billing webhook et import admin
+- restent Sentry ou equivalent, monitoring performance et couverture des jobs emails
+
 Besoin:
 
 - error tracking
@@ -1265,6 +1318,12 @@ Outil recommande:
 
 Objectif:
 Faire grandir le produit sans le casser.
+
+Etat repo au 8 mars 2026:
+
+- suite Vitest et validations `lint` / `typecheck` / `build` passent
+- e2e existants sur auth, practice, dashboard, mock et settings
+- restent surtout les parcours review dedies, billing reel et davantage d'integration tests server actions
 
 Couverture cible:
 
