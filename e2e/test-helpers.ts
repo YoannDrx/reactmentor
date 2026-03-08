@@ -1,10 +1,62 @@
+import {
+  AnalysisDepth,
+  BillingPlan,
+  BillingStatus,
+  PrismaClient,
+} from "@prisma/client";
 import { expect, type Page } from "@playwright/test";
+
+const prisma = new PrismaClient();
 
 export const createTestUser = (prefix = "react-mentor-e2e") => ({
   name: "React Mentor Tester",
   email: `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`,
   password: "Password123!",
 });
+
+export async function upgradeUserToPlan(params: {
+  email: string;
+  plan?: BillingPlan;
+}) {
+  const plan = params.plan ?? BillingPlan.MENTOR_PRO;
+  const user = await prisma.user.findUnique({
+    where: {
+      email: params.email,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!user) {
+    throw new Error(`Unable to find the test user for ${params.email}.`);
+  }
+
+  await prisma.userEntitlement.upsert({
+    where: {
+      userId: user.id,
+    },
+    create: {
+      userId: user.id,
+      plan,
+      billingStatus: BillingStatus.ACTIVE,
+      moduleAccessLimit: null,
+      monthlyMockLimit: null,
+      analysisDepth: AnalysisDepth.ADVANCED,
+      playlistsEnabled: true,
+      sprintModeEnabled: plan === BillingPlan.HIRING_SPRINT,
+    },
+    update: {
+      plan,
+      billingStatus: BillingStatus.ACTIVE,
+      moduleAccessLimit: null,
+      monthlyMockLimit: null,
+      analysisDepth: AnalysisDepth.ADVANCED,
+      playlistsEnabled: true,
+      sprintModeEnabled: plan === BillingPlan.HIRING_SPRINT,
+    },
+  });
+}
 
 export async function fillSignUpForm(
   page: Page,
@@ -115,6 +167,11 @@ export async function completeStructuredSession(
       break;
     }
 
+    const currentQuestionCounter = await page
+      .getByText(/Question\s+\d+\s*\/\s*\d+/)
+      .first()
+      .textContent()
+      .catch(() => null);
     const openAnswerField = page.getByLabel(/Your answer|Ta reponse/);
     const codeField = page.getByLabel(/Your code or snippet|Ton code ou snippet/);
     const bugSummaryField = page.getByLabel(/Your bug analysis|Ton analyse du bug/);
@@ -163,6 +220,24 @@ export async function completeStructuredSession(
       pendingReviewBadge
         .waitFor({ state: "visible", timeout: 10_000 })
         .then(() => "feedback"),
+      ...(currentQuestionCounter
+        ? [
+            page
+              .waitForFunction(
+                (previousCounter) => {
+                  const bodyText = document.body?.innerText ?? "";
+                  const match = bodyText.match(/Question\s+\d+\s*\/\s*\d+/);
+
+                  return Boolean(match?.[0] && match[0] !== previousCounter);
+                },
+                currentQuestionCounter,
+                {
+                  timeout: 10_000,
+                },
+              )
+              .then(() => "advanced"),
+          ]
+        : []),
     ]);
 
     if (resolvedStep === "feedback") {
