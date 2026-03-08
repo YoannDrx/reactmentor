@@ -132,6 +132,26 @@ describe("buildAdminTelemetryReadModel", () => {
           message: "Missing FR translation",
           occurredAt: new Date("2026-03-07T16:08:00.000Z"),
         },
+        {
+          id: "ops_4",
+          userId: "user_1",
+          source: "email.lifecycle",
+          eventType: "welcome_email",
+          level: OperationalEventLevel.INFO,
+          status: "sent",
+          message: null,
+          occurredAt: new Date("2026-03-07T16:09:00.000Z"),
+        },
+        {
+          id: "ops_5",
+          userId: null,
+          source: "email.lifecycle.job",
+          eventType: "review_due_batch",
+          level: OperationalEventLevel.ERROR,
+          status: "failed",
+          message: "Provider unavailable",
+          occurredAt: new Date("2026-03-07T16:10:00.000Z"),
+        },
       ],
     });
 
@@ -172,23 +192,26 @@ describe("buildAdminTelemetryReadModel", () => {
       }),
     );
 
-    expect(readModel.operational.totalEvents).toBe(3);
-    expect(readModel.operational.infoCount).toBe(1);
+    expect(readModel.operational.totalEvents).toBe(5);
+    expect(readModel.operational.infoCount).toBe(2);
     expect(readModel.operational.warningCount).toBe(1);
-    expect(readModel.operational.errorCount).toBe(1);
+    expect(readModel.operational.errorCount).toBe(2);
     expect(readModel.operational.billingWebhookEvents).toBe(2);
     expect(readModel.operational.contentImportEvents).toBe(1);
+    expect(readModel.operational.emailLifecycleEvents).toBe(1);
+    expect(readModel.operational.emailLifecycleFailures).toBe(0);
+    expect(readModel.operational.reviewReminderJobEvents).toBe(1);
     expect(readModel.operational.sourceRows[0]).toEqual(
       expect.objectContaining({
-        source: "billing.webhook",
-        total: 2,
+        source: "email.lifecycle.job",
+        total: 1,
         errors: 1,
         warnings: 0,
       }),
     );
     expect(readModel.operational.recentEvents[0]).toEqual(
       expect.objectContaining({
-        id: "ops_3",
+        id: "ops_5",
       }),
     );
   });

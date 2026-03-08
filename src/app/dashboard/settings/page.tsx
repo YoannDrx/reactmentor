@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { BillingPlan, QuestionLevel } from "@prisma/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -55,7 +56,8 @@ export default async function DashboardSettingsPage({
         checkoutSessionId,
         userId: user.id,
       });
-    } catch {
+    } catch (error) {
+      Sentry.captureException(error);
       // Let the page render and keep the Stripe sync eventual via webhook.
     }
   }

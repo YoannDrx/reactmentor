@@ -1046,6 +1046,9 @@ const en = {
         infoCountLabel: "Info",
         billingWebhookLabel: "Billing webhook events",
         contentImportLabel: "Content imports",
+        lifecycleEmailsLabel: "Lifecycle emails",
+        lifecycleEmailFailuresLabel: "Email failures",
+        reviewReminderJobsLabel: "Review reminder jobs",
         funnelTitle: "Activation funnel",
         funnelDescription:
           "From account creation to the first mock, so you can see where the learning loop actually breaks.",
@@ -1502,6 +1505,12 @@ const en = {
       focusModeTitle: "Training posture",
       focusModeDescription:
         "This setting tunes how aggressive the platform should be when choosing drills and reviews.",
+      lifecycleEmailsTitle: "Lifecycle emails",
+      lifecycleEmailsDescription:
+        "Keep useful reminders on without turning the prep loop into notification noise.",
+      lifecycleEmailsLabel: "Receive useful progress emails",
+      lifecycleEmailsHint:
+        "Welcome email, review-due reminders and future useful digests. You can turn this off at any time.",
       summaryTitle: "Current operating profile",
       summaryDescription:
         "A compact snapshot of the way React Mentor will shape the next study cycle.",
@@ -1509,6 +1518,9 @@ const en = {
       summaryWeeklyGoalLabel: "Weekly volume",
       summaryFocusModeLabel: "Focus mode",
       summaryTracksLabel: "Track coverage",
+      summaryEmailsLabel: "Lifecycle emails",
+      summaryEmailsEnabled: "Enabled",
+      summaryEmailsDisabled: "Disabled",
       summaryEmptyTargetRole: "Target role not defined yet",
       summaryConfigured:
         "Your workspace is personalized and ready to drive the next sessions.",

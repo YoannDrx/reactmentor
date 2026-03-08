@@ -19,16 +19,21 @@ test.describe("settings", () => {
 
     const targetRoleField = page.locator('input[name="targetRole"]');
     const weeklyGoalField = page.locator('input[name="weeklyGoal"]');
+    const lifecycleEmailsField = page.locator(
+      'input[name="lifecycleEmailsEnabled"]',
+    );
     const saveButton = page.getByRole("button", {
       name: /Save setup|Enregistrer/i,
     });
 
     await expect(targetRoleField).toBeVisible();
+    await expect(lifecycleEmailsField).toBeChecked();
     await targetRoleField.fill("Senior Frontend Platform Engineer");
     await weeklyGoalField.fill("45");
     await page
       .locator('input[name="targetLevel"][value="SENIOR"]')
       .check({ force: true });
+    await lifecycleEmailsField.uncheck({ force: true });
     await saveButton.click();
 
     await expect(
@@ -45,6 +50,7 @@ test.describe("settings", () => {
       "Senior Frontend Platform Engineer",
     );
     await expect(weeklyGoalField).toHaveValue("45");
+    await expect(lifecycleEmailsField).not.toBeChecked();
     await expect(
       page.getByText("Senior Frontend Platform Engineer", { exact: true }),
     ).toBeVisible();

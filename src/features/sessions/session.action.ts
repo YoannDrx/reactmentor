@@ -1,5 +1,6 @@
 "use server";
 
+import * as Sentry from "@sentry/nextjs";
 import {
   OperationalEventLevel,
   Prisma,
@@ -752,6 +753,7 @@ export async function recordTrainingSessionAttemptAction(
       formError: null,
     };
   } catch (error) {
+    Sentry.captureException(error);
     await captureOperationalEvent({
       userId: user.id,
       source: "session.action",

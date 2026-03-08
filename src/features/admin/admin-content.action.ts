@@ -1,5 +1,6 @@
 "use server";
 
+import * as Sentry from "@sentry/nextjs";
 import {
   ContentLocale,
   ContentStatus,
@@ -537,6 +538,7 @@ export async function importAdminContentAction(formData: FormData) {
       },
     });
   } catch (error) {
+    Sentry.captureException(error);
     await captureOperationalEvent({
       userId: user.id,
       source: "content.import",

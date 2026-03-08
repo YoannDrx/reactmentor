@@ -255,6 +255,17 @@ export function buildAdminTelemetryReadModel(params: {
       contentImportEvents: operationalRows.filter(
         (row) => row.source === "content.import",
       ).length,
+      emailLifecycleEvents: operationalRows.filter(
+        (row) => row.source === "email.lifecycle",
+      ).length,
+      emailLifecycleFailures: operationalRows.filter(
+        (row) =>
+          row.source === "email.lifecycle" &&
+          row.level === OperationalEventLevel.ERROR,
+      ).length,
+      reviewReminderJobEvents: operationalRows.filter(
+        (row) => row.source === "email.lifecycle.job",
+      ).length,
       sourceRows: buildOperationalSourceRows(operationalRows),
       recentEvents: operationalRows.slice(0, RECENT_EVENT_LIMIT),
     },

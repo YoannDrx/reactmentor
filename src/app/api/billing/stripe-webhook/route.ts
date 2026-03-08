@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import {
   OperationalEventLevel,
   ProductAnalyticsEventName,
@@ -60,6 +61,7 @@ export async function POST(request: Request) {
       env.STRIPE_WEBHOOK_SECRET,
     );
   } catch (error) {
+    Sentry.captureException(error);
     const message =
       error instanceof Error ? error.message : "Unknown webhook signature error.";
 
@@ -151,6 +153,7 @@ export async function POST(request: Request) {
     revalidateBillingEntitlementPaths();
     return Response.json({ received: true });
   } catch (error) {
+    Sentry.captureException(error);
     const message = getErrorMessage(
       error,
       "Unknown webhook processing error.",

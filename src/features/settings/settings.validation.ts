@@ -12,6 +12,7 @@ export const settingsSchema = z.object({
   weeklyGoal: z.coerce.number().int().min(5).max(150),
   preferredTracks: z.array(z.nativeEnum(Track)).min(1).max(4),
   focusMode: z.enum(focusModeValues),
+  lifecycleEmailsEnabled: z.boolean().default(true),
 });
 
 function getFieldErrorCode(

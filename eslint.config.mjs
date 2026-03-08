@@ -9,6 +9,7 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    ".react-email/**",
     "out/**",
     "build/**",
     "next-env.d.ts",

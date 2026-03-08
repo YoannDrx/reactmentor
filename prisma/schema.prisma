@@ -187,15 +187,16 @@ model Verification {
 }
 
 model UserPreference {
-  id              String         @id @default(cuid())
-  userId          String         @unique
-  targetRole      String?
-  targetLevel     QuestionLevel? @default(MID)
-  weeklyGoal      Int            @default(30)
-  preferredTracks Track[]        @default([REACT, TYPESCRIPT])
-  focusMode       String         @default("balanced")
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  id                     String         @id @default(cuid())
+  userId                 String         @unique
+  targetRole             String?
+  targetLevel            QuestionLevel? @default(MID)
+  weeklyGoal             Int            @default(30)
+  preferredTracks        Track[]        @default([REACT, TYPESCRIPT])
+  focusMode              String         @default("balanced")
+  lifecycleEmailsEnabled Boolean        @default(true)
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

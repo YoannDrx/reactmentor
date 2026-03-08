@@ -1,5 +1,6 @@
 "use server";
 
+import * as Sentry from "@sentry/nextjs";
 import { revalidatePath } from "next/cache";
 import { getUser } from "@/lib/auth/auth-user";
 import { updateUserPreferences } from "./user-preferences";
@@ -26,6 +27,7 @@ export async function updateSettingsAction(
     weeklyGoal: formData.get("weeklyGoal"),
     preferredTracks: formData.getAll("preferredTracks").map(String),
     focusMode: String(formData.get("focusMode") ?? ""),
+    lifecycleEmailsEnabled: formData.get("lifecycleEmailsEnabled") === "on",
   });
 
   if (!parsed.success) {
@@ -48,7 +50,9 @@ export async function updateSettingsAction(
       fieldErrors: {},
       formError: null,
     };
-  } catch {
+  } catch (error) {
+    Sentry.captureException(error);
+
     return {
       status: "error",
       fieldErrors: {},

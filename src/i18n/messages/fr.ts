@@ -1058,6 +1058,9 @@ const fr = {
         infoCountLabel: "Infos",
         billingWebhookLabel: "Events billing webhook",
         contentImportLabel: "Imports contenu",
+        lifecycleEmailsLabel: "Emails lifecycle",
+        lifecycleEmailFailuresLabel: "Echecs email",
+        reviewReminderJobsLabel: "Jobs review reminder",
         funnelTitle: "Funnel activation",
         funnelDescription:
           "Du compte cree au premier mock, pour voir ou la boucle d'apprentissage se casse vraiment.",
@@ -1519,6 +1522,12 @@ const fr = {
       focusModeTitle: "Posture d'entrainement",
       focusModeDescription:
         "Ce reglage ajuste a quel point la plateforme doit etre agressive dans le choix des drills et des reviews.",
+      lifecycleEmailsTitle: "Emails lifecycle",
+      lifecycleEmailsDescription:
+        "Garde la main sur les rappels utiles sans transformer la preparation en bruit de notification.",
+      lifecycleEmailsLabel: "Recevoir les emails utiles de progression",
+      lifecycleEmailsHint:
+        "Welcome email, rappels review due et futurs resumes utiles. Tu pourras le couper a tout moment.",
       summaryTitle: "Profil operationnel actuel",
       summaryDescription:
         "Une lecture compacte de la maniere dont React Mentor va structurer le prochain cycle de travail.",
@@ -1526,6 +1535,9 @@ const fr = {
       summaryWeeklyGoalLabel: "Volume hebdo",
       summaryFocusModeLabel: "Mode de focus",
       summaryTracksLabel: "Couverture tracks",
+      summaryEmailsLabel: "Emails lifecycle",
+      summaryEmailsEnabled: "Actifs",
+      summaryEmailsDisabled: "Desactives",
       summaryEmptyTargetRole: "Role cible non defini pour l'instant",
       summaryConfigured:
         "Ton workspace est personnalise et pret a guider les prochaines sessions.",

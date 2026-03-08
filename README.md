@@ -81,10 +81,18 @@ Optional providers:
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
 - `RESEND_API_KEY`
+- `LIFECYCLE_JOB_SECRET`
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
 - `STRIPE_PRICE_MENTOR_PRO`
 - `STRIPE_PRICE_HIRING_SPRINT`
+- `NEXT_PUBLIC_SENTRY_DSN`
+
+Optional Sentry source-map upload:
+
+- `SENTRY_ORG`
+- `SENTRY_PROJECT`
+- `SENTRY_AUTH_TOKEN`
 
 ## Database
 
@@ -123,6 +131,22 @@ pnpm lint
 pnpm typecheck
 pnpm build
 ```
+
+## Observability
+
+- Sentry is wired through `next.config.ts`, `src/instrumentation.ts`, `src/instrumentation-client.ts` and `src/app/global-error.tsx`
+- the SDK stays dormant until `NEXT_PUBLIC_SENTRY_DSN` is configured
+- source-map upload is only useful when `SENTRY_ORG`, `SENTRY_PROJECT` and `SENTRY_AUTH_TOKEN` are also present
+
+## Lifecycle Emails
+
+- Resend is wired server-side through `src/lib/resend.ts` and `src/features/emails/lifecycle-email.ts`
+- React Email templates live in `emails/` with a shared layout similar to the pattern used in Jobio
+- run `pnpm email` to preview templates locally on `http://localhost:3030`
+- onboarding can send a localized welcome email when `RESEND_API_KEY` is configured
+- review-due reminders can be triggered through `GET /api/jobs/review-due-reminders`
+- protect that route with `Authorization: Bearer $LIFECYCLE_JOB_SECRET`
+- users can disable lifecycle emails from `/dashboard/settings`
 
 ## Auth Notes
 

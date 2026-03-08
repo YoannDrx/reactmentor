@@ -39,12 +39,19 @@ export type SettingsFormMessages = {
   weeklyGoalPresetsLabel: string;
   focusModeTitle: string;
   focusModeDescription: string;
+  lifecycleEmailsTitle: string;
+  lifecycleEmailsDescription: string;
+  lifecycleEmailsLabel: string;
+  lifecycleEmailsHint: string;
   summaryTitle: string;
   summaryDescription: string;
   summaryTargetLabel: string;
   summaryWeeklyGoalLabel: string;
   summaryFocusModeLabel: string;
   summaryTracksLabel: string;
+  summaryEmailsLabel: string;
+  summaryEmailsEnabled: string;
+  summaryEmailsDisabled: string;
   summaryEmptyTargetRole: string;
   summaryConfigured: string;
   summaryNotConfigured: string;
@@ -144,6 +151,9 @@ export function SettingsForm({
   const [focusMode, setFocusMode] = useState<FocusMode>(preference.focusMode);
   const [preferredTracks, setPreferredTracks] = useState<Track[]>(
     preference.preferredTracks,
+  );
+  const [lifecycleEmailsEnabled, setLifecycleEmailsEnabled] = useState(
+    preference.lifecycleEmailsEnabled,
   );
 
   useEffect(() => {
@@ -387,6 +397,36 @@ export function SettingsForm({
             </div>
           </section>
 
+          <section className="rounded-[28px] border border-slate-200 bg-white/85 p-6">
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium text-slate-950">
+                {messages.lifecycleEmailsTitle}
+              </h3>
+              <p className="text-sm leading-6 text-slate-600">
+                {messages.lifecycleEmailsDescription}
+              </p>
+            </div>
+            <label className="mt-4 flex items-start gap-3 rounded-[24px] border border-slate-200 bg-slate-50/70 p-4">
+              <input
+                type="checkbox"
+                name="lifecycleEmailsEnabled"
+                checked={lifecycleEmailsEnabled}
+                onChange={(event) =>
+                  setLifecycleEmailsEnabled(event.target.checked)
+                }
+                className="mt-1 h-4 w-4 rounded border-slate-300 text-slate-950"
+              />
+              <span className="grid gap-1">
+                <span className="font-medium text-slate-950">
+                  {messages.lifecycleEmailsLabel}
+                </span>
+                <span className="text-sm leading-6 text-slate-600">
+                  {messages.lifecycleEmailsHint}
+                </span>
+              </span>
+            </label>
+          </section>
+
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm leading-6 text-slate-500">
               {isConfigured
@@ -446,6 +486,17 @@ export function SettingsForm({
               </div>
               <div className="mt-2 text-base font-medium text-white">
                 {summaryTracks}
+              </div>
+            </div>
+
+            <div className="rounded-[22px] border border-white/10 bg-white/5 p-4">
+              <div className="text-xs uppercase tracking-[0.22em] text-slate-400">
+                {messages.summaryEmailsLabel}
+              </div>
+              <div className="mt-2 text-base font-medium text-white">
+                {lifecycleEmailsEnabled
+                  ? messages.summaryEmailsEnabled
+                  : messages.summaryEmailsDisabled}
               </div>
             </div>
           </div>

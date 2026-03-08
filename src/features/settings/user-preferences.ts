@@ -27,6 +27,7 @@ export type UserPreferenceSnapshot = {
   weeklyGoal: number;
   preferredTracks: Track[];
   focusMode: FocusMode;
+  lifecycleEmailsEnabled: boolean;
   isConfigured: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -78,6 +79,7 @@ function mapPreferenceSnapshot(preference: {
   weeklyGoal: number;
   preferredTracks: Track[];
   focusMode: string;
+  lifecycleEmailsEnabled: boolean;
   createdAt: Date;
   updatedAt: Date;
 }) {
@@ -94,6 +96,7 @@ function mapPreferenceSnapshot(preference: {
     weeklyGoal: clampWeeklyGoal(preference.weeklyGoal),
     preferredTracks,
     focusMode,
+    lifecycleEmailsEnabled: preference.lifecycleEmailsEnabled,
     isConfigured: targetRole.length > 0,
     createdAt: preference.createdAt,
     updatedAt: preference.updatedAt,
@@ -117,6 +120,7 @@ async function ensureUserPreferenceRecord(userId: string) {
         weeklyGoal: 30,
         preferredTracks: [Track.REACT, Track.TYPESCRIPT],
         focusMode: "balanced",
+        lifecycleEmailsEnabled: true,
       },
     });
   } catch (error) {
@@ -153,6 +157,7 @@ export async function updateUserPreferences(
     weeklyGoal: number;
     preferredTracks: Track[];
     focusMode: FocusMode;
+    lifecycleEmailsEnabled: boolean;
   },
 ) {
   await ensureUserPreferenceRecord(userId);
@@ -165,6 +170,7 @@ export async function updateUserPreferences(
       weeklyGoal: clampWeeklyGoal(input.weeklyGoal),
       preferredTracks: normalizePreferredTracks(input.preferredTracks),
       focusMode: normalizeFocusMode(input.focusMode),
+      lifecycleEmailsEnabled: input.lifecycleEmailsEnabled,
     },
   });
 

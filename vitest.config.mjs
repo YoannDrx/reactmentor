@@ -28,6 +28,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@email": path.resolve(__dirname, "./emails"),
       "@test": path.resolve(__dirname, "./test"),
     },
   },

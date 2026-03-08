@@ -1,5 +1,6 @@
 "use server";
 
+import * as Sentry from "@sentry/nextjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
@@ -19,6 +20,8 @@ import {
 } from "@/features/settings/settings.validation";
 import type { SettingsActionState } from "@/features/settings/settings.state";
 import { updateUserPreferences } from "@/features/settings/user-preferences";
+import { sendWelcomeLifecycleEmail } from "@/features/emails/lifecycle-email";
+import { getLocale } from "@/i18n/server";
 
 export async function completeOnboardingAction(
   _previousState: SettingsActionState,
@@ -34,12 +37,17 @@ export async function completeOnboardingAction(
     };
   }
 
+  const locale = await getLocale();
   const parsed = settingsSchema.safeParse({
     targetRole: String(formData.get("targetRole") ?? ""),
     targetLevel: String(formData.get("targetLevel") ?? ""),
     weeklyGoal: formData.get("weeklyGoal"),
     preferredTracks: formData.getAll("preferredTracks").map(String),
     focusMode: String(formData.get("focusMode") ?? ""),
+    lifecycleEmailsEnabled:
+      formData.get("lifecycleEmailsEnabled") === null
+        ? true
+        : formData.get("lifecycleEmailsEnabled") === "on",
   });
 
   if (!parsed.success) {
@@ -51,7 +59,7 @@ export async function completeOnboardingAction(
   }
 
   try {
-    await updateUserPreferences(user.id, parsed.data);
+    const updatedPreference = await updateUserPreferences(user.id, parsed.data);
     await captureProductAnalyticsEvent({
       userId: user.id,
       name: ProductAnalyticsEventName.ONBOARDING_COMPLETED,
@@ -63,9 +71,19 @@ export async function completeOnboardingAction(
         focusMode: parsed.data.focusMode,
       },
     });
+    await sendWelcomeLifecycleEmail({
+      userId: user.id,
+      recipient: user.email,
+      userName: user.name,
+      locale,
+      targetRole: updatedPreference.targetRole,
+      preferredTracks: updatedPreference.preferredTracks,
+      lifecycleEmailsEnabled: updatedPreference.lifecycleEmailsEnabled,
+    });
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/settings");
   } catch (error) {
+    Sentry.captureException(error);
     await captureOperationalEvent({
       userId: user.id,
       source: "onboarding.action",

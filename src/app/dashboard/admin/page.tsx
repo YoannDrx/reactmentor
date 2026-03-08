@@ -502,7 +502,7 @@ export default async function DashboardAdminPage({
           </div>
 
           <div className="grid gap-6">
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-2">
               <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4">
                 <div className="text-sm font-medium text-slate-950">
                   {admin.telemetry.errorCountLabel}
@@ -543,6 +543,26 @@ export default async function DashboardAdminPage({
                 </div>
                 <div className="mt-2 text-3xl font-semibold text-slate-950">
                   {telemetryReadModel.operational.contentImportEvents}
+                </div>
+              </div>
+              <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4">
+                <div className="text-sm font-medium text-slate-950">
+                  {admin.telemetry.lifecycleEmailsLabel}
+                </div>
+                <div className="mt-2 text-3xl font-semibold text-slate-950">
+                  {telemetryReadModel.operational.emailLifecycleEvents}
+                </div>
+                <div className="mt-2 text-sm text-slate-600">
+                  {admin.telemetry.lifecycleEmailFailuresLabel}:{" "}
+                  {telemetryReadModel.operational.emailLifecycleFailures}
+                </div>
+              </div>
+              <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4">
+                <div className="text-sm font-medium text-slate-950">
+                  {admin.telemetry.reviewReminderJobsLabel}
+                </div>
+                <div className="mt-2 text-3xl font-semibold text-slate-950">
+                  {telemetryReadModel.operational.reviewReminderJobEvents}
                 </div>
               </div>
             </div>
