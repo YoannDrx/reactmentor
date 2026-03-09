@@ -1,6 +1,6 @@
 # React Mentor Execution Plan
 
-Derniere mise a jour: 7 mars 2026
+Derniere mise a jour: 9 mars 2026
 
 Document parent: [Roadmap.md](./Roadmap.md)
 
@@ -54,16 +54,22 @@ Consequence:
 
 ## 2.1 Statut actuel
 
-- `Lot 0`: `DONE`
-- `Lot 1`: `IN_PROGRESS`
-- `Lot 2`: `DONE`
-- `Lot 3`: `DONE`
-- `Lot 4`: `PARTIAL`
-- `Lot 5`: `DONE`
-- `Lot 6`: `IN_PROGRESS`
-- `Lot 7`: `IN_PROGRESS`
-- `Lot 8`: `PARTIAL`
-- prochain chantier recommande: terminer la migration legacy, finaliser la calibration long terme de `SkillProgress` et etendre le builder mock au-dela des presets single-choice actuels
+- `Lots 0 a 11`: essentiellement `DONE` dans le repo reel
+- `Lot 12`: `PARTIAL`
+- `Lot 13`: `IN_PROGRESS`
+- le projet n'est plus dans une phase "ouvrir les premieres vertical slices"
+- le chemin critique courant est maintenant:
+  1. finir la sortie du reliquat `demo-data` cote surfaces authentifiees
+  2. relier `learn` a une boucle cours -> checkpoint -> practice -> review
+  3. enrichir le tracking d'apprentissage avec des signaux de lecture / comprehension / restitution
+  4. transformer le workspace personnel en vraie surface d'apprentissage
+  5. industrialiser QA editoriale, dedup benchmark et freshness review
+  6. fermer les derniers trous telemetry / observabilite / e2e produit
+
+Note:
+
+- les sections historiques des lots plus bas restent utiles pour comprendre l'ordre de build initial
+- l'etat courant et la priorisation active sont portes par [BuildTracker.md](./BuildTracker.md), [ContinuationPlan.md](./ContinuationPlan.md), [ContentExpansionTracker.md](./ContentExpansionTracker.md) et [LearningSystemImprovements.md](./LearningSystemImprovements.md)
 
 Plan de continuation detaille:
 
@@ -201,14 +207,32 @@ Ce sont les premiers tickets a executer sans attendre.
 
 ### Queue immediate - ordre strict
 
-1. terminer la migration legacy monolingue dans le schema contenu
-2. enrichir `SkillProgress` avec une calibration plus fine par difficulte et recence
-3. completer le player au-dela du single-choice strict
-4. ouvrir les vrais mocks avec scorecards, historique et rapport de fin
-5. sortir les derniers residus demo de `dashboard-view-model`
-6. fiabiliser les parcours review et mock en e2e
-7. preparer la couche notes/bookmarks sur les questions
-8. commencer le contrat fonctionnel de l'admin contenu
+1. sortir `demo-data` des surfaces produit authentifiees encore dependantes
+2. ajouter un premier lot `learn -> signal -> action`:
+   - marquer un cours comme etudie
+   - auto-check oral / checkpoint
+   - ajout rapide a la review
+   - questions associees et micro-practice
+3. etendre `QuestionProgress` ou la couche de tracking adjacente pour porter ces signaux d'apprentissage
+4. rendre ces signaux visibles dans les read models et les surfaces `learn` / dashboard / review
+5. etendre playlists, bookmarks et notes au-dela du seul axe "question jouee"
+6. renforcer QA editoriale avec freshness review, dedup benchmark et garde-fous bulk
+7. completer la telemetry produit sur les evenements `learn`
+8. fiabiliser la matrice e2e sur `learn`, `admin`, `playlists` et le setup DB local
+
+Etat au 9 mars 2026:
+
+- `dashboard/learn` est ouvert comme workspace protege
+- le public `learn` reste accessible comme teaser et redirige les utilisateurs connectes
+- les signaux `learn` sont deja visibles dans dashboard/review/playlists
+- un premier spec Playwright couvre le split public/auth `learn`
+- l'admin editorial remonte deja une queue freshness et un watch de doublons de prompts
+
+Le prochain sous-lot prioritaire devient donc:
+
+1. micro-exercices non-QCM, prerequis et suites de cours dans `dashboard/learn`
+2. actions bulk admin pour traiter freshness/dedup
+3. fermeture des trous `test:e2e:ci` complets et telemetry `learn`
 
 ## 10. Lot 0 - Stabilisation de base
 

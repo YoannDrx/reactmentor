@@ -1,6 +1,6 @@
 # React Mentor Continuation Plan
 
-Derniere mise a jour: 8 mars 2026
+Derniere mise a jour: 9 mars 2026
 
 Document parent:
 
@@ -35,7 +35,7 @@ Le coeur produit existe deja en version defendable:
 - dashboard, review, progress et mocks relies a Prisma
 - moteur de session live pour `PRACTICE`, `REVIEW` et `MOCK_INTERVIEW`
 - progression persistante `QuestionProgress` et `SkillProgress`
-- bibliotheque publique `learn` avec collections et pages cours detaillees
+- `learn` public conserve comme teaser, avec le detail complet maintenant pousse dans `dashboard/learn`
 - notes, bookmarks, playlists, billing Stripe, lifecycle email, telemetry et admin contenu v1 deja ouverts
 - i18n FR/EN et socle de tests deja en place
 
@@ -53,7 +53,7 @@ Le vrai chemin critique devient:
 
 ### P0
 
-- clore la migration legacy contenu/i18n
+- sortir le reliquat `demo-data` des surfaces produit authentifiees
 - densifier la bibliotheque `learn` sur React, JavaScript et Frontend Systems
 - brancher des checkpoints de comprehension et de pratique autour des cours
 - enrichir le tracking d'apprentissage au-dela de la seule tentative
@@ -87,6 +87,7 @@ Le vrai chemin critique devient:
 - relier chaque cours a un mini checkpoint, une pratique ciblee et un plan de recovery
 - faire remonter des signaux distincts de lecture, comprehension, restitution et rechute
 - expliciter davantage les recommandations du dashboard
+- enrichir les formats non-QCM et les prerequis / suites de cours dans `dashboard/learn`
 
 ### C. Learning workspace
 
@@ -97,74 +98,74 @@ Le vrai chemin critique devient:
 
 - industrialiser QA, deduplication benchmark, relecture et maintenance du contenu
 - mieux piloter le coverage par niveau, format, surface et famille
+- ajouter les actions bulk manquantes autour des nouvelles queues freshness/dedup de l'admin
 
 ## 4. Chantiers recommandes
 
-## 4.1 Chantier A - Cleanup legacy et sortie complete du mode demo
+## 4.1 Chantier A - Sortie complete du mode demo cote produit
 
 ### Objectif
 
 Supprimer les derniers points de confusion entre:
 
 - donnees localisees reelles
-- fallbacks legacy monolingues
 - previews marketing encore basees sur `demo-data.ts`
 
 ### Pourquoi maintenant
 
 Ce chantier a une forte valeur de clarification.
-Il reduit les decisions floues sur les prochains lots et evite de construire les nouveaux formats sur une couche de contenu encore ambigue.
+Il reduit les decisions floues sur les prochains lots et evite de brancher `learn` et les nouveaux signaux sur une couche UI encore ambigue.
 
 ### Tickets recommandes
 
-#### A1 - Cartographier les champs legacy encore necessaires
-
-But:
-
-- decider si `title`, `description`, `summary`, `prompt`, `explanation` et `label` restent sources de verite temporaires ou simples fallbacks techniques
-
-Fichiers principaux:
-
-- [prisma/schema.prisma](/Users/yoannandrieux/Projets/react-mentor/prisma/schema.prisma)
-- [src/lib/content-repository.ts](/Users/yoannandrieux/Projets/react-mentor/src/lib/content-repository.ts)
-- [prisma/seed.ts](/Users/yoannandrieux/Projets/react-mentor/prisma/seed.ts)
-
-Definition of done:
-
-- decision documentee sur chaque champ racine legacy
-- regles de fallback explicites dans les services
-- impact migration liste
-
-#### A2 - Purger les residus `demo-data.ts` hors landing si possible
+#### A1 - Sortir `demo-data` des surfaces authentifiees
 
 But:
 
 - garder la landing libre de faire de la mise en scene
-- supprimer toute ambiguite dans les surfaces produit connectees
+- supprimer toute ambiguite dans overview, mock et autres surfaces connectees
 
 Fichiers principaux:
 
 - [src/features/dashboard/dashboard-view-model.ts](/Users/yoannandrieux/Projets/react-mentor/src/features/dashboard/dashboard-view-model.ts)
-- [src/features/landing/landing-page.tsx](/Users/yoannandrieux/Projets/react-mentor/src/features/landing/landing-page.tsx)
-- [src/app/auth/layout.tsx](/Users/yoannandrieux/Projets/react-mentor/src/app/auth/layout.tsx)
+- [src/app/dashboard/page.tsx](/Users/yoannandrieux/Projets/react-mentor/src/app/dashboard/page.tsx)
+- [src/app/dashboard/mock-interviews/page.tsx](/Users/yoannandrieux/Projets/react-mentor/src/app/dashboard/mock-interviews/page.tsx)
 
 Definition of done:
 
-- aucun composant de dashboard authentifie ne depend de `demo-data.ts`
-- les previews marketing restantes sont assumees comme marketing
+- aucun composant produit authentifie ne depend encore de `demo-data.ts`
+- les usages restants sont limites a la landing / auth marketing
+- la documentation le dit explicitement
 
-#### A3 - Clore `L1-05` avec migration et tests
+#### A2 - Realigner la documentation centrale
 
 But:
 
-- aligner schema, seed, repository et tests sur la decision retenue
+- faire de `README.md`, `ExecutionPlan.md` et `ContinuationPlan.md` des documents compatibles avec l'etat reel du repo
+
+Fichiers principaux:
+
+- [README.md](/Users/yoannandrieux/Projets/react-mentor/README.md)
+- [ExecutionPlan.md](/Users/yoannandrieux/Projets/react-mentor/ExecutionPlan.md)
+- [ContinuationPlan.md](/Users/yoannandrieux/Projets/react-mentor/ContinuationPlan.md)
+- [BuildTracker.md](/Users/yoannandrieux/Projets/react-mentor/BuildTracker.md)
 
 Definition of done:
 
-- migration Prisma creee si necessaire
-- seed aligne
-- tests repository mis a jour
-- `BuildTracker.md` passe `L1-05` a `DONE`
+- l'etat du produit n'est plus decrit comme une fondation demo
+- la phase active est clairement `learning system + content scale + QA/ops`
+
+#### A3 - Fiabiliser le setup de verification produit
+
+But:
+
+- eviter que le lot `learn` arrive sur une base de test instable ou ambigue
+
+Definition of done:
+
+- `pnpm typecheck` et `pnpm test:ci` restent verts
+- le prochain lot e2e cible explicitement `learn` et les surfaces manquantes
+- le `BuildTracker.md` mentionne ces garde-fous
 
 ## 4.2 Chantier B - Player multi-format v1
 

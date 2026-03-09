@@ -1,6 +1,6 @@
 # React Mentor Master Development Plan
 
-Derniere mise a jour: 8 mars 2026
+Derniere mise a jour: 9 mars 2026
 
 Documents parents:
 
@@ -58,8 +58,9 @@ Regle forte:
 - moteur de session pour `PRACTICE`, `REVIEW` et `MOCK_INTERVIEW`
 - player multi-format v1 stable sur `SINGLE_CHOICE`, `MULTIPLE_CHOICE`, `OPEN_ENDED`, `CODE_OUTPUT` et `BUG_HUNT`
 - progression `QuestionProgress` et `SkillProgress` persistante
+- premiers signaux `learn` persistants sur `QuestionProgress` et loop de base `cours -> checkpoint -> review/practice`
 - mocks v1 avec timer, expiration, rapport et historique reel
-- bibliotheque publique `learn` avec collections editoriales et pages cours detaillees
+- `learn` public comme teaser editorial, prolonge par `dashboard/learn` pour le workspace detaille authentifie
 - notes, bookmarks, playlists et workspace personnel v1 exposes
 - admin contenu v1 exploitable via `/dashboard/admin`
 - billing Stripe, entitlements, lifecycle email, telemetry produit et Sentry relies
@@ -71,9 +72,9 @@ Regle forte:
 
 - cleanup legacy monolingue incomplet
 - structure pedagogique des cours encore tres textuelle et peu interactive
-- tracking d'apprentissage encore trop centre sur la tentative plutot que sur la comprehension, la restitution et la rechute
+- tracking d'apprentissage encore trop centre sur la tentative malgre un premier lot de signaux de cours; comprehension, restitution et rechute restent encore sous-exploitees
 - recovery plans et recommandations encore pas assez relies a la consommation des cours
-- QA editoriale, deduplication benchmark et operations bulk encore partielles
+- QA editoriale, deduplication benchmark et operations bulk encore partielles, malgre une premiere queue freshness et un watch de doublons deja branches dans l'admin
 - analytics de performance et mesure de l'efficacite pedagogique encore incomplets
 - entonnoirs de retention, reactivation et usage long terme encore a renforcer
 
@@ -155,6 +156,7 @@ La phase active est maintenant:
 - augmenter la profondeur pedagogique des reponses et mini-cours
 - mieux relier contenu, pratique, review et recommandations
 - rendre le tracking d'apprentissage plus lisible et plus utile
+- outiller l'admin pour traiter freshness review et deduplication a plus grande echelle
 
 Documents directeurs de cette phase:
 

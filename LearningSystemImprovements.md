@@ -1,6 +1,6 @@
 # React Mentor Learning System Improvements
 
-Derniere mise a jour: 8 mars 2026
+Derniere mise a jour: 9 mars 2026
 
 ## 1. Role du document
 
@@ -20,8 +20,10 @@ Il sert a repondre a une question plus precise:
 
 ### 2.1 Ce qui existe deja
 
-- bibliotheque publique `learn` avec index, collections et pages question detaillees
+- `learn` public conserve comme bibliotheque teaser, avec `dashboard/learn` comme workspace protege detaille
 - cours bilingues FR/EN avec `tlDr`, reponse courte, explication longue, erreurs frequentes, exemple et points a verbaliser
+- premiers signaux de cours relies a `QuestionProgress` pour suivre lecture, checkpoint de comprehension et ajout a la review
+- page detail question `learn` deja enrichie avec CTA `marquer comme etudie`, checkpoint declaratif, ajout a la review, pratique ciblee et questions liees
 - CTA `Lire le cours` relies depuis modules, review, notes, bookmarks et mock recovery
 - sessions `practice`, `review` et `mock` avec plusieurs formats jouables
 - `QuestionProgress` et `SkillProgress` relies a la repetition espacee et a des signaux de confiance/couverture
@@ -31,8 +33,8 @@ Il sert a repondre a une question plus precise:
 
 ### 2.2 Ce qui manque encore
 
-- la lecture d'un cours n'alimente pas encore un vrai signal d'apprentissage
-- chaque cours n'a pas encore son mini checkpoint ou exercice de verification
+- les signaux de cours existent maintenant et sont deja propagés dans dashboard/review/playlists, mais restent encore sous-exploites dans les recommandations adaptatives et recovery plans
+- les checkpoints de fin de cours existent en premier lot, avec micro-checkpoint interactif pour formats fermes, mais les formats non-QCM restent encore sans vrai micro-exercice dedie
 - il manque des liens explicites entre "je lis", "je m'entraine", "je revise" et "je refais un mock"
 - les recommandations restent surtout basees sur attempts et review, pas encore sur comprehension de cours
 - il n'existe pas encore de vue claire "ou j'en suis par concept / cours / skill / module"
@@ -72,6 +74,12 @@ Objectif:
 
 - qu'un cours ne soit plus une simple lecture passive
 
+Etat 8 mars 2026:
+
+- premier lot livre sur la page question `learn` avec marquage "etudie", checkpoint declaratif, ajout a la review, questions liees et handoff auth-safe vers la practice
+- `dashboard/learn` est maintenant la surface authentifiee de reference, le public `learn` servant de teaser et d'acquisition
+- le prochain sous-lot doit ajouter des vrais micro-exercices pour les formats non fermes, puis prerequis / cours suivants
+
 Ameliorations:
 
 - ajouter un mini checkpoint en bas de chaque cours
@@ -91,6 +99,11 @@ Impact attendu:
 Objectif:
 
 - suivre autre chose que des bonnes ou mauvaises reponses
+
+Etat 8 mars 2026:
+
+- `QuestionProgress` porte deja `lessonViews`, `lastLessonViewedAt`, compteurs de checkpoints et signal review pour les cours
+- il reste a propager ces signaux dans les read models dashboard, les recommandations et le workspace personnel
 
 Ameliorations:
 

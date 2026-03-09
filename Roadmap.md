@@ -1,6 +1,6 @@
 # React Mentor Roadmap
 
-Derniere mise a jour: 8 mars 2026
+Derniere mise a jour: 9 mars 2026
 
 ## 1. Role du document
 
@@ -47,7 +47,7 @@ Le projet dispose maintenant d'une vraie base produit exploitable:
 - landing page premium, brandee, bilingue FR/EN
 - auth Better Auth avec email/password et provider Google si configure
 - dashboard protege avec sidebar retractable, shell localise et recommandations dynamiques
-- bibliotheque publique `learn` avec index, collections, pages detail question et pratique ciblee
+- `learn` public comme teaser editorial, avec `dashboard/learn` comme workspace protege pour la boucle complete cours -> checkpoint -> review/practice
 - onboarding first-run et settings relies aux preferences utilisateur
 - catalogue modules, detail module et couche contenu Prisma localisee FR/EN
 - dashboard overview, progress, review et mock relies a de vraies agregations Prisma
@@ -64,12 +64,12 @@ Le projet dispose maintenant d'une vraie base produit exploitable:
 
 Le projet n'est plus une simple demo, mais plusieurs zones restent inachevees:
 
-- certains residus de `demo-data.ts` subsistent encore dans la couche marketing et quelques view models de transition
+- le reliquat `demo-data.ts` est maintenant cantonne a la couche marketing / auth et a quelques helpers de transition, plus aux surfaces produit authentifiees principales
 - le modele legacy monolingue reste encore present dans le schema et certains fallbacks
 - le player couvre deja `SINGLE_CHOICE`, `MULTIPLE_CHOICE`, `OPEN_ENDED`, `CODE_OUTPUT` et `BUG_HUNT`, mais pas encore les formats plus riches du type `architecture choice` ou `explain this snippet`
-- le builder mock est deja mixed-format, mais la boucle cours -> mini verification -> practice ciblee -> review reste encore inachevee
+- le builder mock est deja mixed-format, et `learn` dispose maintenant d'un premier loop `cours -> signal -> practice/review`, mais la boucle pedagogique complete reste encore inachevee
 - la calibration long terme de `SkillProgress` reste a enrichir par davantage de signaux et de seuils d'acceptation
-- l'admin de contenu v1 existe, mais les operations editoriales bulk, la deduplication benchmark et la QA pedagogique restent a industrialiser
+- l'admin de contenu v1 existe et expose deja une queue de freshness review et un watch de doublons de prompts, mais les operations editoriales bulk, la deduplication benchmark et la QA pedagogique complete restent a industrialiser
 - notes, bookmarks et playlists sont ouverts, mais ne forment pas encore un vrai workspace d'apprentissage personnel et recommande
 - billing Stripe, entitlements, lifecycle emails, telemetry produit et Sentry sont poses, mais la couche ops/performance reste encore partielle
 - les reponses ouvertes guidees, la review structuree et les rubrics mock existent deja, mais leur exploitation dans les recommandations et le coaching reste encore trop limitee
@@ -135,7 +135,7 @@ Vue produit:
 
 - fondation SaaS solide et exploitable en public
 - vertical slices onboarding, dashboard, practice, review, mock, notes, bookmarks, playlists, billing et admin deja ouvertes
-- bibliotheque `learn` publique reelle avec collections editoriales et pages cours detaillees
+- bibliotheque `learn` publique reelle comme teaser d'acquisition, prolongee par `dashboard/learn` pour l'experience detaillee connectee
 
 Vue contenu:
 

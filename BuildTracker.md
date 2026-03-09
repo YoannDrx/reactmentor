@@ -1,6 +1,6 @@
 # React Mentor Build Tracker
 
-Derniere mise a jour: 8 mars 2026
+Derniere mise a jour: 9 mars 2026
 
 ## 1. Role du document
 
@@ -16,9 +16,9 @@ Regle de travail:
 ## 2. Statut global
 
 - current_phase: `Lot 13 in progress (Lot 12 reste partiel)`
-- current_focus: `densification de la bibliotheque learn, definition du prochain niveau du learning system et fermeture progressive des derniers trous analytics/perf`
+- current_focus: `workspace dashboard/learn, propagation des signaux lesson dans dashboard/review/playlists, teaser learn public et premiers signaux QA editoriaux freshness/dedup`
 - last_completed_lot: `Lot 11`
-- active_ticket: `L13-01 densification contenu / L13-03 tracking d'apprentissage`
+- active_ticket: `L13-02 loop learn -> practice/review / L13-03 tracking d'apprentissage / L13-04 QA editoriale`
 - continuation_plan: [ContinuationPlan.md](./ContinuationPlan.md)
 - master_plan: [MasterDevelopmentPlan.md](./MasterDevelopmentPlan.md)
 - learning_system_plan: [LearningSystemImprovements.md](./LearningSystemImprovements.md)
@@ -40,7 +40,7 @@ Regle de travail:
 | 10  | Admin et operations contenu       | DONE        | guard RBAC `admin`/`editor`, route `/dashboard/admin`, create/edit forms modules/skills/questions/pitfall tags, options bilingues pour formats fermes, filtres d'inventaire, statuts FR/EN, import/export JSON seed-compatible et quality dashboard editorial relies |
 | 11  | Billing et entitlements           | DONE        | schema `UserEntitlement`, provision starter par defaut, gating modules/mocks/playlists, recap settings, checkout Stripe, billing portal et webhook de synchronisation abonnement relies                                                                   |
 | 12  | Growth, analytics et plateforme   | PARTIAL     | telemetry produit persistee, funnel admin et monitoring webhook/import v1 relies; observabilite vendor, jobs lifecycle et matrice e2e encore ouverts                                                                                                        |
-| 13  | Learning system et content scale  | IN_PROGRESS | bibliotheque `learn` publique en forte densification, plusieurs vagues seedees sur React/JS/Frontend Systems et travail en cours sur le lien cours -> tracking -> practice -> review                                                                        |
+| 13  | Learning system et content scale  | IN_PROGRESS | bibliotheque `learn` publique en forte densification, `dashboard/learn` ouvert comme workspace protege, premier loop `learn -> tracking -> practice/review` livre, propagation dashboard/review/playlists engagee et QA editoriale learn en cours d'industrialisation |
 
 ## 4. Statut des tickets immediats
 
@@ -119,17 +119,58 @@ Regle de travail:
 | L11-02 | Schema entitlements                                   | DONE    | ajout de `UserEntitlement`, enums billing et migration [prisma/migrations/20260308013000_user_entitlements/migration.sql](./prisma/migrations/20260308013000_user_entitlements/migration.sql) depuis [prisma/schema.prisma](./prisma/schema.prisma) |
 | L11-03 | Integration Stripe                                    | DONE    | client Stripe serveur, checkout abonnement, billing portal et webhook de sync relies dans [src/lib/stripe.ts](./src/lib/stripe.ts), [src/features/billing/stripe-billing.ts](./src/features/billing/stripe-billing.ts), [src/features/billing/billing.action.ts](./src/features/billing/billing.action.ts) et [src/app/api/billing/stripe-webhook/route.ts](./src/app/api/billing/stripe-webhook/route.ts) |
 | L11-04 | Gating produit premium                                | DONE    | protections server-side dans [src/features/sessions/session.action.ts](./src/features/sessions/session.action.ts) et [src/features/playlists/playlist.action.ts](./src/features/playlists/playlist.action.ts), surfaces UI lisibles dans [src/app/dashboard/modules/page.tsx](./src/app/dashboard/modules/page.tsx), [src/app/dashboard/modules/[slug]/page.tsx](./src/app/dashboard/modules/[slug]/page.tsx), [src/app/dashboard/mock-interviews/page.tsx](./src/app/dashboard/mock-interviews/page.tsx), [src/app/dashboard/playlists/page.tsx](./src/app/dashboard/playlists/page.tsx), [src/app/dashboard/playlists/[id]/page.tsx](./src/app/dashboard/playlists/[id]/page.tsx) et [src/app/dashboard/settings/page.tsx](./src/app/dashboard/settings/page.tsx) |
-| L12-01 | Instrumenter les evenements critiques                 | PARTIAL | ajout de `ProductAnalyticsEvent`, instrumentation signup email, onboarding, creation/completion session, answers, bookmarks, notes, upgrade click et abonnements Stripe dans [src/features/telemetry/telemetry.ts](./src/features/telemetry/telemetry.ts), [src/features/sessions/session.action.ts](./src/features/sessions/session.action.ts), [src/features/onboarding/onboarding.action.ts](./src/features/onboarding/onboarding.action.ts), [src/features/bookmarks/bookmark.action.ts](./src/features/bookmarks/bookmark.action.ts), [src/features/notes/note.action.ts](./src/features/notes/note.action.ts), [src/features/billing/billing.action.ts](./src/features/billing/billing.action.ts) et [src/app/api/billing/stripe-webhook/route.ts](./src/app/api/billing/stripe-webhook/route.ts) |
+| L12-01 | Instrumenter les evenements critiques                 | PARTIAL | ajout de `ProductAnalyticsEvent`, instrumentation signup email, onboarding, creation/completion session, answers, bookmarks, notes, upgrade click, abonnements Stripe et premiers evenements `learn` (`LESSON_VIEWED`, `LESSON_CHECKPOINT_COMPLETED`, `LESSON_REVIEW_QUEUED`) dans [src/features/telemetry/telemetry.ts](./src/features/telemetry/telemetry.ts), [src/features/sessions/session.action.ts](./src/features/sessions/session.action.ts), [src/features/learn/learn.action.ts](./src/features/learn/learn.action.ts), [src/features/onboarding/onboarding.action.ts](./src/features/onboarding/onboarding.action.ts), [src/features/bookmarks/bookmark.action.ts](./src/features/bookmarks/bookmark.action.ts), [src/features/notes/note.action.ts](./src/features/notes/note.action.ts), [src/features/billing/billing.action.ts](./src/features/billing/billing.action.ts) et [src/app/api/billing/stripe-webhook/route.ts](./src/app/api/billing/stripe-webhook/route.ts) |
 | L12-02 | Funnel et activation                                  | DONE    | projection admin du funnel signup -> onboarding -> practice -> mock et lecture des evenements recents dans [src/features/telemetry/admin-telemetry-read-model.ts](./src/features/telemetry/admin-telemetry-read-model.ts) et [src/app/dashboard/admin/page.tsx](./src/app/dashboard/admin/page.tsx) |
 | L12-03 | Error tracking et logs structures                     | PARTIAL | `OperationalEvent` reste la base locale et Sentry Next.js est maintenant branche via [next.config.ts](./next.config.ts), [src/instrumentation.ts](./src/instrumentation.ts), [src/instrumentation-client.ts](./src/instrumentation-client.ts), [src/sentry.server.config.ts](./src/sentry.server.config.ts), [src/sentry.edge.config.ts](./src/sentry.edge.config.ts) et [src/app/global-error.tsx](./src/app/global-error.tsx); restent le monitoring perf plus pousse et les alertes endpoint |
 | L12-04 | Monitoring jobs et webhooks                           | DONE    | monitoring des imports admin et du webhook Stripe deja relies, emails lifecycle Resend et job `review_due_reminders` instrumentes dans [src/features/emails/lifecycle-email.ts](./src/features/emails/lifecycle-email.ts), [src/app/api/jobs/review-due-reminders/route.ts](./src/app/api/jobs/review-due-reminders/route.ts), [src/features/telemetry/admin-telemetry-read-model.ts](./src/features/telemetry/admin-telemetry-read-model.ts) et [src/app/dashboard/admin/page.tsx](./src/app/dashboard/admin/page.tsx) |
 | L12-05 | Matrice de tests complete                             | DONE    | suites Vitest completes, lint, build et matrice Playwright CI complete passent apres realignement des specs premium/practice/mock dans [e2e/test-helpers.ts](./e2e/test-helpers.ts), [e2e/practice.spec.ts](./e2e/practice.spec.ts), [e2e/mock-interviews.spec.ts](./e2e/mock-interviews.spec.ts) et [e2e/settings.spec.ts](./e2e/settings.spec.ts) |
 | L13-01 | Densifier la bibliotheque `learn`                     | IN_PROGRESS | vagues editoriales successives sur React fundamentals/hooks/advanced/router/i18n/testing, JavaScript et Frontend Systems pilotees par [ContentExpansionTracker.md](./ContentExpansionTracker.md) et [prisma/seed.ts](./prisma/seed.ts) |
-| L13-02 | Relier cours, pratique et review                      | TODO    | il faut encore ajouter mini checks, exercices relies, parcours associes et transitions plus visibles depuis `learn` vers practice/review |
-| L13-03 | Renforcer le tracking d'apprentissage                 | IN_PROGRESS | les bases `QuestionProgress`, `SkillProgress`, telemetry et recovery existent; restent les signaux de consommation de cours, comprehension, restitution et plans adaptatifs, formalises dans [LearningSystemImprovements.md](./LearningSystemImprovements.md) |
-| L13-04 | Industrialiser la QA pedagogique et editoriale        | TODO    | l'admin contenu v1 existe, mais la production en volume, la dedup benchmark, la freshness review et les garde-fous QA restent a renforcer |
+| L13-02 | Relier cours, pratique et review                      | IN_PROGRESS | loop `learn -> checkpoint -> review/practice` branche, checkpoint interactif pour formats fermes, `dashboard/learn` protege, redirections auth-safe depuis le public, teaser learn public et couverture Playwright dediee dans [src/features/learn/learn-question-page.tsx](./src/features/learn/learn-question-page.tsx), [src/features/learn/lesson-checkpoint-card.tsx](./src/features/learn/lesson-checkpoint-card.tsx), [src/app/dashboard/learn/page.tsx](./src/app/dashboard/learn/page.tsx) et [e2e/learn.spec.ts](./e2e/learn.spec.ts); restent les micro-exercices non-QCM, prerequis et parcours adaptatifs |
+| L13-03 | Renforcer le tracking d'apprentissage                 | IN_PROGRESS | `QuestionProgress` porte des signaux lesson views/checkpoints/review, le workspace `learn` les expose et dashboard/review/playlists les exploitent deja dans [prisma/schema.prisma](./prisma/schema.prisma), [src/features/learn/lesson-progress.ts](./src/features/learn/lesson-progress.ts), [src/features/learn/lesson-read-model.ts](./src/features/learn/lesson-read-model.ts), [src/features/dashboard/dashboard-read-model.ts](./src/features/dashboard/dashboard-read-model.ts) et [src/features/playlists/playlist-read-model.ts](./src/features/playlists/playlist-read-model.ts); restent les signaux de restitution plus fins et leur exploitation reco avancée |
+| L13-04 | Industrialiser la QA pedagogique et editoriale        | IN_PROGRESS | quality dashboard admin enrichi avec freshness review queue et duplicate prompt watch dans [src/features/admin/admin-content-read-model.ts](./src/features/admin/admin-content-read-model.ts) et [src/app/dashboard/admin/page.tsx](./src/app/dashboard/admin/page.tsx); restent les actions bulk, la dedup benchmark plus fine et les garde-fous QA de production en volume |
 
 ## 5. Journal de travail
+
+### 2026-03-09 (learn workspace, teaser public, e2e et QA editoriale)
+
+Travail effectue:
+
+- ouverture de [src/app/dashboard/learn/page.tsx](./src/app/dashboard/learn/page.tsx), [src/app/dashboard/learn/collections/[slug]/page.tsx](./src/app/dashboard/learn/collections/[slug]/page.tsx) et [src/app/dashboard/learn/questions/[slug]/page.tsx](./src/app/dashboard/learn/questions/[slug]/page.tsx) pour faire du `learn` authentifie un vrai workspace protege
+- extraction des vues partagees `learn` dans [src/features/learn/learn-library-page.tsx](./src/features/learn/learn-library-page.tsx), [src/features/learn/learn-collection-page.tsx](./src/features/learn/learn-collection-page.tsx), [src/features/learn/learn-question-page.tsx](./src/features/learn/learn-question-page.tsx), [src/features/learn/learn-surface.tsx](./src/features/learn/learn-surface.tsx) et [src/features/learn/learn-paths.ts](./src/features/learn/learn-paths.ts)
+- redirection des utilisateurs connectes depuis les routes publiques `learn` vers `dashboard/learn`, conservation d'un teaser public et ajout du composant CTA [src/features/learn/learn-workspace-access-card.tsx](./src/features/learn/learn-workspace-access-card.tsx)
+- propagation des signaux `learn` dans overview/progress/review/playlists/bookmarks/notes et suppression du reliquat `demo-data` sur les surfaces dashboard principales dans [src/features/dashboard/dashboard-read-model.ts](./src/features/dashboard/dashboard-read-model.ts), [src/features/playlists/playlist-read-model.ts](./src/features/playlists/playlist-read-model.ts) et les pages dashboard associees
+- ajout du checkpoint interactif formats fermes dans [src/features/learn/lesson-checkpoint.ts](./src/features/learn/lesson-checkpoint.ts) et [src/features/learn/lesson-checkpoint-card.tsx](./src/features/learn/lesson-checkpoint-card.tsx)
+- ajout de la couverture [e2e/learn.spec.ts](./e2e/learn.spec.ts) pour le teaser public, les redirections auth et le handoff `learn -> review -> playlists`
+- enrichissement du quality dashboard admin avec freshness review queue et duplicate prompt watch dans [src/features/admin/admin-content-read-model.ts](./src/features/admin/admin-content-read-model.ts), [src/app/dashboard/admin/page.tsx](./src/app/dashboard/admin/page.tsx) et [__tests__/admin-content-read-model.test.ts](./__tests__/admin-content-read-model.test.ts)
+
+Validation effectuee:
+
+- `pnpm exec playwright test e2e/learn.spec.ts`
+- `pnpm exec vitest run __tests__/admin-content-read-model.test.ts`
+- `pnpm typecheck`
+- `pnpm build`
+
+### 2026-03-08 (docs realignment and learn loop v1)
+
+Travail effectue:
+
+- realignement de [README.md](./README.md), [ExecutionPlan.md](./ExecutionPlan.md) et [ContinuationPlan.md](./ContinuationPlan.md) pour refleter l'etat reel du produit, du lot actif et du backlog restant
+- retrait de la dependance `demo-data` des surfaces produit authentifiees [src/app/dashboard/page.tsx](./src/app/dashboard/page.tsx) et [src/app/dashboard/mock-interviews/page.tsx](./src/app/dashboard/mock-interviews/page.tsx)
+- ajout de signaux `lessonViews`, checkpoints et file review dans [prisma/schema.prisma](./prisma/schema.prisma) avec migration additive [prisma/migrations/20260308224359_question_progress_learning_signals/migration.sql](./prisma/migrations/20260308224359_question_progress_learning_signals/migration.sql)
+- creation des helpers et server actions `learn` dans [src/features/learn/lesson-progress.ts](./src/features/learn/lesson-progress.ts), [src/features/learn/lesson-read-model.ts](./src/features/learn/lesson-read-model.ts) et [src/features/learn/learn.action.ts](./src/features/learn/learn.action.ts)
+- enrichissement de [src/app/learn/questions/[slug]/page.tsx](./src/app/learn/questions/[slug]/page.tsx) avec boucle de progression, checkpoint declaratif, ajout rapide a la review et questions liees
+- extension de [src/lib/content-repository.ts](./src/lib/content-repository.ts) pour proposer des questions liees par skill/module
+- ajout d'un handoff auth-safe `learn -> practice` dans [src/features/sessions/session.action.ts](./src/features/sessions/session.action.ts), [src/features/learn/question-preview-card.tsx](./src/features/learn/question-preview-card.tsx) et [src/app/learn/collections/[slug]/page.tsx](./src/app/learn/collections/[slug]/page.tsx)
+- mise a jour des libelles FR/EN et de la couverture [__tests__/lesson-progress.test.ts](./__tests__/lesson-progress.test.ts)
+
+Validation effectuee:
+
+- `pnpm exec prisma migrate dev --name question_progress_learning_signals`
+- `pnpm exec vitest run __tests__/lesson-progress.test.ts __tests__/content-repository.test.ts`
+- `pnpm typecheck`
+- `pnpm test:ci`
+- `pnpm lint`
+- `pnpm build`
 
 ### 2026-03-08 (learn content scale and roadmap refresh)
 

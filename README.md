@@ -1,15 +1,20 @@
 # React Mentor
 
-React Mentor is a branded interview-prep SaaS foundation for React, React Native and TypeScript candidates.
+React Mentor is a branded interview-prep SaaS for React, React Native, TypeScript and Frontend Systems candidates.
 
-The current MVP includes:
+The current product includes:
 
 - a premium landing page with a clear product narrative
 - Better Auth wired to Prisma for email/password and optional social login
-- a protected dashboard with a retractable sidebar
-- dedicated pages for modules, progress, review and mock interviews
-- a Prisma schema designed for modules, skills, questions, attempts and spaced review
-- demo content in the UI so the product feels real before the admin/content layer exists
+- onboarding and localized user preferences
+- a protected dashboard with real overview, progress, review and mock read models
+- a public `learn` teaser library paired with a protected `dashboard/learn` workspace for the full course loop
+- dedicated product surfaces for modules, sessions, notes, bookmarks and playlists
+- a multi-format practice/review/mock engine for `SINGLE_CHOICE`, `MULTIPLE_CHOICE`, `OPEN_ENDED`, `CODE_OUTPUT` and `BUG_HUNT`
+- an admin content workspace for modules, skills, questions, pitfall tags and import/export
+- Stripe billing, entitlements and gating for premium surfaces
+- lifecycle emails, product telemetry and Sentry wiring
+- a Prisma schema designed for localized content, attempts, progress, playlists and billing entitlements
 
 ## Stack
 
@@ -31,13 +36,22 @@ src/
     api/auth/[...auth]/route.ts
     auth/*
     dashboard/*
+    learn/*
+    onboarding/*
   components/
     brand/*
     ui/*
   features/
+    admin/*
     auth/*
+    billing/*
     dashboard/*
+    learn/*
     landing/*
+    notes/*
+    playlists/*
+    sessions/*
+    telemetry/*
   lib/
     auth/*
     demo-data.ts
@@ -130,6 +144,15 @@ Validation commands:
 pnpm lint
 pnpm typecheck
 pnpm build
+pnpm pricing:verify
+```
+
+Stripe tooling:
+
+```bash
+pnpm pricing:sync
+pnpm pricing:verify
+pnpm stripe-webhooks
 ```
 
 ## Observability
@@ -157,10 +180,24 @@ pnpm build
 
 ## Product Notes
 
-The dashboard currently uses demo UI content, while the auth and database foundations are real.
+The product is no longer in a "foundation plus demo dashboard" phase.
 
-That gives you a pragmatic split:
+What is already real:
 
-- the branding, UX and route architecture are production-shaped now
-- the Prisma schema is ready for real content and progression data
-- the next logical layer is the admin/content workflow plus server actions for attempts, sessions and progress aggregation
+- auth, onboarding and settings
+- localized content queries through Prisma
+- dashboard, progress, review and mock read models
+- `dashboard/learn` as the authenticated learning workspace, with public `learn` kept as a teaser/acquisition surface
+- session creation, attempts, scoring and manual review
+- notes, bookmarks and playlists
+- admin content operations with editorial quality signals, freshness review queue and duplicate-prompt watch
+- Stripe billing and entitlements
+- lifecycle emails, telemetry and Sentry wiring
+
+What remains as the active roadmap:
+
+- finish the last `demo-data` residues on authenticated surfaces
+- deepen `learn` with richer micro-exercises, prerequisites and adaptive follow-up flows
+- add learning signals beyond attempts alone and exploit them more deeply in recommendations
+- extend admin QA with bulk freshness / dedup / editorial operations
+- continue the editorial scale-up and QA workflow for the `learn` program
