@@ -70,10 +70,11 @@ test.describe("dashboard overview", () => {
     await signUpWithEmail(page, testUser);
     await completeOnboardingIfNeeded(page);
 
-    await expect(page).toHaveURL(/\/dashboard$/);
+    await page.goto("/dashboard/mock-interviews");
+    await page.waitForLoadState("networkidle");
 
     const launchMockButton = page.getByRole("button", {
-      name: /Launch this mock|Lancer ce mock/,
+      name: /Launch template|Lancer le template/,
     });
 
     await expect(launchMockButton.first()).toBeVisible({
@@ -152,10 +153,11 @@ test.describe("dashboard overview", () => {
     await signUpWithEmail(page, testUser);
     await completeOnboardingIfNeeded(page);
 
-    await expect(page).toHaveURL(/\/dashboard$/);
+    await page.goto("/dashboard/mock-interviews");
+    await page.waitForLoadState("networkidle");
 
     const launchMockButton = page.getByRole("button", {
-      name: /Launch this mock|Lancer ce mock/,
+      name: /Launch template|Lancer le template/,
     });
 
     await expect(launchMockButton.first()).toBeVisible({
