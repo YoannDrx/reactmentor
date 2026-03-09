@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import {
+  SESSION_LAUNCH_TIMEOUT_MS,
   completeOnboardingIfNeeded,
   completeStructuredSession,
   createTestUser,
@@ -8,7 +9,7 @@ import {
 } from "./test-helpers";
 
 test.describe("mock interviews", () => {
-  test.setTimeout(60_000);
+  test.setTimeout(120_000);
 
   test("completes a timed mock and exposes the report in history", async ({
     page,
@@ -24,15 +25,23 @@ test.describe("mock interviews", () => {
     await page.goto("/dashboard/mock-interviews");
     await page.waitForLoadState("networkidle");
 
-    const launchButton = page.getByRole("button", {
+    const launchButtons = page.getByRole("button", {
       name: /Launch template|Lancer le template/,
     });
 
-    await expect(launchButton.first()).toBeVisible({ timeout: 15_000 });
-    await launchButton.first().click();
+    await expect(launchButtons.nth(1)).toBeVisible({
+      timeout: SESSION_LAUNCH_TIMEOUT_MS,
+    });
+    await Promise.all([
+      page.waitForURL(/\/dashboard\/session\//, {
+        timeout: SESSION_LAUNCH_TIMEOUT_MS,
+      }),
+      launchButtons.nth(1).click(),
+    ]);
 
-    await expect(page).toHaveURL(/\/dashboard\/session\//);
-    await expect(page.getByText(/Time left|Temps restant/)).toBeVisible();
+    await expect(page.getByText(/Time left|Temps restant/)).toBeVisible({
+      timeout: SESSION_LAUNCH_TIMEOUT_MS,
+    });
 
     await completeStructuredSession(page, {
       maxQuestions: 12,

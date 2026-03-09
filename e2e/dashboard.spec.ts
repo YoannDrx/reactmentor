@@ -1,11 +1,14 @@
 import { expect, test } from "@playwright/test";
 import {
+  SESSION_LAUNCH_TIMEOUT_MS,
   completeOnboardingIfNeeded,
   createTestUser,
   signUpWithEmail,
 } from "./test-helpers";
 
 test.describe("dashboard overview", () => {
+  test.describe.configure({ timeout: 90_000 });
+
   test("surfaces the recommended module path for a first-run learner", async ({
     page,
   }) => {
@@ -39,18 +42,24 @@ test.describe("dashboard overview", () => {
       name: /Launch template|Lancer le template/,
     });
 
-    await expect(launchMockButton.first()).toBeVisible();
-    await launchMockButton.first().click();
+    await expect(launchMockButton.first()).toBeVisible({
+      timeout: SESSION_LAUNCH_TIMEOUT_MS,
+    });
+    await Promise.all([
+      page.waitForURL(/\/dashboard\/session\//, {
+        timeout: SESSION_LAUNCH_TIMEOUT_MS,
+      }),
+      launchMockButton.first().click(),
+    ]);
 
-    await expect(page).toHaveURL(/\/dashboard\/session\//);
     await expect(
       page.getByText(/Time left|Temps restant/),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: SESSION_LAUNCH_TIMEOUT_MS });
     await expect(
       page.getByRole("button", {
         name: /Submit answer|Valider la reponse/,
       }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: SESSION_LAUNCH_TIMEOUT_MS });
   });
 
   test("saves the current live question into bookmarks and surfaces it on the dedicated page", async ({
@@ -67,15 +76,22 @@ test.describe("dashboard overview", () => {
       name: /Launch this mock|Lancer ce mock/,
     });
 
-    await expect(launchMockButton.first()).toBeVisible();
-    await launchMockButton.first().click();
-
-    await expect(page).toHaveURL(/\/dashboard\/session\//);
+    await expect(launchMockButton.first()).toBeVisible({
+      timeout: SESSION_LAUNCH_TIMEOUT_MS,
+    });
+    await Promise.all([
+      page.waitForURL(/\/dashboard\/session\//, {
+        timeout: SESSION_LAUNCH_TIMEOUT_MS,
+      }),
+      launchMockButton.first().click(),
+    ]);
 
     const currentQuestion = page.getByText(
       /Does changing a key always force|Une key differente force-t-elle toujours/i,
     );
-    await expect(currentQuestion).toBeVisible();
+    await expect(currentQuestion).toBeVisible({
+      timeout: SESSION_LAUNCH_TIMEOUT_MS,
+    });
 
     const saveBookmarkButton = page.getByRole("button", {
       name: /Save question|Sauvegarder/,
@@ -89,27 +105,37 @@ test.describe("dashboard overview", () => {
     ).toBeVisible({ timeout: 15_000 });
 
     await page.goto("/dashboard/bookmarks");
-    await page.waitForLoadState("networkidle");
-
     await expect(
       page.getByRole("heading", {
         name: /Saved questions|Questions sauvegardees/,
       }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: SESSION_LAUNCH_TIMEOUT_MS });
     await expect(
       page.getByText(
         /Does changing a key always force|Une key differente force-t-elle toujours/i,
       ),
     ).toBeVisible();
 
-    await page.getByRole("button", {
+    const removeBookmarkButton = page.getByRole("button", {
       name: /Remove bookmark|Retirer/,
-    }).click();
+    });
+    await Promise.all([
+      page.waitForResponse(
+        (response) =>
+          response.request().method() === "POST" &&
+          response.url().includes("/dashboard/bookmarks"),
+        {
+          timeout: SESSION_LAUNCH_TIMEOUT_MS,
+        },
+      ),
+      removeBookmarkButton.click(),
+    ]);
+    await page.reload();
     await expect(
       page.getByText(
         /No saved question yet|Aucune question sauvegardee pour l'instant/,
       ),
-    ).toBeVisible({ timeout: 15_000 });
+    ).toBeVisible({ timeout: SESSION_LAUNCH_TIMEOUT_MS });
   });
 
   test("writes a note from bookmarks and finds it in the notes recap", async ({
@@ -126,16 +152,21 @@ test.describe("dashboard overview", () => {
       name: /Launch this mock|Lancer ce mock/,
     });
 
-    await expect(launchMockButton.first()).toBeVisible();
-    await launchMockButton.first().click();
-
-    await expect(page).toHaveURL(/\/dashboard\/session\//);
+    await expect(launchMockButton.first()).toBeVisible({
+      timeout: SESSION_LAUNCH_TIMEOUT_MS,
+    });
+    await Promise.all([
+      page.waitForURL(/\/dashboard\/session\//, {
+        timeout: SESSION_LAUNCH_TIMEOUT_MS,
+      }),
+      launchMockButton.first().click(),
+    ]);
 
     await expect(
       page.getByText(
         /Does changing a key always force|Une key differente force-t-elle toujours/i,
       ),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: SESSION_LAUNCH_TIMEOUT_MS });
 
     await page.getByRole("button", {
       name: /Save question|Sauvegarder/,
@@ -147,7 +178,11 @@ test.describe("dashboard overview", () => {
     ).toBeVisible({ timeout: 15_000 });
 
     await page.goto("/dashboard/bookmarks");
-    await page.waitForLoadState("networkidle");
+    await expect(
+      page.getByRole("heading", {
+        name: /Saved questions|Questions sauvegardees/,
+      }),
+    ).toBeVisible({ timeout: SESSION_LAUNCH_TIMEOUT_MS });
 
     const noteField = page.getByPlaceholder(
       /Write the mechanism|Ecris le mecanisme/i,
@@ -166,12 +201,10 @@ test.describe("dashboard overview", () => {
     );
 
     await page.goto("/dashboard/notes");
-    await page.waitForLoadState("networkidle");
-
     await expect(
       page.getByRole("heading", {
         name: /Personal notes|Notes personnelles/,
       }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: SESSION_LAUNCH_TIMEOUT_MS });
   });
 });

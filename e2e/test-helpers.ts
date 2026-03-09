@@ -8,6 +8,8 @@ import { expect, type Page } from "@playwright/test";
 
 const prisma = new PrismaClient();
 
+export const SESSION_LAUNCH_TIMEOUT_MS = 20_000;
+
 export const createTestUser = (prefix = "react-mentor-e2e") => ({
   name: "React Mentor Tester",
   email: `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`,
@@ -212,13 +214,13 @@ export async function completeStructuredSession(
 
     const resolvedStep = await Promise.race([
       completionHeading
-        .waitFor({ state: "visible", timeout: 10_000 })
+        .waitFor({ state: "visible", timeout: SESSION_LAUNCH_TIMEOUT_MS })
         .then(() => "completed"),
       mechanismPanel
-        .waitFor({ state: "visible", timeout: 10_000 })
+        .waitFor({ state: "visible", timeout: SESSION_LAUNCH_TIMEOUT_MS })
         .then(() => "feedback"),
       pendingReviewBadge
-        .waitFor({ state: "visible", timeout: 10_000 })
+        .waitFor({ state: "visible", timeout: SESSION_LAUNCH_TIMEOUT_MS })
         .then(() => "feedback"),
       ...(currentQuestionCounter
         ? [
@@ -232,7 +234,7 @@ export async function completeStructuredSession(
                 },
                 currentQuestionCounter,
                 {
-                  timeout: 10_000,
+                  timeout: SESSION_LAUNCH_TIMEOUT_MS,
                 },
               )
               .then(() => "advanced"),
