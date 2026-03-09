@@ -25,11 +25,18 @@ const bookmarkStatusClasses: Record<BookmarkStatus, string> = {
   saved: "border-slate-200 bg-slate-100 text-slate-700",
 };
 
+const lessonSignalClasses = {
+  reviewDue: "border-amber-200 bg-amber-50 text-amber-700",
+  checkpointReady: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  lessonViewed: "border-cyan-200 bg-cyan-50 text-cyan-700",
+} as const;
+
 export default async function DashboardBookmarksPage() {
   const user = await getRequiredUser("/dashboard/bookmarks");
   const { locale, messages } = await getI18n();
   const bookmarks = messages.dashboard.bookmarks;
   const notes = messages.dashboard.notes;
+  const progress = messages.dashboard.progress;
   const readModel = await getBookmarkReadModel({
     userId: user.id,
     locale,
@@ -98,9 +105,16 @@ export default async function DashboardBookmarksPage() {
                       {item.prompt}
                     </div>
                   </div>
-                  <Badge className={bookmarkStatusClasses[item.status]}>
-                    {bookmarks.statusLabels[item.status]}
-                  </Badge>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge className={bookmarkStatusClasses[item.status]}>
+                      {bookmarks.statusLabels[item.status]}
+                    </Badge>
+                    {item.learningSignal ? (
+                      <Badge className={lessonSignalClasses[item.learningSignal]}>
+                        {progress.lessonStatusLabels[item.learningSignal]}
+                      </Badge>
+                    ) : null}
+                  </div>
                 </div>
 
                 <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-500">
@@ -122,7 +136,7 @@ export default async function DashboardBookmarksPage() {
                     variant="secondary"
                   />
                   <Link
-                    href={`/learn/questions/${item.questionSlug}`}
+                    href={`/dashboard/learn/questions/${item.questionSlug}`}
                     className={buttonVariants({ variant: "secondary", size: "sm" })}
                   >
                     {bookmarks.openLessonAction}
@@ -136,11 +150,8 @@ export default async function DashboardBookmarksPage() {
                   <form action={createTrainingSessionAction}>
                     <input type="hidden" name="mode" value="PRACTICE" />
                     <input type="hidden" name="locale" value={locale} />
-                    <input
-                      type="hidden"
-                      name="moduleSlug"
-                      value={item.moduleSlug}
-                    />
+                    <input type="hidden" name="questionCount" value="1" />
+                    <input type="hidden" name="questionIds" value={item.questionId} />
                     <Button type="submit" size="sm">
                       {bookmarks.launchPracticeAction}
                     </Button>

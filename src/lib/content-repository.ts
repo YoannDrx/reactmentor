@@ -690,6 +690,96 @@ export async function getLocalizedQuestionCollectionBySlug(
   };
 }
 
+async function getLocalizedRelatedQuestions(params: {
+  questionId: string;
+  moduleId: string;
+  primarySkillId: string;
+  locale: Locale;
+  limit?: number;
+}) {
+  const limit = params.limit ?? 3;
+  const relatedQuestionInclude = {
+    translations: true,
+    primarySkill: {
+      include: {
+        translations: true,
+      },
+    },
+    module: {
+      include: {
+        translations: true,
+      },
+    },
+  } satisfies Prisma.QuestionInclude;
+
+  const sameSkillQuestions = await prisma.question.findMany({
+    where: {
+      id: {
+        not: params.questionId,
+      },
+      status: ContentStatus.PUBLISHED,
+      primarySkillId: params.primarySkillId,
+      module: {
+        status: ContentStatus.PUBLISHED,
+      },
+      primarySkill: {
+        status: ContentStatus.PUBLISHED,
+      },
+    },
+    include: relatedQuestionInclude,
+    orderBy: [
+      {
+        difficulty: "asc",
+      },
+      {
+        updatedAt: "desc",
+      },
+    ],
+    take: limit,
+  });
+
+  const remainingSlots = Math.max(0, limit - sameSkillQuestions.length);
+  const excludedIds = new Set([
+    params.questionId,
+    ...sameSkillQuestions.map((question) => question.id),
+  ]);
+
+  const sameModuleQuestions =
+    remainingSlots > 0
+      ? await prisma.question.findMany({
+          where: {
+            id: {
+              notIn: Array.from(excludedIds),
+            },
+            status: ContentStatus.PUBLISHED,
+            moduleId: params.moduleId,
+            module: {
+              status: ContentStatus.PUBLISHED,
+            },
+            primarySkill: {
+              status: ContentStatus.PUBLISHED,
+            },
+          },
+          include: relatedQuestionInclude,
+          orderBy: [
+            {
+              difficulty: "asc",
+            },
+            {
+              updatedAt: "desc",
+            },
+          ],
+          take: remainingSlots,
+        })
+      : [];
+
+  return [...sameSkillQuestions, ...sameModuleQuestions].map((question) => ({
+    ...localizeQuestionSummary(question, params.locale),
+    primarySkill: localizeSkill(question.primarySkill, params.locale),
+    module: localizeModule(question.module, params.locale),
+  }));
+}
+
 export async function getLocalizedQuestionBySlug(
   slug: string,
   locale: Locale = defaultLocale,
@@ -787,6 +877,13 @@ export async function getLocalizedQuestionBySlug(
     return null;
   }
 
+  const relatedQuestions = await getLocalizedRelatedQuestions({
+    questionId: question.id,
+    moduleId: question.moduleId,
+    primarySkillId: question.primarySkillId,
+    locale,
+  });
+
   return {
     ...localizeQuestion(question, locale),
     primarySkill: localizeSkill(question.primarySkill, locale),
@@ -799,5 +896,6 @@ export async function getLocalizedQuestionBySlug(
       question.collectionItems.map((item) => item.collection),
       locale,
     ),
+    relatedQuestions,
   };
 }

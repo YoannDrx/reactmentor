@@ -336,6 +336,7 @@ export default async function DashboardModuleDetailPage({
                 learn.question.estimatedReadMinutesLabel
               }
               showModule={false}
+              questionHrefBase="/dashboard/learn/questions"
             />
           ))
         )}

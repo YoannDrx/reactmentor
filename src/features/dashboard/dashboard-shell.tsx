@@ -87,7 +87,7 @@ export function DashboardShell({
       ...sidebar.nav.modules,
     },
     {
-      href: "/learn",
+      href: "/dashboard/learn",
       icon: navigationIcons.learn,
       ...sidebar.nav.learn,
     },
@@ -139,6 +139,7 @@ export function DashboardShell({
   const pageMeta = {
     "/dashboard": pages.overview,
     "/dashboard/modules": pages.modules,
+    "/dashboard/learn": pages.learn,
     "/dashboard/bookmarks": pages.bookmarks,
     "/dashboard/notes": pages.notes,
     "/dashboard/playlists": pages.playlists,
@@ -151,6 +152,8 @@ export function DashboardShell({
   } as const;
   const currentMeta = pathname.startsWith("/dashboard/modules/")
     ? pageMeta["/dashboard/modules"]
+    : pathname.startsWith("/dashboard/learn/")
+      ? pageMeta["/dashboard/learn"]
     : pathname.startsWith("/dashboard/playlists/")
       ? pageMeta["/dashboard/playlists"]
     : pathname.startsWith("/dashboard/admin")

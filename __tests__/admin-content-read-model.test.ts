@@ -207,8 +207,12 @@ describe("getAdminContentReadModel", () => {
       ])
       .mockResolvedValueOnce([
         {
+          id: "question_quality_1",
+          slug: "effect-stale-closure",
           status: ContentStatus.PUBLISHED,
           format: "OPEN_ENDED",
+          sourceType: "seed",
+          updatedAt: new Date("2026-03-01T10:00:00.000Z"),
           translations: [
             {
               locale: "FR",
@@ -223,14 +227,32 @@ describe("getAdminContentReadModel", () => {
               takeaways: ["One EN takeaway"],
             },
           ],
+          module: {
+            slug: "react-rendering-systems",
+            title: "React Rendering Systems",
+            translations: [
+              {
+                locale: "FR",
+                title: "Systemes de rendu React",
+              },
+              {
+                locale: "EN",
+                title: "React Rendering Systems",
+              },
+            ],
+          },
           options: [],
           _count: {
             pitfallLinks: 1,
           },
         },
         {
+          id: "question_quality_2",
+          slug: "question-incomplete",
           status: ContentStatus.DRAFT,
           format: "OPEN_ENDED",
+          sourceType: null,
+          updatedAt: new Date("2026-03-02T10:00:00.000Z"),
           translations: [
             {
               locale: "FR",
@@ -239,6 +261,20 @@ describe("getAdminContentReadModel", () => {
               takeaways: ["FR only"],
             },
           ],
+          module: {
+            slug: "react-rendering-systems",
+            title: "React Rendering Systems",
+            translations: [
+              {
+                locale: "FR",
+                title: "Systemes de rendu React",
+              },
+              {
+                locale: "EN",
+                title: "React Rendering Systems",
+              },
+            ],
+          },
           options: [],
           _count: {
             pitfallLinks: 0,
@@ -289,6 +325,8 @@ describe("getAdminContentReadModel", () => {
     expect(readModel.quality.translationGapQuestions).toBe(1);
     expect(readModel.quality.untaggedQuestions).toBe(1);
     expect(readModel.quality.thinModules).toEqual([]);
+    expect(readModel.quality.stalePublishedQuestions).toEqual([]);
+    expect(readModel.quality.duplicatePromptCandidates).toEqual([]);
     expect(readModel.quality.coverageByTrack).toEqual([
       {
         track: "REACT",
@@ -466,8 +504,12 @@ describe("getAdminContentReadModel", () => {
       ])
       .mockResolvedValueOnce([
         {
+          id: "question_quality_3",
+          slug: "deps-array",
           status: ContentStatus.DRAFT,
           format: "SINGLE_CHOICE",
+          sourceType: "seed",
+          updatedAt: new Date("2026-03-08T09:00:00.000Z"),
           translations: [
             {
               locale: "FR",
@@ -482,6 +524,20 @@ describe("getAdminContentReadModel", () => {
               takeaways: ["EN takeaway"],
             },
           ],
+          module: {
+            slug: "react-rendering-systems",
+            title: "React Rendering Systems",
+            translations: [
+              {
+                locale: "FR",
+                title: "Systemes de rendu React",
+              },
+              {
+                locale: "EN",
+                title: "React Rendering Systems",
+              },
+            ],
+          },
           options: [
             {
               isCorrect: false,
@@ -519,6 +575,178 @@ describe("getAdminContentReadModel", () => {
         },
       }),
     );
+  });
+
+  it("surfaces stale published questions and duplicate prompt clusters for editorial QA", async () => {
+    learningModuleFindManyMock.mockResolvedValue([]);
+    skillFindManyMock.mockResolvedValue([]);
+    pitfallTagFindManyMock.mockResolvedValue([]);
+    questionFindManyMock
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        {
+          id: "question_stale_1",
+          slug: "keys-identity-a",
+          status: ContentStatus.PUBLISHED,
+          format: "OPEN_ENDED",
+          sourceType: "seed",
+          updatedAt: new Date("2025-01-10T09:00:00.000Z"),
+          translations: [
+            {
+              locale: "FR",
+              prompt: "Explique pourquoi les keys pilotent l'identite.",
+              explanation: "Explication FR",
+              takeaways: ["FR takeaway"],
+            },
+            {
+              locale: "EN",
+              prompt: "Explain why keys control identity.",
+              explanation: "EN explanation",
+              takeaways: ["EN takeaway"],
+            },
+          ],
+          module: {
+            slug: "react-rendering-systems",
+            title: "React Rendering Systems",
+            translations: [
+              {
+                locale: "FR",
+                title: "Systemes de rendu React",
+              },
+              {
+                locale: "EN",
+                title: "React Rendering Systems",
+              },
+            ],
+          },
+          options: [],
+          _count: {
+            pitfallLinks: 0,
+          },
+        },
+        {
+          id: "question_stale_2",
+          slug: "keys-identity-b",
+          status: ContentStatus.PUBLISHED,
+          format: "OPEN_ENDED",
+          sourceType: "benchmark",
+          updatedAt: new Date("2025-02-12T09:00:00.000Z"),
+          translations: [
+            {
+              locale: "FR",
+              prompt: "Explique pourquoi les keys pilotent l'identite.",
+              explanation: "Explication FR",
+              takeaways: ["FR takeaway"],
+            },
+            {
+              locale: "EN",
+              prompt: "Explain why keys control identity.",
+              explanation: "EN explanation",
+              takeaways: ["EN takeaway"],
+            },
+          ],
+          module: {
+            slug: "react-stateful-ui-coding",
+            title: "React Stateful UI Coding",
+            translations: [
+              {
+                locale: "FR",
+                title: "UI stateful React",
+              },
+              {
+                locale: "EN",
+                title: "React Stateful UI Coding",
+              },
+            ],
+          },
+          options: [],
+          _count: {
+            pitfallLinks: 0,
+          },
+        },
+        {
+          id: "question_recent_1",
+          slug: "recent-unique-question",
+          status: ContentStatus.PUBLISHED,
+          format: "OPEN_ENDED",
+          sourceType: null,
+          updatedAt: new Date("2026-03-01T09:00:00.000Z"),
+          translations: [
+            {
+              locale: "FR",
+              prompt: "Question recente unique",
+              explanation: "Explication FR",
+              takeaways: ["FR takeaway"],
+            },
+            {
+              locale: "EN",
+              prompt: "Recent unique question",
+              explanation: "EN explanation",
+              takeaways: ["EN takeaway"],
+            },
+          ],
+          module: {
+            slug: "react-rendering-systems",
+            title: "React Rendering Systems",
+            translations: [
+              {
+                locale: "FR",
+                title: "Systemes de rendu React",
+              },
+              {
+                locale: "EN",
+                title: "React Rendering Systems",
+              },
+            ],
+          },
+          options: [],
+          _count: {
+            pitfallLinks: 0,
+          },
+        },
+      ]);
+
+    const readModel = await getAdminContentReadModel("en");
+
+    expect(readModel.quality.stalePublishedQuestions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "question_stale_1",
+          slug: "keys-identity-a",
+          prompt: "Explain why keys control identity.",
+          moduleTitle: "React Rendering Systems",
+          sourceType: "seed",
+        }),
+        expect.objectContaining({
+          id: "question_stale_2",
+          slug: "keys-identity-b",
+          prompt: "Explain why keys control identity.",
+          moduleTitle: "React Stateful UI Coding",
+          sourceType: "benchmark",
+        }),
+      ]),
+    );
+    expect(readModel.quality.duplicatePromptCandidates).toEqual([
+      {
+        promptKey: "explain why keys control identity",
+        prompt: "Explain why keys control identity.",
+        questionCount: 2,
+        questions: [
+          {
+            id: "question_stale_1",
+            slug: "keys-identity-a",
+            prompt: "Explain why keys control identity.",
+            moduleTitle: "React Rendering Systems",
+          },
+          {
+            id: "question_stale_2",
+            slug: "keys-identity-b",
+            prompt: "Explain why keys control identity.",
+            moduleTitle: "React Stateful UI Coding",
+          },
+        ],
+      },
+    ]);
   });
 
   it("applies question filters to the editorial inventory without changing global stats", async () => {

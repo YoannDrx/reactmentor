@@ -9,6 +9,7 @@ import type { Locale } from "@/i18n/config";
 import {
   localizeModule,
   localizeQuestion,
+  localizeQuestionSummary,
   localizeSkill,
 } from "@/lib/content-repository";
 import { prisma } from "@/lib/prisma";
@@ -35,7 +36,14 @@ type ReviewReason =
   | "failedRecently"
   | "weakSkill"
   | "mockFallout"
+  | "lessonQueued"
+  | "checkpointFailed"
   | "scheduled";
+type LessonFollowUpReason =
+  | "reviewDue"
+  | "needsCheckpoint"
+  | "checkpointFailed"
+  | "needsPractice";
 
 type RecoveryPlanReason = "dueNow" | "pendingReview" | "weakSignal";
 type MockRecommendationReason =
@@ -103,10 +111,18 @@ function getReviewUrgency(nextReviewAt: Date | null, now: Date): ReviewUrgency {
   return "normal";
 }
 
+function isDueForReview(nextReviewAt: Date | null, now: Date) {
+  return nextReviewAt ? nextReviewAt <= now : false;
+}
+
 function getReviewReason(params: {
   masteryState: MasteryState;
   nextReviewAt: Date | null;
   lastOutcomeCorrect: boolean | null;
+  reviewCount: number;
+  lessonViews: number;
+  lessonCheckpointAttempts: number;
+  lastLessonCheckpointPassed: boolean | null;
   latestAttempt:
     | {
         mode: SessionMode;
@@ -125,6 +141,17 @@ function getReviewReason(params: {
 }): ReviewReason {
   if (!params.nextReviewAt) {
     return "scheduled";
+  }
+
+  if (params.reviewCount === 0 && params.lessonViews > 0) {
+    if (
+      params.lessonCheckpointAttempts > 0 &&
+      params.lastLessonCheckpointPassed === false
+    ) {
+      return "checkpointFailed";
+    }
+
+    return "lessonQueued";
   }
 
   if (differenceInWholeDays(params.now, params.nextReviewAt) >= 1) {
@@ -155,6 +182,71 @@ function getReviewReason(params: {
   }
 
   return "scheduled";
+}
+
+function shouldQueueLessonFollowUp(params: {
+  lessonViews: number;
+  lessonCheckpointAttempts: number;
+  lastLessonCheckpointPassed: boolean | null;
+  reviewCount: number;
+  nextReviewAt: Date | null;
+  now: Date;
+}) {
+  if (params.lessonViews <= 0) {
+    return false;
+  }
+
+  if (isDueForReview(params.nextReviewAt, params.now)) {
+    return true;
+  }
+
+  if (params.lessonCheckpointAttempts === 0) {
+    return true;
+  }
+
+  if (params.lastLessonCheckpointPassed !== true) {
+    return true;
+  }
+
+  return params.reviewCount === 0;
+}
+
+function getLessonFollowUpReason(params: {
+  lessonCheckpointAttempts: number;
+  lastLessonCheckpointPassed: boolean | null;
+  reviewCount: number;
+  nextReviewAt: Date | null;
+  now: Date;
+}): LessonFollowUpReason {
+  if (isDueForReview(params.nextReviewAt, params.now)) {
+    return "reviewDue";
+  }
+
+  if (params.lessonCheckpointAttempts === 0) {
+    return "needsCheckpoint";
+  }
+
+  if (params.lastLessonCheckpointPassed === false) {
+    return "checkpointFailed";
+  }
+
+  return params.reviewCount === 0 ? "needsPractice" : "reviewDue";
+}
+
+function getLessonFollowUpPriority(reason: LessonFollowUpReason) {
+  if (reason === "reviewDue") {
+    return 0;
+  }
+
+  if (reason === "needsCheckpoint") {
+    return 1;
+  }
+
+  if (reason === "checkpointFailed") {
+    return 2;
+  }
+
+  return 3;
 }
 
 function mapSessionHistoryRows(rows: SessionHistoryRow[]) {
@@ -469,6 +561,7 @@ export async function getDashboardReadModel(userId: string, locale: Locale) {
     dueProgressRows,
     pendingReviewAttempts,
     recentSessions,
+    lessonSignalRows,
   ] = await prisma.$transaction([
     prisma.question.count(),
     prisma.attempt.count({
@@ -698,6 +791,40 @@ export async function getDashboardReadModel(userId: string, locale: Locale) {
         },
       },
     }),
+    prisma.questionProgress.findMany({
+      where: {
+        userId,
+        lessonViews: {
+          gt: 0,
+        },
+      },
+      include: {
+        question: {
+          include: {
+            translations: true,
+            primarySkill: {
+              include: {
+                translations: true,
+              },
+            },
+            module: {
+              include: {
+                translations: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: [
+        {
+          lastLessonViewedAt: "desc",
+        },
+        {
+          nextReviewAt: "asc",
+        },
+      ],
+      take: 12,
+    }),
   ]);
 
   const attemptMap = new Map<string, { correct: number; total: number }>();
@@ -802,6 +929,85 @@ export async function getDashboardReadModel(userId: string, locale: Locale) {
           signalDetails: null,
           lastAttemptAt: null,
         }));
+  const lessonSignalSource = lessonSignalRows.map((progressRow) => {
+    const localizedQuestion = localizeQuestionSummary(progressRow.question, locale);
+    const localizedSkill = localizeSkill(
+      progressRow.question.primarySkill,
+      locale,
+    );
+    const localizedModule = localizeModule(progressRow.question.module, locale);
+    const hasPracticeAttempts = progressRow.reviewCount > 0;
+    const isFollowUp = shouldQueueLessonFollowUp({
+      lessonViews: progressRow.lessonViews,
+      lessonCheckpointAttempts: progressRow.lessonCheckpointAttempts,
+      lastLessonCheckpointPassed: progressRow.lastLessonCheckpointPassed,
+      reviewCount: progressRow.reviewCount,
+      nextReviewAt: progressRow.nextReviewAt,
+      now,
+    });
+
+    return {
+      questionId: progressRow.questionId,
+      questionSlug: progressRow.question.slug,
+      title: localizedQuestion.prompt,
+      skill: localizedSkill.title,
+      module: localizedModule.title,
+      moduleSlug: progressRow.question.module.slug,
+      lessonViews: progressRow.lessonViews,
+      lastLessonViewedAt: progressRow.lastLessonViewedAt,
+      checkpointAttempts: progressRow.lessonCheckpointAttempts,
+      lastLessonCheckpointPassed: progressRow.lastLessonCheckpointPassed,
+      hasPracticeAttempts,
+      nextReviewAt: progressRow.nextReviewAt,
+      reason: isFollowUp
+        ? getLessonFollowUpReason({
+            lessonCheckpointAttempts: progressRow.lessonCheckpointAttempts,
+            lastLessonCheckpointPassed: progressRow.lastLessonCheckpointPassed,
+            reviewCount: progressRow.reviewCount,
+            nextReviewAt: progressRow.nextReviewAt,
+            now,
+          })
+        : null,
+    };
+  });
+  const lessonFollowUpItems = lessonSignalSource
+    .filter(
+      (
+        item,
+      ): item is typeof item & {
+        reason: LessonFollowUpReason;
+      } => item.reason !== null,
+    )
+    .sort((left, right) => {
+      const leftPriority = getLessonFollowUpPriority(left.reason);
+      const rightPriority = getLessonFollowUpPriority(right.reason);
+
+      if (leftPriority !== rightPriority) {
+        return leftPriority - rightPriority;
+      }
+
+      const leftViewedAt = left.lastLessonViewedAt?.getTime() ?? 0;
+      const rightViewedAt = right.lastLessonViewedAt?.getTime() ?? 0;
+
+      if (rightViewedAt !== leftViewedAt) {
+        return rightViewedAt - leftViewedAt;
+      }
+
+      return left.title.localeCompare(right.title);
+    });
+  const lessonViewedCount = lessonSignalSource.length;
+  const lessonCheckpointReadyCount = lessonSignalSource.filter(
+    (item) => item.lastLessonCheckpointPassed === true,
+  ).length;
+  const lessonCheckpointFailedCount = lessonSignalSource.filter(
+    (item) => item.lastLessonCheckpointPassed === false,
+  ).length;
+  const lessonReadWithoutPracticeCount = lessonSignalSource.filter(
+    (item) => !item.hasPracticeAttempts,
+  ).length;
+  const lessonReviewQueuedCount = lessonSignalSource.filter((item) =>
+    isDueForReview(item.nextReviewAt, now),
+  ).length;
 
   const reviewItems = dueProgressRows.map((progressRow) => {
     const localizedQuestion = localizeQuestion(progressRow.question, locale);
@@ -825,12 +1031,21 @@ export async function getDashboardReadModel(userId: string, locale: Locale) {
         masteryState: progressRow.masteryState,
         nextReviewAt: progressRow.nextReviewAt,
         lastOutcomeCorrect: progressRow.lastOutcomeCorrect,
+        reviewCount: progressRow.reviewCount,
+        lessonViews: progressRow.lessonViews,
+        lessonCheckpointAttempts: progressRow.lessonCheckpointAttempts,
+        lastLessonCheckpointPassed: progressRow.lastLessonCheckpointPassed,
         latestAttempt,
         skillSignal,
         now,
       }),
       nextReviewAt: progressRow.nextReviewAt,
       isBookmarked: progressRow.question.bookmarks.length > 0,
+      hasLessonSignal: progressRow.lessonViews > 0,
+      lessonViews: progressRow.lessonViews,
+      checkpointAttempts: progressRow.lessonCheckpointAttempts,
+      lastLessonCheckpointPassed: progressRow.lastLessonCheckpointPassed,
+      hasPracticeAttempts: progressRow.reviewCount > 0,
     };
   });
 
@@ -994,6 +1209,7 @@ export async function getDashboardReadModel(userId: string, locale: Locale) {
 
   return {
     hasAttempts: attemptsCount > 0,
+    hasLearningActivity: attemptsCount > 0 || lessonViewedCount > 0,
     overview: {
       stats: {
         readiness: Math.round(readinessAggregate._avg.masteryScore ?? 0),
@@ -1001,6 +1217,12 @@ export async function getDashboardReadModel(userId: string, locale: Locale) {
         dueToday: dueCount,
         completedMocks: completedMocksCount,
         totalQuestions,
+      },
+      learn: {
+        viewedCount: lessonViewedCount,
+        checkpointReadyCount: lessonCheckpointReadyCount,
+        readWithoutPracticeCount: lessonReadWithoutPracticeCount,
+        lessonReviewQueuedCount,
       },
       weeklyMomentum,
       skillReadiness: skillReadinessSource,
@@ -1012,6 +1234,17 @@ export async function getDashboardReadModel(userId: string, locale: Locale) {
       weeklyMomentum,
       skillBreakdown: skillBreakdownSource,
       recoveryPlans,
+      learn: {
+        viewedCount: lessonViewedCount,
+        checkpointReadyCount: lessonCheckpointReadyCount,
+        checkpointFailedCount: lessonCheckpointFailedCount,
+        readWithoutPracticeCount: lessonReadWithoutPracticeCount,
+        followUpCount: lessonFollowUpItems.length,
+        followUpQuestionIds: lessonFollowUpItems
+          .map((item) => item.questionId)
+          .slice(0, 8),
+        items: lessonFollowUpItems.slice(0, 4),
+      },
     },
     review: {
       dueCount,

@@ -7,7 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getLocalizedMockTemplates } from "@/features/dashboard/dashboard-view-model";
 import {
   SkillRadarChart,
   WeeklyMomentumChart,
@@ -29,7 +28,7 @@ export default async function DashboardOverviewPage() {
   const user = await getRequiredUser("/dashboard");
   const { locale, messages, t } = await getI18n();
   const overview = messages.dashboard.overview;
-  const localizedMockTemplates = getLocalizedMockTemplates(messages);
+  const localizedMockTemplates = messages.dashboard.mockTemplates;
   const mockTemplateMap = Object.fromEntries(
     mockTemplateKeys.map((key, index) => [key, localizedMockTemplates[index]]),
   );
@@ -39,6 +38,8 @@ export default async function DashboardOverviewPage() {
   const templateAvailabilities = await getMockTemplateAvailabilities();
   const reviewQueue = readModel.overview.dueItems;
   const recentSessions = readModel.overview.recentSessions;
+  const learnOverview = readModel.overview.learn;
+  const learnFollowUpItems = readModel.progress.learn.items;
   const reviewQuestionCount = Math.min(
     10,
     Math.max(1, readModel.overview.stats.dueToday),
@@ -92,6 +93,30 @@ export default async function DashboardOverviewPage() {
           : overview.statChanges.noMocks,
     },
   ];
+  const learnStatCards = [
+    {
+      label: overview.learnTrackedLabel,
+      value: learnOverview.viewedCount,
+      tone: "text-slate-950",
+    },
+    {
+      label: overview.learnCheckpointReadyLabel,
+      value: learnOverview.checkpointReadyCount,
+      tone: "text-emerald-700",
+    },
+    {
+      label: overview.learnNeedsPracticeLabel,
+      value: learnOverview.readWithoutPracticeCount,
+      tone: "text-cyan-700",
+    },
+    {
+      label: overview.learnReviewQueuedLabel,
+      value: learnOverview.lessonReviewQueuedCount,
+      tone: "text-amber-700",
+    },
+  ];
+  const showLearnLoop =
+    learnOverview.viewedCount > 0 || learnFollowUpItems.length > 0;
 
   return (
     <div className="grid gap-6">
@@ -191,7 +216,7 @@ export default async function DashboardOverviewPage() {
                   <Button type="submit">{overview.startReviewAction}</Button>
                 </form>
                 <Link
-                  href="/learn"
+                  href="/dashboard/learn"
                   className={buttonVariants({ variant: "secondary", size: "md" })}
                 >
                   {overview.openLearnLibraryAction}
@@ -206,7 +231,7 @@ export default async function DashboardOverviewPage() {
                   {overview.recommendedModuleAction}
                 </Link>
                 <Link
-                  href="/learn"
+                  href="/dashboard/learn"
                   className={buttonVariants({ variant: "secondary", size: "md" })}
                 >
                   {overview.openLearnLibraryAction}
@@ -259,6 +284,112 @@ export default async function DashboardOverviewPage() {
         </Card>
       </section>
 
+      {showLearnLoop ? (
+        <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <CardTitle>{overview.learnLoopTitle}</CardTitle>
+                  <CardDescription>
+                    {overview.learnLoopDescription}
+                  </CardDescription>
+                </div>
+                <Link href="/dashboard/progress">
+                  <Button variant="secondary">
+                    {overview.openProgressAction}
+                  </Button>
+                </Link>
+              </div>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+              {learnStatCards.map((stat) => (
+                <div
+                  key={stat.label}
+                  className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4"
+                >
+                  <div className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                    {stat.label}
+                  </div>
+                  <div className={`mt-2 text-2xl font-semibold ${stat.tone}`}>
+                    {stat.value}
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{overview.learnQueueTitle}</CardTitle>
+              <CardDescription>{overview.learnQueueDescription}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {learnFollowUpItems.length > 0 ? (
+                learnFollowUpItems.map((item) => (
+                  <div
+                    key={item.questionId}
+                    className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4"
+                  >
+                    <div>
+                      <div className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                        {item.module}
+                      </div>
+                      <div className="mt-2 font-medium text-slate-950">
+                        {item.title}
+                      </div>
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                      {overview.learnReasonLabels[item.reason]}
+                    </p>
+                    <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-500">
+                      <span>{item.skill}</span>
+                      <span className="text-slate-300">•</span>
+                      <span>
+                        {overview.lessonViewsLabel}: {item.lessonViews}
+                      </span>
+                      <span className="text-slate-300">•</span>
+                      <span>
+                        {overview.checkpointAttemptsLabel}:{" "}
+                        {item.checkpointAttempts}
+                      </span>
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-3">
+                      <Link
+                        href={`/dashboard/learn/questions/${item.questionSlug}`}
+                        className={buttonVariants({ variant: "secondary", size: "sm" })}
+                      >
+                        {overview.openLessonAction}
+                      </Link>
+                      <form action={createTrainingSessionAction}>
+                        <input type="hidden" name="mode" value="PRACTICE" />
+                        <input type="hidden" name="locale" value={locale} />
+                        <input type="hidden" name="questionCount" value="1" />
+                        <input
+                          type="hidden"
+                          name="questionIds"
+                          value={item.questionId}
+                        />
+                        <Button type="submit" size="sm" variant="ghost">
+                          {overview.startFocusedPracticeAction}
+                        </Button>
+                      </form>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4 text-sm leading-6 text-slate-600">
+                  <div className="font-medium text-slate-950">
+                    {overview.learnQueueEmptyTitle}
+                  </div>
+                  <p className="mt-2">{overview.learnQueueEmptyDescription}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </section>
+      ) : null}
+
       <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <Card>
           <CardHeader>
@@ -306,12 +437,31 @@ export default async function DashboardOverviewPage() {
                     </div>
                   </div>
                   <div className="font-medium text-slate-950">{item.title}</div>
+                  {item.hasLessonSignal || !item.hasPracticeAttempts ? (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {item.hasLessonSignal ? (
+                        <Badge className="border-cyan-200 bg-cyan-50 text-cyan-700">
+                          {overview.learnSignalBadge}
+                        </Badge>
+                      ) : null}
+                      {!item.hasPracticeAttempts ? (
+                        <Badge className="border-slate-200 bg-white text-slate-700">
+                          {overview.learnNoPracticeBadge}
+                        </Badge>
+                      ) : null}
+                      {item.reason === "checkpointFailed" ? (
+                        <Badge className="border-rose-200 bg-rose-50 text-rose-700">
+                          {overview.checkpointFailedBadge}
+                        </Badge>
+                      ) : null}
+                    </div>
+                  ) : null}
                   <p className="mt-2 text-sm leading-6 text-slate-600">
                     {overview.reasonLabels[item.reason]}
                   </p>
                   <div className="mt-4 flex flex-wrap gap-3">
                     <Link
-                      href={`/learn/questions/${item.questionSlug}`}
+                      href={`/dashboard/learn/questions/${item.questionSlug}`}
                       className={buttonVariants({ variant: "secondary", size: "sm" })}
                     >
                       {overview.openLessonAction}

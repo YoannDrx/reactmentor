@@ -69,6 +69,10 @@ function parseQuestionFormatFilter(value?: string) {
     : null;
 }
 
+function formatCountLabel(template: string, count: number) {
+  return template.replace("{count}", String(count));
+}
+
 function StatusSelect({
   name,
   defaultValue,
@@ -654,66 +658,223 @@ export default async function DashboardAdminPage({
           <CardTitle>{admin.qualityTitle}</CardTitle>
           <CardDescription>{admin.qualityDescription}</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-6 xl:grid-cols-4">
-          <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4">
-            <div className="text-sm font-medium text-slate-950">
-              {admin.qualityTranslationGapsLabel}
+        <CardContent className="grid gap-6">
+          <section className="grid gap-6 xl:grid-cols-6">
+            <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4">
+              <div className="text-sm font-medium text-slate-950">
+                {admin.qualityTranslationGapsLabel}
+              </div>
+              <div className="mt-2 text-3xl font-semibold text-amber-700">
+                {readModel.quality.translationGapQuestions}
+              </div>
             </div>
-            <div className="mt-2 text-3xl font-semibold text-amber-700">
-              {readModel.quality.translationGapQuestions}
+            <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4">
+              <div className="text-sm font-medium text-slate-950">
+                {admin.qualityUntaggedQuestionsLabel}
+              </div>
+              <div className="mt-2 text-3xl font-semibold text-slate-950">
+                {readModel.quality.untaggedQuestions}
+              </div>
             </div>
-          </div>
-          <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4">
-            <div className="text-sm font-medium text-slate-950">
-              {admin.qualityUntaggedQuestionsLabel}
+            <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4">
+              <div className="text-sm font-medium text-slate-950">
+                {admin.qualityThinModulesLabel}
+              </div>
+              <div className="mt-2 text-3xl font-semibold text-slate-950">
+                {readModel.quality.thinModules.length}
+              </div>
+              <div className="mt-3 grid gap-2 text-sm text-slate-600">
+                {readModel.quality.thinModules.length > 0 ? (
+                  readModel.quality.thinModules.slice(0, 4).map((module) => (
+                    <div key={module.id}>
+                      {module.title} · {admin.stats.skillsLabel}: {module.skillCount} ·{" "}
+                      {admin.stats.questionsLabel}: {module.questionCount}
+                    </div>
+                  ))
+                ) : (
+                  <div>{admin.qualityNoThinModules}</div>
+                )}
+              </div>
             </div>
-            <div className="mt-2 text-3xl font-semibold text-slate-950">
-              {readModel.quality.untaggedQuestions}
+            <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4">
+              <div className="text-sm font-medium text-slate-950">
+                {admin.qualityFreshnessReviewLabel}
+              </div>
+              <div className="mt-2 text-3xl font-semibold text-slate-950">
+                {readModel.quality.stalePublishedQuestions.length}
+              </div>
+              <div className="mt-3 text-sm text-slate-600">
+                {formatCountLabel(
+                  admin.qualityFreshnessWindowLabel,
+                  readModel.quality.freshnessReviewWindowDays,
+                )}
+              </div>
             </div>
-          </div>
-          <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4">
-            <div className="text-sm font-medium text-slate-950">
-              {admin.qualityThinModulesLabel}
+            <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4">
+              <div className="text-sm font-medium text-slate-950">
+                {admin.qualityDuplicateCandidatesLabel}
+              </div>
+              <div className="mt-2 text-3xl font-semibold text-slate-950">
+                {readModel.quality.duplicatePromptCandidates.length}
+              </div>
+              <div className="mt-3 text-sm text-slate-600">
+                {admin.questionsListTitle}
+              </div>
             </div>
-            <div className="mt-2 text-3xl font-semibold text-slate-950">
-              {readModel.quality.thinModules.length}
-            </div>
-            <div className="mt-3 grid gap-2 text-sm text-slate-600">
-              {readModel.quality.thinModules.length > 0 ? (
-                readModel.quality.thinModules.slice(0, 4).map((module) => (
-                  <div key={module.id}>
-                    {module.title} · {admin.stats.skillsLabel}: {module.skillCount} ·{" "}
-                    {admin.stats.questionsLabel}: {module.questionCount}
+            <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4">
+              <div className="text-sm font-medium text-slate-950">
+                {admin.qualityCoverageLabel}
+              </div>
+              <div className="mt-3 grid gap-2 text-sm text-slate-600">
+                {readModel.quality.coverageByTrack.map((coverage) => (
+                  <div key={coverage.track}>
+                    {trackLabels[coverage.track]} · {admin.stats.modulesLabel}:{" "}
+                    {coverage.modules} · {admin.stats.questionsLabel}:{" "}
+                    {coverage.questions}
                   </div>
-                ))
-              ) : (
-                <div>{admin.qualityNoThinModules}</div>
-              )}
+                ))}
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {readModel.quality.coverageByFormat.map((coverage) => (
+                  <Badge
+                    key={coverage.format}
+                    className="border-slate-200 bg-white text-slate-700"
+                  >
+                    {learn.formatLabels[coverage.format]}: {coverage.count}
+                  </Badge>
+                ))}
+              </div>
             </div>
-          </div>
-          <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4">
-            <div className="text-sm font-medium text-slate-950">
-              {admin.qualityCoverageLabel}
-            </div>
-            <div className="mt-3 grid gap-2 text-sm text-slate-600">
-              {readModel.quality.coverageByTrack.map((coverage) => (
-                <div key={coverage.track}>
-                  {trackLabels[coverage.track]} · {admin.stats.modulesLabel}:{" "}
-                  {coverage.modules} · {admin.stats.questionsLabel}: {coverage.questions}
+          </section>
+
+          <section className="grid gap-6 xl:grid-cols-2">
+            <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-5">
+              <div className="space-y-2">
+                <div className="text-lg font-semibold text-slate-950">
+                  {admin.qualityFreshnessTitle}
                 </div>
-              ))}
+                <p className="text-sm leading-6 text-slate-600">
+                  {admin.qualityFreshnessDescription}
+                </p>
+              </div>
+
+              <div className="mt-4 grid gap-3">
+                {readModel.quality.stalePublishedQuestions.length > 0 ? (
+                  readModel.quality.stalePublishedQuestions
+                    .slice(0, 6)
+                    .map((question) => (
+                      <div
+                        key={question.id}
+                        className="rounded-[22px] border border-slate-200 bg-white p-4"
+                      >
+                        <div className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                          {question.slug}
+                        </div>
+                        <div className="mt-2 font-medium text-slate-950">
+                          {question.prompt}
+                        </div>
+                        <div className="mt-2 text-sm text-slate-500">
+                          {question.moduleTitle}
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <Badge className="border-slate-200 bg-slate-100 text-slate-700">
+                            {formatCountLabel(
+                              admin.qualityFreshnessAgeLabel,
+                              question.ageInDays,
+                            )}
+                          </Badge>
+                          <Badge className="border-slate-200 bg-slate-100 text-slate-700">
+                            {question.issueCount > 0
+                              ? formatCountLabel(
+                                  admin.qualityIssuesCountLabel,
+                                  question.issueCount,
+                                )
+                              : admin.qualityIssuesCountZero}
+                          </Badge>
+                          <Badge className="border-slate-200 bg-slate-100 text-slate-700">
+                            {question.sourceType ?? admin.qualitySourceFallback}
+                          </Badge>
+                        </div>
+                        <div className="mt-4 flex flex-wrap gap-3">
+                          <Link
+                            href={`/dashboard/admin#question-${question.id}`}
+                            className={buttonVariants({
+                              variant: "secondary",
+                              size: "sm",
+                            })}
+                          >
+                            {admin.qualityJumpToQuestionAction}
+                          </Link>
+                          <span className="text-sm text-slate-500">
+                            {admin.updatedAtLabel}:{" "}
+                            {updatedAtFormatter.format(question.updatedAt)}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                ) : (
+                  <div className="rounded-[22px] border border-dashed border-slate-200 bg-white px-4 py-6 text-sm text-slate-500">
+                    {admin.qualityFreshnessEmpty}
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {readModel.quality.coverageByFormat.map((coverage) => (
-                <Badge
-                  key={coverage.format}
-                  className="border-slate-200 bg-white text-slate-700"
-                >
-                  {learn.formatLabels[coverage.format]}: {coverage.count}
-                </Badge>
-              ))}
+
+            <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-5">
+              <div className="space-y-2">
+                <div className="text-lg font-semibold text-slate-950">
+                  {admin.qualityDuplicateTitle}
+                </div>
+                <p className="text-sm leading-6 text-slate-600">
+                  {admin.qualityDuplicateDescription}
+                </p>
+              </div>
+
+              <div className="mt-4 grid gap-3">
+                {readModel.quality.duplicatePromptCandidates.length > 0 ? (
+                  readModel.quality.duplicatePromptCandidates
+                    .slice(0, 6)
+                    .map((group) => (
+                      <div
+                        key={group.promptKey}
+                        className="rounded-[22px] border border-slate-200 bg-white p-4"
+                      >
+                        <div className="font-medium text-slate-950">
+                          {group.prompt}
+                        </div>
+                        <div className="mt-3">
+                          <Badge className="border-amber-200 bg-amber-50 text-amber-700">
+                            {formatCountLabel(
+                              admin.qualityDuplicateCountLabel,
+                              group.questionCount,
+                            )}
+                          </Badge>
+                        </div>
+                        <div className="mt-4 grid gap-2">
+                          {group.questions.map((question) => (
+                            <Link
+                              key={question.id}
+                              href={`/dashboard/admin#question-${question.id}`}
+                              className="rounded-[18px] border border-slate-200 bg-slate-50/80 px-3 py-2 text-sm text-slate-700 transition hover:border-slate-300 hover:bg-white"
+                            >
+                              <span className="font-medium text-slate-950">
+                                {question.moduleTitle}
+                              </span>
+                              <span className="mx-2 text-slate-300">•</span>
+                              <span>{question.slug}</span>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    ))
+                ) : (
+                  <div className="rounded-[22px] border border-dashed border-slate-200 bg-white px-4 py-6 text-sm text-slate-500">
+                    {admin.qualityDuplicateEmpty}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          </section>
         </CardContent>
       </Card>
 
@@ -1422,6 +1583,7 @@ export default async function DashboardAdminPage({
               readModel.questions.map((question) => (
                 <div
                   key={question.id}
+                  id={`question-${question.id}`}
                   className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4"
                 >
                   <div className="space-y-3">
@@ -1501,7 +1663,7 @@ export default async function DashboardAdminPage({
                       </Button>
                     </form>
                     <Link
-                      href={`/learn/questions/${question.slug}`}
+                      href={`/dashboard/learn/questions/${question.slug}`}
                       className={buttonVariants({ variant: "ghost", size: "sm" })}
                     >
                       {admin.openAction}

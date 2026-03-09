@@ -36,7 +36,7 @@ describe("getPlaylistReadModel", () => {
     getMockInterviewReadModelMock.mockReset();
   });
 
-  it("builds generated playlists from review recovery, mock fallout, bookmarks and notes", async () => {
+  it("builds generated playlists from learn follow-up, review recovery, mock fallout, bookmarks and notes", async () => {
     getBookmarkReadModelMock.mockResolvedValue({
       count: 2,
       items: [
@@ -67,6 +67,22 @@ describe("getPlaylistReadModel", () => {
         dueCount: 3,
       },
       progress: {
+        learn: {
+          followUpCount: 3,
+          followUpQuestionIds: ["lesson_1", "lesson_2"],
+          items: [
+            {
+              questionId: "lesson_1",
+              skill: "Effects",
+              moduleSlug: "react-rendering-systems",
+            },
+            {
+              questionId: "lesson_2",
+              skill: "Identity",
+              moduleSlug: "react-rendering-systems",
+            },
+          ],
+        },
         recoveryPlans: [
           {
             skill: "Effects",
@@ -95,13 +111,22 @@ describe("getPlaylistReadModel", () => {
         },
       ],
     });
-
     const readModel = await getPlaylistReadModel({
       userId: "user_1",
       locale: "en",
     });
 
     expect(readModel.items).toEqual([
+      {
+        id: "lessonFollowUp",
+        type: "lessonFollowUp",
+        mode: SessionMode.PRACTICE,
+        questionIds: ["lesson_1", "lesson_2"],
+        questionCount: 2,
+        focusSkills: ["Effects", "Identity"],
+        moduleSlug: "react-rendering-systems",
+        signalCount: 3,
+      },
       {
         id: "recoveryReview",
         type: "recoveryReview",

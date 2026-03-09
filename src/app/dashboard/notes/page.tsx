@@ -22,11 +22,18 @@ const noteStatusClasses: Record<NoteStatus, string> = {
   saved: "border-slate-200 bg-slate-100 text-slate-700",
 };
 
+const lessonSignalClasses = {
+  reviewDue: "border-amber-200 bg-amber-50 text-amber-700",
+  checkpointReady: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  lessonViewed: "border-cyan-200 bg-cyan-50 text-cyan-700",
+} as const;
+
 export default async function DashboardNotesPage() {
   const user = await getRequiredUser("/dashboard/notes");
   const { locale, messages } = await getI18n();
   const notes = messages.dashboard.notes;
   const bookmarks = messages.dashboard.bookmarks;
+  const progress = messages.dashboard.progress;
   const readModel = await getNoteReadModel({
     userId: user.id,
     locale,
@@ -92,9 +99,16 @@ export default async function DashboardNotesPage() {
                       {item.prompt}
                     </div>
                   </div>
-                  <Badge className={noteStatusClasses[item.status]}>
-                    {notes.statusLabels[item.status]}
-                  </Badge>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge className={noteStatusClasses[item.status]}>
+                      {notes.statusLabels[item.status]}
+                    </Badge>
+                    {item.learningSignal ? (
+                      <Badge className={lessonSignalClasses[item.learningSignal]}>
+                        {progress.lessonStatusLabels[item.learningSignal]}
+                      </Badge>
+                    ) : null}
+                  </div>
                 </div>
 
                 <div className="mt-3 text-sm text-slate-500">{item.skill}</div>
@@ -124,7 +138,7 @@ export default async function DashboardNotesPage() {
                     variant="secondary"
                   />
                   <Link
-                    href={`/learn/questions/${item.questionSlug}`}
+                    href={`/dashboard/learn/questions/${item.questionSlug}`}
                     className={buttonVariants({ variant: "secondary", size: "sm" })}
                   >
                     {notes.openLessonAction}
@@ -138,11 +152,8 @@ export default async function DashboardNotesPage() {
                   <form action={createTrainingSessionAction}>
                     <input type="hidden" name="mode" value="PRACTICE" />
                     <input type="hidden" name="locale" value={locale} />
-                    <input
-                      type="hidden"
-                      name="moduleSlug"
-                      value={item.moduleSlug}
-                    />
+                    <input type="hidden" name="questionCount" value="1" />
+                    <input type="hidden" name="questionIds" value={item.questionId} />
                     <Button type="submit" size="sm">
                       {notes.launchPracticeAction}
                     </Button>

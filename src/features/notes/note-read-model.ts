@@ -8,6 +8,11 @@ import {
 import { prisma } from "@/lib/prisma";
 
 export type NoteStatus = "pendingReview" | "due" | "stable" | "saved";
+export type NoteLearningSignal =
+  | "reviewDue"
+  | "checkpointReady"
+  | "lessonViewed"
+  | null;
 
 export async function getNoteReadModel(params: {
   userId: string;
@@ -50,6 +55,9 @@ export async function getNoteReadModel(params: {
             select: {
               nextReviewAt: true,
               masteryState: true,
+              lessonViews: true,
+              lessonCheckpointAttempts: true,
+              lastLessonCheckpointPassed: true,
             },
             take: 1,
           },
@@ -89,6 +97,11 @@ export async function getNoteReadModel(params: {
     const isPendingReview = latestAttempt?.isCorrect === null;
     const isDue =
       questionProgress?.nextReviewAt ? questionProgress.nextReviewAt <= now : false;
+    const hasLessonSignal = Boolean(
+      (questionProgress?.lessonViews ?? 0) > 0 ||
+      (questionProgress?.lessonCheckpointAttempts ?? 0) > 0 ||
+      (!latestAttempt && questionProgress?.nextReviewAt),
+    );
     const status: NoteStatus = isPendingReview
       ? "pendingReview"
       : isDue
@@ -96,6 +109,14 @@ export async function getNoteReadModel(params: {
         : questionProgress?.masteryState === MasteryState.MASTERED
           ? "stable"
           : "saved";
+    const learningSignal: NoteLearningSignal =
+      hasLessonSignal && isDue
+        ? "reviewDue"
+        : questionProgress?.lastLessonCheckpointPassed
+          ? "checkpointReady"
+          : (questionProgress?.lessonViews ?? 0) > 0
+            ? "lessonViewed"
+            : null;
 
     return {
       noteId: note.id,
@@ -111,6 +132,7 @@ export async function getNoteReadModel(params: {
       isPendingReview,
       isDue,
       isBookmarked: note.question.bookmarks.length > 0,
+      learningSignal,
     };
   });
 

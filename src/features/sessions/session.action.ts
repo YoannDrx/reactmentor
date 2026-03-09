@@ -11,6 +11,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getUser } from "@/lib/auth/auth-user";
+import { sanitizeCallbackUrl } from "@/lib/auth/auth-utils";
 import type { Locale } from "@/i18n/config";
 import { prisma } from "@/lib/prisma";
 import {
@@ -58,6 +59,7 @@ const createSessionSchema = z.object({
   moduleSlug: z.string().trim().optional(),
   templateKey: z.enum(mockTemplateKeys).optional(),
   questionIds: z.array(z.string().trim().min(1)).default([]),
+  callbackUrl: z.string().trim().optional(),
 });
 
 const recordAttemptSchema = z.object({
@@ -352,10 +354,16 @@ export async function finishTrainingSessionAction(sessionId: string) {
 }
 
 export async function createTrainingSessionAction(formData: FormData) {
+  const safeCallbackUrl = sanitizeCallbackUrl(
+    String(formData.get("callbackUrl") ?? "") || undefined,
+    "/dashboard",
+  );
   const user = await getUser();
 
   if (!user) {
-    redirect("/auth/signin?callbackUrl=%2Fdashboard");
+    redirect(
+      `/auth/signin?callbackUrl=${encodeURIComponent(safeCallbackUrl)}`,
+    );
   }
 
   const parsed = createSessionSchema.safeParse({
@@ -365,10 +373,11 @@ export async function createTrainingSessionAction(formData: FormData) {
     moduleSlug: String(formData.get("moduleSlug") ?? "") || undefined,
     templateKey: String(formData.get("templateKey") ?? "") || undefined,
     questionIds: formData.getAll("questionIds").map(String),
+    callbackUrl: String(formData.get("callbackUrl") ?? "") || undefined,
   });
 
   if (!parsed.success) {
-    redirect("/dashboard");
+    redirect(safeCallbackUrl);
   }
 
   const entitlement = await getUserEntitlementSnapshot(user.id);

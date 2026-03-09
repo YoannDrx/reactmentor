@@ -57,6 +57,9 @@ describe("getNoteReadModel", () => {
             {
               nextReviewAt: new Date("2026-03-08T08:00:00.000Z"),
               masteryState: MasteryState.REVIEWING,
+              lessonViews: 1,
+              lessonCheckpointAttempts: 0,
+              lastLessonCheckpointPassed: null,
             },
           ],
           attempts: [
@@ -87,6 +90,9 @@ describe("getNoteReadModel", () => {
             {
               nextReviewAt: new Date("2026-03-07T08:00:00.000Z"),
               masteryState: MasteryState.LEARNING,
+              lessonViews: 2,
+              lessonCheckpointAttempts: 1,
+              lastLessonCheckpointPassed: false,
             },
           ],
           attempts: [
@@ -116,6 +122,7 @@ describe("getNoteReadModel", () => {
         body: "Name the cleanup boundary explicitly.",
         status: "pendingReview",
         isBookmarked: true,
+        learningSignal: "lessonViewed",
       }),
       expect.objectContaining({
         noteId: "note_due",
@@ -124,6 +131,7 @@ describe("getNoteReadModel", () => {
         body: "Anchor the answer in identity and references.",
         status: "due",
         isBookmarked: false,
+        learningSignal: "reviewDue",
       }),
     ]);
   });

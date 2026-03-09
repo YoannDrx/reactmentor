@@ -28,11 +28,13 @@ type QuestionPreview = {
 type QuestionPreviewCardProps = {
   locale: "fr" | "en";
   question: QuestionPreview;
+  callbackUrl?: string;
   readLessonLabel: string;
   focusedPracticeLabel: string;
   skillLabel: string;
   moduleLabel?: string;
   showModule?: boolean;
+  questionHrefBase?: string;
   levelLabels: Record<"junior" | "mid" | "senior", string>;
   formatLabels: Record<QuestionFormat, string>;
   estimatedReadMinutesLabel: string;
@@ -45,11 +47,13 @@ function formatReadTime(template: string, count: number) {
 export function QuestionPreviewCard({
   locale,
   question,
+  callbackUrl,
   readLessonLabel,
   focusedPracticeLabel,
   skillLabel,
   moduleLabel,
   showModule = true,
+  questionHrefBase = "/learn/questions",
   levelLabels,
   formatLabels,
   estimatedReadMinutesLabel,
@@ -108,7 +112,7 @@ export function QuestionPreviewCard({
 
         <div className="flex flex-col gap-3 sm:flex-row">
           <Link
-            href={`/learn/questions/${question.slug}`}
+            href={`${questionHrefBase}/${question.slug}`}
             className={buttonVariants({ variant: "primary", size: "md" })}
           >
             <BookOpenText className="size-4" />
@@ -120,6 +124,9 @@ export function QuestionPreviewCard({
             <input type="hidden" name="locale" value={locale} />
             <input type="hidden" name="questionCount" value="1" />
             <input type="hidden" name="questionIds" value={question.id} />
+            {callbackUrl ? (
+              <input type="hidden" name="callbackUrl" value={callbackUrl} />
+            ) : null}
             <Button
               type="submit"
               variant="secondary"

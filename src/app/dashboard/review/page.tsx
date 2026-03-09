@@ -366,7 +366,7 @@ export default async function DashboardReviewPage() {
 
                 <div className="mt-4 flex flex-wrap gap-3">
                   <Link
-                    href={`/learn/questions/${item.questionSlug}`}
+                    href={`/dashboard/learn/questions/${item.questionSlug}`}
                     className={buttonVariants({ variant: "secondary", size: "sm" })}
                   >
                     {review.openLessonAction}
@@ -502,12 +502,42 @@ export default async function DashboardReviewPage() {
                     />
                   </div>
                   <div className="font-medium text-slate-950">{item.title}</div>
+                  <div className="mt-2 text-sm text-slate-500">{item.module}</div>
+                  {item.hasLessonSignal ? (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Badge className="border-cyan-200 bg-cyan-50 text-cyan-700">
+                        {review.lessonSignalBadge}
+                      </Badge>
+                      {!item.hasPracticeAttempts ? (
+                        <Badge className="border-slate-200 bg-white text-slate-700">
+                          {review.lessonNoPracticeBadge}
+                        </Badge>
+                      ) : null}
+                      {item.reason === "checkpointFailed" ? (
+                        <Badge className="border-rose-200 bg-rose-50 text-rose-700">
+                          {review.lessonCheckpointFailedBadge}
+                        </Badge>
+                      ) : null}
+                    </div>
+                  ) : null}
+                  {item.hasLessonSignal ? (
+                    <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-500">
+                      <span>
+                        {review.lessonViewsLabel}: {item.lessonViews}
+                      </span>
+                      <span className="text-slate-300">•</span>
+                      <span>
+                        {review.checkpointAttemptsLabel}:{" "}
+                        {item.checkpointAttempts}
+                      </span>
+                    </div>
+                  ) : null}
                   <p className="mt-2 text-sm leading-6 text-slate-600">
                     {review.reasonLabels[item.reason]}
                   </p>
                   <div className="mt-4">
                     <Link
-                      href={`/learn/questions/${item.questionSlug}`}
+                      href={`/dashboard/learn/questions/${item.questionSlug}`}
                       className={buttonVariants({ variant: "secondary", size: "sm" })}
                     >
                       {review.openLessonAction}

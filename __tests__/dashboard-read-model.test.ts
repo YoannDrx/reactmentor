@@ -311,11 +311,13 @@ describe("getDashboardReadModel", () => {
       [],
       [],
       [],
+      [],
     ]);
 
     const readModel = await getDashboardReadModel("user_1", "fr");
 
     expect(readModel.hasAttempts).toBe(false);
+    expect(readModel.hasLearningActivity).toBe(false);
     expect(readModel.overview.stats).toMatchObject({
       readiness: 0,
       masteredQuestions: 0,
@@ -336,10 +338,25 @@ describe("getDashboardReadModel", () => {
       reviewing: 0,
       mastered: 0,
     });
+    expect(readModel.overview.learn).toEqual({
+      viewedCount: 0,
+      checkpointReadyCount: 0,
+      readWithoutPracticeCount: 0,
+      lessonReviewQueuedCount: 0,
+    });
     expect(readModel.overview.dueItems).toEqual([]);
     expect(readModel.review.items).toEqual([]);
     expect(readModel.review.pendingItems).toEqual([]);
     expect(readModel.overview.recentSessions).toEqual([]);
+    expect(readModel.progress.learn).toEqual({
+      viewedCount: 0,
+      checkpointReadyCount: 0,
+      checkpointFailedCount: 0,
+      readWithoutPracticeCount: 0,
+      followUpCount: 0,
+      followUpQuestionIds: [],
+      items: [],
+    });
     expect(readModel.progress.weeklyMomentum).toHaveLength(7);
     expect(
       readModel.progress.weeklyMomentum.every((item) => item.score === 0),
@@ -909,6 +926,10 @@ describe("getDashboardReadModel", () => {
           masteryState: MasteryState.MASTERED,
           lastOutcomeCorrect: true,
           nextReviewAt: new Date("2026-03-03T10:00:00.000Z"),
+          reviewCount: 1,
+          lessonViews: 0,
+          lessonCheckpointAttempts: 0,
+          lastLessonCheckpointPassed: null,
           question: overdueQuestion,
         },
         {
@@ -916,6 +937,10 @@ describe("getDashboardReadModel", () => {
           masteryState: MasteryState.LEARNING,
           lastOutcomeCorrect: false,
           nextReviewAt: new Date("2026-03-07T06:00:00.000Z"),
+          reviewCount: 1,
+          lessonViews: 0,
+          lessonCheckpointAttempts: 0,
+          lastLessonCheckpointPassed: null,
           question: unstableQuestion,
         },
         {
@@ -923,6 +948,10 @@ describe("getDashboardReadModel", () => {
           masteryState: MasteryState.REVIEWING,
           lastOutcomeCorrect: false,
           nextReviewAt: new Date("2026-03-07T08:00:00.000Z"),
+          reviewCount: 1,
+          lessonViews: 0,
+          lessonCheckpointAttempts: 0,
+          lastLessonCheckpointPassed: null,
           question: mockFalloutQuestion,
         },
       ],
@@ -954,6 +983,7 @@ describe("getDashboardReadModel", () => {
           },
         },
       ],
+      [],
     ]);
 
     const readModel = await getDashboardReadModel("user_1", "fr");
@@ -1083,6 +1113,149 @@ describe("getDashboardReadModel", () => {
     });
   });
 
+  it("surfaces lesson-driven review reasons and learn follow-up metrics", async () => {
+    const skillEffects = createSkillFixture({
+      id: "skill_effects",
+      slug: "effect-mental-model",
+      titleEn: "Effect Mental Model",
+      titleFr: "Modele mental des effects",
+    });
+    const lessonQueuedQuestion = createQuestionFixture({
+      id: "question_lesson_queued",
+      slug: "effect-cleanup-queue",
+      promptEn: "Why must effect cleanup come from the effect body itself?",
+      promptFr:
+        "Pourquoi le cleanup d un effect doit-il venir du corps de l effect ?",
+      primarySkill: skillEffects,
+    });
+    const checkpointFailedQuestion = createQuestionFixture({
+      id: "question_checkpoint_failed",
+      slug: "effect-checkpoint-failed",
+      promptEn: "Why can a stale closure break an effect-driven subscription?",
+      promptFr:
+        "Pourquoi une stale closure peut-elle casser une souscription pilotee par un effect ?",
+      primarySkill: skillEffects,
+    });
+    const needsPracticeQuestion = createQuestionFixture({
+      id: "question_needs_practice",
+      slug: "effect-needs-practice",
+      promptEn: "How do you explain dependency intent before naming APIs?",
+      promptFr:
+        "Comment expliquer l intention des dependances avant de citer des APIs ?",
+      primarySkill: skillEffects,
+    });
+
+    transactionMock.mockResolvedValue([
+      12,
+      0,
+      0,
+      1,
+      0,
+      { _avg: { masteryScore: null } },
+      [],
+      [],
+      [],
+      [skillEffects],
+      [
+        {
+          questionId: lessonQueuedQuestion.id,
+          masteryState: MasteryState.NEW,
+          lastOutcomeCorrect: false,
+          nextReviewAt: new Date("2026-03-07T10:00:00.000Z"),
+          reviewCount: 0,
+          lessonViews: 1,
+          lessonCheckpointAttempts: 0,
+          lastLessonCheckpointPassed: null,
+          question: lessonQueuedQuestion,
+        },
+      ],
+      [],
+      [],
+      [
+        {
+          questionId: lessonQueuedQuestion.id,
+          reviewCount: 0,
+          lessonViews: 1,
+          lessonCheckpointAttempts: 0,
+          lessonCheckpointPassCount: 0,
+          lastLessonCheckpointPassed: null,
+          nextReviewAt: new Date("2026-03-07T10:00:00.000Z"),
+          lastLessonViewedAt: new Date("2026-03-07T09:30:00.000Z"),
+          question: lessonQueuedQuestion,
+        },
+        {
+          questionId: checkpointFailedQuestion.id,
+          reviewCount: 0,
+          lessonViews: 2,
+          lessonCheckpointAttempts: 1,
+          lessonCheckpointPassCount: 0,
+          lastLessonCheckpointPassed: false,
+          nextReviewAt: null,
+          lastLessonViewedAt: new Date("2026-03-07T09:00:00.000Z"),
+          question: checkpointFailedQuestion,
+        },
+        {
+          questionId: needsPracticeQuestion.id,
+          reviewCount: 0,
+          lessonViews: 1,
+          lessonCheckpointAttempts: 1,
+          lessonCheckpointPassCount: 1,
+          lastLessonCheckpointPassed: true,
+          nextReviewAt: null,
+          lastLessonViewedAt: new Date("2026-03-07T08:00:00.000Z"),
+          question: needsPracticeQuestion,
+        },
+      ],
+    ]);
+
+    const readModel = await getDashboardReadModel("user_1", "fr");
+
+    expect(readModel.hasAttempts).toBe(false);
+    expect(readModel.hasLearningActivity).toBe(true);
+    expect(readModel.overview.learn).toEqual({
+      viewedCount: 3,
+      checkpointReadyCount: 1,
+      readWithoutPracticeCount: 3,
+      lessonReviewQueuedCount: 1,
+    });
+    expect(readModel.review.items).toEqual([
+      expect.objectContaining({
+        questionId: "question_lesson_queued",
+        reason: "lessonQueued",
+        hasLessonSignal: true,
+        lessonViews: 1,
+        checkpointAttempts: 0,
+        hasPracticeAttempts: false,
+      }),
+    ]);
+    expect(readModel.progress.learn).toMatchObject({
+      viewedCount: 3,
+      checkpointReadyCount: 1,
+      checkpointFailedCount: 1,
+      readWithoutPracticeCount: 3,
+      followUpCount: 3,
+      followUpQuestionIds: [
+        "question_lesson_queued",
+        "question_checkpoint_failed",
+        "question_needs_practice",
+      ],
+    });
+    expect(readModel.progress.learn.items).toEqual([
+      expect.objectContaining({
+        questionId: "question_lesson_queued",
+        reason: "reviewDue",
+      }),
+      expect.objectContaining({
+        questionId: "question_checkpoint_failed",
+        reason: "checkpointFailed",
+      }),
+      expect.objectContaining({
+        questionId: "question_needs_practice",
+        reason: "needsPractice",
+      }),
+    ]);
+  });
+
   it("surfaces weak-skill recovery plans when the due card is stable but the parent signal is still fragile", async () => {
     const weakSkill = createSkillFixture({
       id: "skill_types",
@@ -1149,9 +1322,14 @@ describe("getDashboardReadModel", () => {
           masteryState: MasteryState.MASTERED,
           lastOutcomeCorrect: true,
           nextReviewAt: new Date("2026-03-07T08:00:00.000Z"),
+          reviewCount: 1,
+          lessonViews: 0,
+          lessonCheckpointAttempts: 0,
+          lastLessonCheckpointPassed: null,
           question: weakQuestion,
         },
       ],
+      [],
       [],
       [],
     ]);

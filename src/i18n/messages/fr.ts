@@ -24,6 +24,7 @@ const fr = {
     },
     actions: {
       logIn: "Connexion",
+      openDashboard: "Ouvrir le dashboard",
       startTraining: "Commencer",
       seeProduct: "Voir le produit",
       createWorkspace: "Créer mon espace",
@@ -233,9 +234,9 @@ const fr = {
           price: "Free",
           description: "Pour valider le format et poser un diagnostic rapide.",
           features: [
-            "2 modules actifs",
-            "dashboard personnel",
-            "practice mode",
+            "2 modules publies",
+            "1 mock chronometre / mois",
+            "workspace practice et review",
           ],
         },
         {
@@ -244,20 +245,20 @@ const fr = {
           description:
             "Le coeur du produit pour préparer des entretiens React de manière sérieuse.",
           features: [
-            "tous les modules",
-            "mock interviews illimitées",
-            "review queue et analytics de lacunes",
+            "tous les modules publies",
+            "mocks chronometres illimites",
+            "analytics avancees et playlists ciblees",
           ],
         },
         {
           title: "Hiring Sprint",
           price: "€59",
           description:
-            "Pour les deux semaines avant candidature, avec un mode intensif plus offensif.",
+            "Pour la fenetre courte avant entretien, quand la boucle de prep doit passer sur la voie la plus agressive.",
           features: [
-            "playlists intensives",
-            "rapports d'argumentation",
-            "plan de révision par rôle visé",
+            "tout Mentor Pro",
+            "mode sprint active",
+            "voie de prep la plus intensive",
           ],
         },
       ],
@@ -381,6 +382,11 @@ const fr = {
         title: "Bibliothèque d'entraînement",
         description:
           "Des modules organisés autour des skills qui comptent vraiment en entretien React.",
+      },
+      learn: {
+        title: "Workspace learn",
+        description:
+          "Des cours detailles, des sequences guidees et la boucle lecture-vers-practice directement dans ton espace.",
       },
       bookmarks: {
         title: "Questions sauvegardees",
@@ -542,6 +548,36 @@ const fr = {
       dueTitle: "À revoir aujourd'hui",
       dueDescription:
         "La file des questions à reprendre avant qu'une mauvaise intuition ne se fixe.",
+      learnLoopTitle: "Statut de la boucle learn",
+      learnLoopDescription:
+        "Les cours deja vus, verifies, ou encore en attente de conversion en pratique et review utiles.",
+      learnTrackedLabel: "Cours suivis",
+      learnCheckpointReadyLabel: "Checkpoint valide",
+      learnNeedsPracticeLabel: "Sans practice",
+      learnReviewQueuedLabel: "Envoyes en review",
+      learnQueueTitle: "Prochains suivis de cours",
+      learnQueueDescription:
+        "Des actions courtes tirees des cours vus, des checkpoints manquants et des signaux de review issus de learn.",
+      learnQueueEmptyTitle: "Les suivis de cours sont sous controle",
+      learnQueueEmptyDescription:
+        "Les cours vus sont deja verifies ou programmes. Ouvre la page progress pour voir le workspace learn complet.",
+      openProgressAction: "Ouvrir progress",
+      startFocusedPracticeAction: "Lancer une practice ciblee",
+      lessonViewsLabel: "Lectures",
+      checkpointAttemptsLabel: "Checkpoints",
+      learnSignalBadge: "Signal learn",
+      learnNoPracticeBadge: "Pas encore de practice",
+      checkpointFailedBadge: "Checkpoint echoue",
+      learnReasonLabels: {
+        reviewDue:
+          "Ce cours alimente deja la queue de review et doit revenir avant que l'explication ne derive.",
+        needsCheckpoint:
+          "Le cours a ete vu mais n'a pas encore ete verifie avec un checkpoint rapide.",
+        checkpointFailed:
+          "Le checkpoint a echoue, donc l'explication doit etre rejouee avant d'elargir la practice.",
+        needsPractice:
+          "Le checkpoint est valide, mais ce cours demande encore une question ciblee pour devenir un vrai rappel utile.",
+      },
       startReviewAction: "Lancer une session review",
       openReviewAction: "Ouvrir le review lab",
       openLessonAction: "Lire le cours",
@@ -569,6 +605,10 @@ const fr = {
           "Le skill parent reste fragile ou peu fiable, donc cette question aide a consolider le signal.",
         mockFallout:
           "Cette question a cede en mode mock et doit revenir vite avant le prochain round sous pression.",
+        lessonQueued:
+          "Ce cours a ete vu dans learn mais n'a pas encore ete transforme en pratique espacee stable.",
+        checkpointFailed:
+          "Le checkpoint de cours a echoue, donc cette card doit revenir avant que la mauvaise explication ne durcisse.",
         scheduled:
           "Cette question revient pour verifier que le mecanisme a vraiment tenu dans le temps.",
       },
@@ -650,8 +690,7 @@ const fr = {
           "Retour du portail billing. Les resynchronisations Stripe garderont le workspace aligne.",
         notConfigured:
           "Stripe n'est pas encore configure dans cet environnement. Ajoute les cles Stripe et les price ids pour activer le checkout.",
-        invalidPlan:
-          "Ce plan billing n'est pas valide pour le checkout.",
+        invalidPlan: "Ce plan billing n'est pas valide pour le checkout.",
         portalUnavailable:
           "Aucun customer Stripe n'est encore rattache a ce workspace, donc le portail billing reste indisponible.",
       },
@@ -905,6 +944,11 @@ const fr = {
       emptyDetailDescription:
         "Tu peux la supprimer, ou la garder comme placeholder en attendant des outils de curation plus complets.",
       types: {
+        lessonFollowUp: {
+          label: "Suivi de cours",
+          description:
+            "Les cours deja touches dans learn mais qui demandent encore verification, relance ou replay via un bloc court et cible.",
+        },
         recoveryReview: {
           label: "Rattrapage review",
           description:
@@ -957,12 +1001,30 @@ const fr = {
         "Une vue compacte de ce qui a bouge recemment et de ce qui bloque encore la publication.",
       qualityTitle: "Qualite editoriale",
       qualityDescription:
-        "Des signaux rapides sur la dette de traduction, la couverture taxonomique vide et les modules encore trop maigres.",
+        "Des signaux rapides sur la dette de traduction, le risque de doublon, la fraicheur des cours publies, la couverture taxonomique vide et les modules encore trop maigres.",
       qualityTranslationGapsLabel: "Questions avec ecarts de traduction",
       qualityUntaggedQuestionsLabel: "Questions sans tag de piege",
       qualityThinModulesLabel: "Modules trop maigres",
+      qualityFreshnessReviewLabel: "Questions publiees a relire pour fraicheur",
+      qualityDuplicateCandidatesLabel: "Candidats doublons de prompt",
       qualityCoverageLabel: "Photo de couverture",
       qualityNoThinModules: "Aucun module trop maigre detecte.",
+      qualityFreshnessTitle: "Queue de freshness review",
+      qualityFreshnessDescription:
+        "Les cours publies plus vieux que la fenetre de fraicheur, pour les relire avant que la bibliotheque learn ne derive du contrat actuel.",
+      qualityFreshnessEmpty:
+        "Aucun cours publie n attend de freshness review pour l instant.",
+      qualityFreshnessWindowLabel: "Fenetre review de {count}j",
+      qualityFreshnessAgeLabel: "{count} jours depuis la derniere mise a jour",
+      qualityIssuesCountLabel: "{count} points de checklist",
+      qualityIssuesCountZero: "Aucun point de checklist",
+      qualityJumpToQuestionAction: "Aller a la question",
+      qualityDuplicateTitle: "Veille doublons de prompt",
+      qualityDuplicateDescription:
+        "Les collisions exactes de prompt remontent ici pour fusionner, archiver ou recadrer le contenu avant que le benchmark ne grossisse.",
+      qualityDuplicateEmpty: "Aucun doublon exact de prompt detecte.",
+      qualityDuplicateCountLabel: "{count} questions dans le cluster",
+      qualitySourceFallback: "Source non renseignee",
       pitfallTagsListTitle: "Tags de pieges recents",
       pitfallTagsListDescription:
         "Garde le vocabulaire des confusions propre et visible avant qu'il ne se propage dans le reporting.",
@@ -1022,6 +1084,7 @@ const fr = {
       clearFiltersAction: "Effacer les filtres",
       allStatusesOption: "Tous les statuts",
       allFormatsOption: "Tous les formats",
+      updatedAtLabel: "Mise a jour",
       optionsCountLabel: "Options",
       attemptsCountLabel: "Tentatives",
       questionLinksCountLabel: "Questions liees",
@@ -1093,6 +1156,9 @@ const fr = {
           SESSION_COMPLETED: "Session terminee",
           REVIEW_LAUNCHED: "Review lancee",
           QUESTION_ANSWERED: "Question repondue",
+          LESSON_VIEWED: "Cours consulte",
+          LESSON_CHECKPOINT_COMPLETED: "Checkpoint de cours complete",
+          LESSON_REVIEW_QUEUED: "Cours ajoute a la review",
           BOOKMARK_CREATED: "Bookmark cree",
           NOTE_CREATED: "Note creee",
           UPGRADE_CLICKED: "Upgrade clique",
@@ -1252,6 +1318,27 @@ const fr = {
       masteryMapTitle: "Carte de maîtrise",
       masteryMapDescription:
         "Les compétences les plus robustes et les poches de doute encore visibles.",
+      lessonSignalsTitle: "Boucle de signal learn",
+      lessonSignalsDescription:
+        "Ce que tu as deja etudie dans learn, ce qui manque encore de verification et ce qui doit nourrir la prochaine relance ciblee.",
+      lessonQueueTitle: "Cours a relancer maintenant",
+      lessonQueueDescription:
+        "Une queue courte construite depuis les cours vus, les checkpoints manquants et les signaux de review issus de learn.",
+      lessonTrackedLabel: "Cours suivis",
+      lessonReviewDueLabel: "A revoir",
+      lessonUnverifiedLabel: "Encore non verifies",
+      lessonCheckpointReadyLabel: "Checkpoint valide",
+      lessonViewsLabel: "Lectures",
+      lessonCheckpointCountLabel: "Checkpoints",
+      lessonOpenAction: "Ouvrir le cours",
+      lessonPracticeAction: "Lancer une practice ciblee",
+      lessonStatusLabels: {
+        reviewDue: "A revoir",
+        unverified: "Pas encore verifie",
+        checkpointReady: "Checkpoint valide",
+        lessonViewed: "Cours vu",
+        studied: "Etudie",
+      },
       emptyModuleAction: "Ouvrir le module recommande",
       emptyReviewAction: "Ouvrir le review lab",
       emptyLearnAction: "Ouvrir la bibliotheque learn",
@@ -1466,9 +1553,18 @@ const fr = {
           "Le skill parent reste fragile ou peu fiable, donc cette question aide a consolider le signal.",
         mockFallout:
           "Cette question a cede en mode mock et doit revenir vite avant le prochain round sous pression.",
+        lessonQueued:
+          "Ce cours a ete vu dans learn mais n'a pas encore ete transforme en pratique espacee stable.",
+        checkpointFailed:
+          "Le checkpoint de cours a echoue, donc cette card doit revenir avant que la mauvaise explication ne durcisse.",
         scheduled:
           "Cette question revient pour verifier que le mecanisme a vraiment tenu dans le temps.",
       },
+      lessonSignalBadge: "Signal learn",
+      lessonNoPracticeBadge: "Pas encore de practice",
+      lessonCheckpointFailedBadge: "Checkpoint echoue",
+      lessonViewsLabel: "Lectures",
+      checkpointAttemptsLabel: "Checkpoints",
       emptyTitle: "Aucune review n'est due pour l'instant",
       emptyDescription:
         "Cette queue se remplira automatiquement quand des questions redeviendront dues via le systeme de review espacee.",
@@ -1696,6 +1792,22 @@ const fr = {
       BUG_HUNT: "Bug hunt",
       OPEN_ENDED: "Reponse ouverte",
     },
+    gating: {
+      workspaceTitle: "Transformer la lecture en vraie boucle d entrainement",
+      workspaceDescription:
+        "L experience learn complete vit dans le workspace : signaux de cours, checkpoints, practice ciblee et renvoi en review.",
+      highlights: [
+        "suivre les cours vus et les resultats de checkpoint",
+        "lancer une practice ciblee directement depuis un cours",
+        "renvoyer les cours en review espacee",
+      ],
+      collectionPreviewTitle: "Apercu de la collection",
+      collectionPreviewDescription:
+        "Tu peux inspecter ici la sequence et la couverture des sujets. La boucle guidee complete reste dans le workspace dashboard.",
+      questionPreviewTitle: "Apercu du cours",
+      questionPreviewDescription:
+        "Cette page publique garde le prompt et le cadrage entretien visibles, mais le cours complet vit dans dashboard learn.",
+    },
     index: {
       badge: "Bibliotheque learn",
       title: "Des cours d'entretien detailles, relies a la pratique.",
@@ -1737,11 +1849,56 @@ const fr = {
       optionBreakdownTitle: "Lecture des options",
       bugHuntSnippetTitle: "Snippet a relire",
       verbalizePointsTitle: "Ce qu'il faut verbaliser en entretien",
+      learningLoopTitle: "Transformer ce cours en signal utile",
+      learningLoopDescription:
+        "Marque le cours comme etudie, valide si tu sais deja l'expliquer, ou pousse-le dans ta review avant d'ouvrir une practice ciblee.",
+      learningStateEmpty:
+        "Aucun signal encore sur ce cours. Commence par le marquer comme etudie ou utilise un checkpoint rapide.",
+      learningStateLabels: {
+        viewed: "Cours vu",
+        checkpointReady: "Checkpoint valide",
+        reviewDue: "A revoir",
+      },
+      lessonViewsLabel: "Lectures",
+      checkpointAttemptsLabel: "Checkpoints",
+      checkpointPassCountLabel: "Validations",
+      markLessonViewedAction: "Marquer comme etudie",
+      checkpointCard: {
+        title: "Mini-checkpoint",
+        description:
+          "Teste le mecanisme avant de t appuyer sur la lecture detaillee. Si tu es connecte, le resultat met aussi a jour ton signal de cours.",
+        singleChoiceHint: "Choisis la reponse la plus solide.",
+        multipleChoiceHint: "Choisis toutes les reponses qui doivent etre vraies.",
+        validateAction: "Verifier ma reponse",
+        resetAction: "Reinitialiser",
+        selectionRequired: "Selectionne au moins une option d abord.",
+        passedTitle: "Checkpoint valide",
+        passedDescription:
+          "Bien. Ce cours peut maintenant passer en practice ciblee ou en review espacee.",
+        failedTitle: "Checkpoint manque",
+        failedDescription:
+          "Rejoue l explication, puis ajoute ce cours a la review ou retente le checkpoint.",
+        correctAnswerLabel: "Bonne reponse",
+      },
+      manualCheckpointTitle: "Checkpoint manuel",
+      manualCheckpointDescription:
+        "Ce format de cours ne supporte pas encore d auto-correction. Utilise les boutons d auto-evaluation pour enregistrer si tu sais deja expliquer le mecanisme.",
+      checkpointReadyAction: "Je peux l'expliquer",
+      checkpointReviewAction: "Je dois le revoir",
+      addToReviewAction: "Ajouter a la review",
+      signInToTrackTitle: "Connecte-toi pour garder une trace de ce cours",
+      signInToTrackDescription:
+        "Ton espace peut memoriser les cours lus, les checkpoints reussis et les notions a revoir pour relancer la bonne practice ensuite.",
       focusedPracticeTitle: "Transformer ce cours en pratique",
       focusedPracticeDescription:
         "Lance une session d'une seule question pour consolider l'explication tout de suite.",
       focusedPracticeAction: "Lancer une practice ciblee",
       openModuleAction: "Ouvrir le module",
+      relatedQuestionsTitle: "Continuer avec des questions liees",
+      relatedQuestionsDescription:
+        "Ces cours restent proches du meme skill ou du meme module pour transformer la lecture en repetition utile.",
+      openRelatedLessonAction: "Ouvrir le cours lie",
+      startRelatedPracticeAction: "Pratiquer cette question",
       continueCollectionTitle: "Continuer dans cette collection",
       previousQuestionAction: "Question precedente",
       nextQuestionAction: "Question suivante",

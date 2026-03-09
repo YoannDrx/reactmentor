@@ -24,6 +24,7 @@ const en = {
     },
     actions: {
       logIn: "Log in",
+      openDashboard: "Open dashboard",
       startTraining: "Start training",
       seeProduct: "See the product",
       createWorkspace: "Create my workspace",
@@ -231,7 +232,11 @@ const en = {
           title: "Starter",
           price: "Free",
           description: "To validate the format and get an early diagnosis.",
-          features: ["2 active modules", "personal dashboard", "practice mode"],
+          features: [
+            "2 published modules",
+            "1 timed mock / month",
+            "practice and review workspace",
+          ],
         },
         {
           title: "Mentor Pro",
@@ -239,20 +244,20 @@ const en = {
           description:
             "The product core for serious React interview preparation.",
           features: [
-            "all modules",
-            "unlimited mock interviews",
-            "review queue and weakness analytics",
+            "all published modules",
+            "unlimited timed mocks",
+            "advanced analytics and targeted playlists",
           ],
         },
         {
           title: "Hiring Sprint",
           price: "€59",
           description:
-            "For the two weeks before applications, with a more aggressive preparation mode.",
+            "For the short interview window where the prep loop needs the most aggressive lane.",
           features: [
-            "intensive playlists",
-            "argumentation reports",
-            "revision plan by target role",
+            "everything in Mentor Pro",
+            "sprint mode enabled",
+            "highest-intensity prep lane",
           ],
         },
       ],
@@ -374,6 +379,11 @@ const en = {
         title: "Training library",
         description:
           "Modules organized around the skills that actually matter in React interviews.",
+      },
+      learn: {
+        title: "Learn workspace",
+        description:
+          "Detailed lessons, guided question sequences, and the reading-to-practice loop inside your workspace.",
       },
       bookmarks: {
         title: "Saved questions",
@@ -532,6 +542,36 @@ const en = {
       dueTitle: "Due today",
       dueDescription:
         "The queue of questions to revisit before a bad intuition settles in.",
+      learnLoopTitle: "Learn loop status",
+      learnLoopDescription:
+        "Lessons already viewed, verified, or still waiting to be turned into useful practice and review.",
+      learnTrackedLabel: "Tracked lessons",
+      learnCheckpointReadyLabel: "Checkpoint passed",
+      learnNeedsPracticeLabel: "No practice yet",
+      learnReviewQueuedLabel: "Queued for review",
+      learnQueueTitle: "Next lesson follow-ups",
+      learnQueueDescription:
+        "Short actions pulled from viewed lessons, missing checkpoints, and lesson-driven review signals.",
+      learnQueueEmptyTitle: "Lesson follow-ups are under control",
+      learnQueueEmptyDescription:
+        "The viewed lessons are already verified or scheduled. Open progress to inspect the broader lesson workspace.",
+      openProgressAction: "Open progress",
+      startFocusedPracticeAction: "Start focused practice",
+      lessonViewsLabel: "Views",
+      checkpointAttemptsLabel: "Checkpoints",
+      learnSignalBadge: "Learn signal",
+      learnNoPracticeBadge: "No practice yet",
+      checkpointFailedBadge: "Checkpoint failed",
+      learnReasonLabels: {
+        reviewDue:
+          "This lesson already fed the review queue and should come back before the explanation drifts.",
+        needsCheckpoint:
+          "The lesson was viewed but has not been verified yet with a quick checkpoint.",
+        checkpointFailed:
+          "The checkpoint failed, so the explanation should be replayed before practice widens.",
+        needsPractice:
+          "The checkpoint passed, but this lesson still needs one focused question to become usable recall.",
+      },
       startReviewAction: "Start review session",
       openReviewAction: "Open review lab",
       openLessonAction: "Read lesson",
@@ -559,6 +599,10 @@ const en = {
           "The parent skill is still fragile or low-confidence, so this question helps consolidate the signal.",
         mockFallout:
           "This question broke under mock pressure and should return before the next timed round.",
+        lessonQueued:
+          "This lesson was viewed in learn but still has not been converted into stable spaced practice.",
+        checkpointFailed:
+          "The lesson checkpoint failed, so this card should return before the wrong explanation hardens.",
         scheduled:
           "This question is due again to verify that the mechanism actually stuck.",
       },
@@ -639,8 +683,7 @@ const en = {
           "Returned from the billing portal. Refreshes from Stripe will keep the workspace aligned.",
         notConfigured:
           "Stripe is not configured in this environment yet. Add the Stripe keys and price ids to activate checkout.",
-        invalidPlan:
-          "This billing plan is not valid for checkout.",
+        invalidPlan: "This billing plan is not valid for checkout.",
         portalUnavailable:
           "No Stripe customer record is attached to this workspace yet, so the billing portal is unavailable.",
       },
@@ -894,6 +937,11 @@ const en = {
       emptyDetailDescription:
         "You can delete it, or keep it as a placeholder until more curation tools are added.",
       types: {
+        lessonFollowUp: {
+          label: "Lesson follow-up",
+          description:
+            "Lessons you already touched in learn but still need to verify, revisit, or replay in a short focused block.",
+        },
         recoveryReview: {
           label: "Review recovery",
           description:
@@ -946,12 +994,30 @@ const en = {
         "A compact view of what changed recently and what is blocked before publication.",
       qualityTitle: "Editorial quality",
       qualityDescription:
-        "Quick signals for translation debt, empty taxonomy coverage and modules that still lack enough material.",
+        "Quick signals for translation debt, duplicate risk, stale published lessons, empty taxonomy coverage and modules that still lack enough material.",
       qualityTranslationGapsLabel: "Questions with translation gaps",
       qualityUntaggedQuestionsLabel: "Questions without pitfall tags",
       qualityThinModulesLabel: "Thin modules",
+      qualityFreshnessReviewLabel: "Published questions pending freshness review",
+      qualityDuplicateCandidatesLabel: "Duplicate prompt candidates",
       qualityCoverageLabel: "Coverage snapshot",
       qualityNoThinModules: "No thin modules detected.",
+      qualityFreshnessTitle: "Freshness review queue",
+      qualityFreshnessDescription:
+        "Published lessons older than the freshness window, so editors can revisit them before the learn library drifts away from the current contract.",
+      qualityFreshnessEmpty:
+        "No published lesson is currently waiting for freshness review.",
+      qualityFreshnessWindowLabel: "{count}d review window",
+      qualityFreshnessAgeLabel: "{count} days since last update",
+      qualityIssuesCountLabel: "{count} checklist issues",
+      qualityIssuesCountZero: "No checklist issue",
+      qualityJumpToQuestionAction: "Jump to question",
+      qualityDuplicateTitle: "Duplicate prompt watch",
+      qualityDuplicateDescription:
+        "Exact prompt collisions are surfaced here so editors can merge, archive or sharpen the framing before the benchmark grows.",
+      qualityDuplicateEmpty: "No duplicate prompt candidate detected.",
+      qualityDuplicateCountLabel: "{count} questions in cluster",
+      qualitySourceFallback: "Source not set",
       pitfallTagsListTitle: "Recent pitfall tags",
       pitfallTagsListDescription:
         "Keep the misconception vocabulary clean and visible before it spreads into reporting.",
@@ -1010,6 +1076,7 @@ const en = {
       clearFiltersAction: "Clear filters",
       allStatusesOption: "All statuses",
       allFormatsOption: "All formats",
+      updatedAtLabel: "Updated",
       optionsCountLabel: "Options",
       attemptsCountLabel: "Attempts",
       questionLinksCountLabel: "Linked questions",
@@ -1081,6 +1148,9 @@ const en = {
           SESSION_COMPLETED: "Session completed",
           REVIEW_LAUNCHED: "Review launched",
           QUESTION_ANSWERED: "Question answered",
+          LESSON_VIEWED: "Lesson viewed",
+          LESSON_CHECKPOINT_COMPLETED: "Lesson checkpoint completed",
+          LESSON_REVIEW_QUEUED: "Lesson queued for review",
           BOOKMARK_CREATED: "Bookmark created",
           NOTE_CREATED: "Note created",
           UPGRADE_CLICKED: "Upgrade clicked",
@@ -1237,6 +1307,27 @@ const en = {
       masteryMapTitle: "Mastery map",
       masteryMapDescription:
         "The strongest skills and the uncertainty pockets that are still visible.",
+      lessonSignalsTitle: "Lesson signal loop",
+      lessonSignalsDescription:
+        "What you already studied in learn, what still lacks verification, and what should feed the next focused replay.",
+      lessonQueueTitle: "Lessons to bring back now",
+      lessonQueueDescription:
+        "A short follow-up queue built from viewed lessons, missing checkpoints, and lesson-driven review signals.",
+      lessonTrackedLabel: "Tracked lessons",
+      lessonReviewDueLabel: "Review due",
+      lessonUnverifiedLabel: "Still unverified",
+      lessonCheckpointReadyLabel: "Checkpoint ready",
+      lessonViewsLabel: "Views",
+      lessonCheckpointCountLabel: "Checkpoints",
+      lessonOpenAction: "Open lesson",
+      lessonPracticeAction: "Start focused practice",
+      lessonStatusLabels: {
+        reviewDue: "Review due",
+        unverified: "Not verified yet",
+        checkpointReady: "Checkpoint ready",
+        lessonViewed: "Lesson viewed",
+        studied: "Studied",
+      },
       emptyModuleAction: "Open recommended module",
       emptyReviewAction: "Open review lab",
       emptyLearnAction: "Open learn library",
@@ -1449,9 +1540,18 @@ const en = {
           "The parent skill is still fragile or low-confidence, so this question helps consolidate the signal.",
         mockFallout:
           "This question broke under mock pressure and should return before the next timed round.",
+        lessonQueued:
+          "This lesson was viewed in learn but still has not been converted into stable spaced practice.",
+        checkpointFailed:
+          "The lesson checkpoint failed, so this card should return before the wrong explanation hardens.",
         scheduled:
           "This question is due again to verify that the mechanism actually stuck.",
       },
+      lessonSignalBadge: "Learn signal",
+      lessonNoPracticeBadge: "No practice yet",
+      lessonCheckpointFailedBadge: "Checkpoint failed",
+      lessonViewsLabel: "Views",
+      checkpointAttemptsLabel: "Checkpoints",
       emptyTitle: "No reviews are due right now",
       emptyDescription:
         "This queue will fill automatically when questions become due again through the spaced review system.",
@@ -1678,6 +1778,22 @@ const en = {
       BUG_HUNT: "Bug hunt",
       OPEN_ENDED: "Open answer",
     },
+    gating: {
+      workspaceTitle: "Turn reading into a real training loop",
+      workspaceDescription:
+        "The full learn experience lives inside the workspace: lesson signals, checkpoints, focused practice, and review handoff.",
+      highlights: [
+        "track viewed lessons and checkpoint results",
+        "launch focused practice directly from a lesson",
+        "queue lessons back into spaced review",
+      ],
+      collectionPreviewTitle: "Collection preview",
+      collectionPreviewDescription:
+        "You can inspect the sequence and topic coverage here. The full guided loop stays inside the dashboard workspace.",
+      questionPreviewTitle: "Lesson preview",
+      questionPreviewDescription:
+        "This public page keeps the prompt and interview framing visible, but the complete lesson stays in dashboard learn.",
+    },
     index: {
       badge: "Learn library",
       title: "Detailed interview courses, linked to practice.",
@@ -1718,11 +1834,56 @@ const en = {
       optionBreakdownTitle: "Option breakdown",
       bugHuntSnippetTitle: "Snippet under review",
       verbalizePointsTitle: "What to verbalize in an interview",
+      learningLoopTitle: "Turn the lesson into a useful signal",
+      learningLoopDescription:
+        "Mark the lesson as studied, confirm when you can already explain it, or queue it for review before starting focused practice.",
+      learningStateEmpty:
+        "No learning signal exists on this lesson yet. Start by marking it as studied or use a quick checkpoint.",
+      learningStateLabels: {
+        viewed: "Lesson viewed",
+        checkpointReady: "Checkpoint passed",
+        reviewDue: "Review due",
+      },
+      lessonViewsLabel: "Views",
+      checkpointAttemptsLabel: "Checkpoints",
+      checkpointPassCountLabel: "Passes",
+      markLessonViewedAction: "Mark as studied",
+      checkpointCard: {
+        title: "Mini-checkpoint",
+        description:
+          "Test the mechanism before you lean on the full breakdown. If you are signed in, the result updates your lesson signal.",
+        singleChoiceHint: "Choose the strongest answer.",
+        multipleChoiceHint: "Choose every answer that must be true.",
+        validateAction: "Check my answer",
+        resetAction: "Reset",
+        selectionRequired: "Select at least one option first.",
+        passedTitle: "Checkpoint passed",
+        passedDescription:
+          "Good. This lesson can now move into focused practice or spaced review.",
+        failedTitle: "Checkpoint missed",
+        failedDescription:
+          "Replay the explanation, then queue this lesson for review or retry the checkpoint.",
+        correctAnswerLabel: "Correct answer",
+      },
+      manualCheckpointTitle: "Manual checkpoint",
+      manualCheckpointDescription:
+        "This lesson format does not support auto-check yet. Use the self-evaluation buttons to record whether you can already explain the mechanism.",
+      checkpointReadyAction: "I can explain this",
+      checkpointReviewAction: "I need to review this",
+      addToReviewAction: "Queue for review",
+      signInToTrackTitle: "Sign in to keep track of this lesson",
+      signInToTrackDescription:
+        "Your workspace can remember viewed lessons, passed checkpoints, and concepts to revisit before it launches the next practice loop.",
       focusedPracticeTitle: "Turn the lesson into practice",
       focusedPracticeDescription:
         "Launch a one-question practice session to reinforce the explanation immediately.",
       focusedPracticeAction: "Start focused practice",
       openModuleAction: "Open module",
+      relatedQuestionsTitle: "Continue with related questions",
+      relatedQuestionsDescription:
+        "These lessons stay close to the same skill or module so reading turns into useful repetition.",
+      openRelatedLessonAction: "Open related lesson",
+      startRelatedPracticeAction: "Practice this question",
       continueCollectionTitle: "Continue in this collection",
       previousQuestionAction: "Previous question",
       nextQuestionAction: "Next question",

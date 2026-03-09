@@ -8,7 +8,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getUserEntitlementSnapshot } from "@/features/billing/user-entitlements";
-import { getLocalizedMockTemplates } from "@/features/dashboard/dashboard-view-model";
 import { getMockInterviewReadModel } from "@/features/dashboard/dashboard-read-model";
 import { createTrainingSessionAction } from "@/features/sessions/session.action";
 import { getMockTemplateAvailabilities } from "@/features/sessions/session-builder";
@@ -27,7 +26,7 @@ export default async function DashboardMockInterviewsPage() {
   const mockInterviews = messages.dashboard.mockInterviews;
   const entitlements = messages.dashboard.entitlements;
   const rubricCriteriaLabels = messages.dashboard.session.rubricCriteriaLabels;
-  const templates = getLocalizedMockTemplates(messages);
+  const templates = messages.dashboard.mockTemplates;
   const templateTitles = Object.fromEntries(
     mockTemplateKeys.map((key, index) => [key, templates[index]?.title ?? key]),
   );
@@ -658,7 +657,7 @@ export default async function DashboardMockInterviewsPage() {
                 ) : null}
                 <div className="mt-4 flex flex-wrap gap-3">
                   <Link
-                    href={`/learn/questions/${question.questionSlug}`}
+                    href={`/dashboard/learn/questions/${question.questionSlug}`}
                     className={buttonVariants({ variant: "secondary", size: "sm" })}
                   >
                     {mockInterviews.openLessonAction}

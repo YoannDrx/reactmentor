@@ -14,6 +14,8 @@ const editableQuestionFormats = [
   QuestionFormat.CODE_OUTPUT,
   QuestionFormat.BUG_HUNT,
 ] as const;
+const millisecondsPerDay = 24 * 60 * 60 * 1000;
+const freshnessReviewWindowDays = 120;
 
 function isClosedQuestionFormat(format: QuestionFormat) {
   return (
@@ -195,6 +197,15 @@ function toSortedSlugList(values: string[]) {
   return [...values].sort((left, right) => left.localeCompare(right));
 }
 
+function normalizePromptKey(value: string) {
+  return value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
 function buildQuestionChecklist(question: {
   format: QuestionFormat;
   translations: Array<{
@@ -319,6 +330,7 @@ export async function getAdminContentReadModel(
     questionFormat?: QuestionFormat | null;
   },
 ) {
+  const now = new Date();
   const [
     modules,
     skills,
@@ -421,14 +433,30 @@ export async function getAdminContentReadModel(
     }),
     prisma.question.findMany({
       select: {
+        id: true,
+        slug: true,
         status: true,
         format: true,
+        sourceType: true,
+        updatedAt: true,
         translations: {
           select: {
             locale: true,
             prompt: true,
             explanation: true,
             takeaways: true,
+          },
+        },
+        module: {
+          select: {
+            slug: true,
+            title: true,
+            translations: {
+              select: {
+                locale: true,
+                title: true,
+              },
+            },
           },
         },
         options: {
@@ -503,6 +531,98 @@ export async function getAdminContentReadModel(
     }, {}),
   );
   const coverageByFormat = countQuestionFormats(questionChecklistRows);
+  const stalePublishedQuestions = questionChecklistRows
+    .filter(
+      (question) =>
+        question.status === ContentStatus.PUBLISHED &&
+        now.getTime() - question.updatedAt.getTime() >=
+          freshnessReviewWindowDays * millisecondsPerDay,
+    )
+    .map((question) => {
+      const checklist = buildQuestionChecklist(question);
+      const localizedTranslation = pickTranslation(question.translations, locale);
+      const localizedModule = pickTranslation(question.module.translations, locale);
+
+      return {
+        id: question.id,
+        slug: question.slug,
+        prompt: localizedTranslation?.prompt ?? question.slug,
+        moduleTitle:
+          localizedModule?.title ?? question.module.title ?? question.module.slug,
+        updatedAt: question.updatedAt,
+        ageInDays: Math.floor(
+          (now.getTime() - question.updatedAt.getTime()) / millisecondsPerDay,
+        ),
+        sourceType: question.sourceType ?? null,
+        issueCount: checklist.issues.length,
+      };
+    })
+    .sort((left, right) => right.ageInDays - left.ageInDays);
+  const duplicatePromptGroups = new Map<
+    string,
+    Array<{
+      id: string;
+      slug: string;
+      prompt: string;
+      moduleTitle: string;
+    }>
+  >();
+
+  for (const question of questionChecklistRows) {
+    const localizedTranslation = pickTranslation(question.translations, locale);
+    const localizedModule = pickTranslation(question.module.translations, locale);
+    const moduleTitle =
+      localizedModule?.title ?? question.module.title ?? question.module.slug;
+    const localizedPrompt = localizedTranslation?.prompt ?? null;
+
+    if (!hasText(localizedPrompt)) {
+      continue;
+    }
+
+    const promptKey = normalizePromptKey(localizedPrompt);
+
+    if (!promptKey) {
+      continue;
+    }
+
+    const currentGroup = duplicatePromptGroups.get(promptKey) ?? [];
+
+    currentGroup.push({
+      id: question.id,
+      slug: question.slug,
+      prompt: localizedPrompt,
+      moduleTitle,
+    });
+    duplicatePromptGroups.set(promptKey, currentGroup);
+  }
+
+  const duplicatePromptCandidates = Array.from(duplicatePromptGroups.entries())
+    .map(([promptKey, items]) => {
+      const uniqueItems = Array.from(
+        new Map(items.map((item) => [item.id, item])).values(),
+      );
+
+      if (uniqueItems.length < 2) {
+        return null;
+      }
+
+      return {
+        promptKey,
+        prompt: uniqueItems[0]?.prompt ?? promptKey,
+        questionCount: uniqueItems.length,
+        questions: uniqueItems.sort((left, right) =>
+          left.moduleTitle.localeCompare(right.moduleTitle),
+        ),
+      };
+    })
+    .filter((group): group is NonNullable<typeof group> => group !== null)
+    .sort((left, right) => {
+      if (right.questionCount !== left.questionCount) {
+        return right.questionCount - left.questionCount;
+      }
+
+      return left.prompt.localeCompare(right.prompt);
+    });
   const sections = {
     modules: modules.slice(0, 8).map((module) => ({
       id: module.id,
@@ -646,6 +766,9 @@ export async function getAdminContentReadModel(
       thinModules: thinModuleCandidates,
       coverageByTrack,
       coverageByFormat,
+      freshnessReviewWindowDays,
+      stalePublishedQuestions,
+      duplicatePromptCandidates,
     },
     moduleOptions: modules.map((module) => ({
       id: module.id,

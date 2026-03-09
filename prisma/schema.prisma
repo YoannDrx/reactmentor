@@ -93,6 +93,9 @@ enum ProductAnalyticsEventName {
   SESSION_COMPLETED
   REVIEW_LAUNCHED
   QUESTION_ANSWERED
+  LESSON_VIEWED
+  LESSON_CHECKPOINT_COMPLETED
+  LESSON_REVIEW_QUEUED
   BOOKMARK_CREATED
   NOTE_CREATED
   UPGRADE_CLICKED
@@ -544,6 +547,12 @@ model QuestionProgress {
   lastAttemptAt      DateTime?
   nextReviewAt       DateTime?
   masteryState       MasteryState @default(NEW)
+  lessonViews        Int          @default(0)
+  lastLessonViewedAt DateTime?
+  lessonCheckpointAttempts Int    @default(0)
+  lessonCheckpointPassCount Int   @default(0)
+  lastLessonCheckpointAt DateTime?
+  lastLessonCheckpointPassed Boolean?
 
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)

@@ -7,6 +7,7 @@ import {
 import { getNoteReadModel } from "@/features/notes/note-read-model";
 
 export type GeneratedPlaylistType =
+  | "lessonFollowUp"
   | "recoveryReview"
   | "mockRecovery"
   | "bookmarks"
@@ -63,8 +64,26 @@ export async function getPlaylistReadModel(params: {
   const noteQuestionIds = notes.items
     .map((item) => item.questionId)
     .slice(0, 8);
+  const lessonFollowUpQuestionIds = uniqueStrings(
+    dashboardReadModel.progress.learn.followUpQuestionIds,
+  ).slice(0, 8);
+  const lessonFollowUpItems = dashboardReadModel.progress.learn.items.filter(
+    (item) => lessonFollowUpQuestionIds.includes(item.questionId),
+  );
 
   const playlists = [
+    {
+      id: "lessonFollowUp",
+      type: "lessonFollowUp",
+      mode: "PRACTICE",
+      questionIds: lessonFollowUpQuestionIds,
+      questionCount: lessonFollowUpQuestionIds.length,
+      focusSkills: uniqueStrings(
+        lessonFollowUpItems.map((item) => item.skill),
+      ).slice(0, 3),
+      moduleSlug: lessonFollowUpItems[0]?.moduleSlug ?? null,
+      signalCount: dashboardReadModel.progress.learn.followUpCount,
+    },
     {
       id: "recoveryReview",
       type: "recoveryReview",

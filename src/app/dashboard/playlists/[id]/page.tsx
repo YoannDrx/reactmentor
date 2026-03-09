@@ -298,7 +298,7 @@ export default async function DashboardPlaylistDetailPage({
 
                       <div className="flex flex-wrap gap-3">
                         <Link
-                          href={`/learn/questions/${question.slug}`}
+                          href={`/dashboard/learn/questions/${question.slug}`}
                           className={buttonVariants({
                             variant: "secondary",
                             size: "sm",

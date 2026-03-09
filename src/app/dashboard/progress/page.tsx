@@ -14,6 +14,7 @@ import {
 } from "@/features/dashboard/dashboard-charts";
 import { getDashboardRecommendation } from "@/features/dashboard/dashboard-recommendations";
 import { getDashboardReadModel } from "@/features/dashboard/dashboard-read-model";
+import { getLessonWorkspaceReadModel } from "@/features/learn/lesson-workspace-read-model";
 import { createTrainingSessionAction } from "@/features/sessions/session.action";
 import { getI18n } from "@/i18n/server";
 import { getRequiredUser } from "@/lib/auth/auth-user";
@@ -66,12 +67,22 @@ function getSignalState(confidenceScore: number) {
   return "low" as const;
 }
 
+const lessonStatusClasses = {
+  reviewDue: "border-amber-200 bg-amber-50 text-amber-700",
+  unverified: "border-cyan-200 bg-cyan-50 text-cyan-700",
+  checkpointReady: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  studied: "border-slate-200 bg-slate-100 text-slate-700",
+} as const;
+
 export default async function DashboardProgressPage() {
   const user = await getRequiredUser("/dashboard/progress");
   const { locale, messages, t } = await getI18n();
   const progress = messages.dashboard.progress;
-  const readModel = await getDashboardReadModel(user.id, locale);
-  const recommendation = await getDashboardRecommendation(user.id, locale);
+  const [readModel, recommendation, lessonWorkspace] = await Promise.all([
+    getDashboardReadModel(user.id, locale),
+    getDashboardRecommendation(user.id, locale),
+    getLessonWorkspaceReadModel(user.id, locale),
+  ]);
   const skillRadar = readModel.progress.skillBreakdown;
   const dateFormatter = new Intl.DateTimeFormat(locale, {
     day: "numeric",
@@ -105,7 +116,7 @@ export default async function DashboardProgressPage() {
 
   return (
     <div className="grid gap-6">
-      {!readModel.hasAttempts ? (
+      {!readModel.hasAttempts && lessonWorkspace.count === 0 ? (
         <Card className="border-dashed border-slate-300 bg-slate-50/80">
           <CardContent className="space-y-4 pt-6 text-sm leading-6 text-slate-600">
             <div className="font-medium text-slate-950">
@@ -121,7 +132,7 @@ export default async function DashboardProgressPage() {
                   {progress.emptyModuleAction}
                 </Link>
                 <Link
-                  href="/learn"
+                  href="/dashboard/learn"
                   className={buttonVariants({ variant: "secondary", size: "md" })}
                 >
                   {progress.emptyLearnAction}
@@ -136,7 +147,7 @@ export default async function DashboardProgressPage() {
                   {progress.emptyReviewAction}
                 </Link>
                 <Link
-                  href="/learn"
+                  href="/dashboard/learn"
                   className={buttonVariants({ variant: "ghost", size: "md" })}
                 >
                   {progress.emptyLearnAction}
@@ -145,6 +156,113 @@ export default async function DashboardProgressPage() {
             ) : null}
           </CardContent>
         </Card>
+      ) : null}
+
+      {lessonWorkspace.count > 0 ? (
+        <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+          <Card>
+            <CardHeader>
+              <CardTitle>{progress.lessonSignalsTitle}</CardTitle>
+              <CardDescription>
+                {progress.lessonSignalsDescription}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
+                <div className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                  {progress.lessonTrackedLabel}
+                </div>
+                <div className="mt-2 text-2xl font-semibold text-slate-950">
+                  {lessonWorkspace.trackedCount}
+                </div>
+              </div>
+              <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
+                <div className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                  {progress.lessonReviewDueLabel}
+                </div>
+                <div className="mt-2 text-2xl font-semibold text-amber-700">
+                  {lessonWorkspace.reviewDueCount}
+                </div>
+              </div>
+              <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
+                <div className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                  {progress.lessonUnverifiedLabel}
+                </div>
+                <div className="mt-2 text-2xl font-semibold text-cyan-700">
+                  {lessonWorkspace.unverifiedCount}
+                </div>
+              </div>
+              <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
+                <div className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                  {progress.lessonCheckpointReadyLabel}
+                </div>
+                <div className="mt-2 text-2xl font-semibold text-emerald-700">
+                  {lessonWorkspace.checkpointReadyCount}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{progress.lessonQueueTitle}</CardTitle>
+              <CardDescription>{progress.lessonQueueDescription}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {lessonWorkspace.items.slice(0, 4).map((item) => (
+                <div
+                  key={item.questionId}
+                  className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <div className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                        {item.module}
+                      </div>
+                      <div className="mt-2 font-medium text-slate-950">
+                        {item.prompt}
+                      </div>
+                    </div>
+                    <Badge className={lessonStatusClasses[item.status]}>
+                      {progress.lessonStatusLabels[item.status]}
+                    </Badge>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-500">
+                    <span>{item.skill}</span>
+                    <span className="text-slate-300">•</span>
+                    <span>
+                      {progress.lessonViewsLabel}: {item.lessonViews}
+                    </span>
+                    <span className="text-slate-300">•</span>
+                    <span>
+                      {progress.lessonCheckpointCountLabel}:{" "}
+                      {item.checkpointAttempts}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <Link
+                      href={`/dashboard/learn/questions/${item.questionSlug}`}
+                      className={buttonVariants({ variant: "secondary", size: "sm" })}
+                    >
+                      {progress.lessonOpenAction}
+                    </Link>
+                    <form action={createTrainingSessionAction}>
+                      <input type="hidden" name="mode" value="PRACTICE" />
+                      <input type="hidden" name="locale" value={locale} />
+                      <input type="hidden" name="questionCount" value="1" />
+                      <input type="hidden" name="questionIds" value={item.questionId} />
+                      <Button type="submit" size="sm">
+                        {progress.lessonPracticeAction}
+                      </Button>
+                    </form>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </section>
       ) : null}
 
       <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
@@ -303,7 +421,7 @@ export default async function DashboardProgressPage() {
                               {recoveryPlan.recoveryQuestions.map((question) => (
                                 <Link
                                   key={`${recoveryPlan.skillId}-${question.questionId}`}
-                                  href={`/learn/questions/${question.questionSlug}`}
+                                  href={`/dashboard/learn/questions/${question.questionSlug}`}
                                   className="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 transition hover:border-cyan-300 hover:text-slate-950"
                                 >
                                   {question.prompt}

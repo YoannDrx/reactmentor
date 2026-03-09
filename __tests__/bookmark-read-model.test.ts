@@ -57,6 +57,9 @@ describe("getBookmarkReadModel", () => {
             {
               nextReviewAt: new Date("2026-03-08T12:00:00.000Z"),
               masteryState: MasteryState.REVIEWING,
+              lessonViews: 1,
+              lessonCheckpointAttempts: 0,
+              lastLessonCheckpointPassed: null,
             },
           ],
           attempts: [
@@ -86,6 +89,9 @@ describe("getBookmarkReadModel", () => {
             {
               nextReviewAt: new Date("2026-03-07T08:00:00.000Z"),
               masteryState: MasteryState.LEARNING,
+              lessonViews: 2,
+              lessonCheckpointAttempts: 1,
+              lastLessonCheckpointPassed: false,
             },
           ],
           attempts: [
@@ -115,6 +121,9 @@ describe("getBookmarkReadModel", () => {
             {
               nextReviewAt: new Date("2026-03-10T08:00:00.000Z"),
               masteryState: MasteryState.MASTERED,
+              lessonViews: 1,
+              lessonCheckpointAttempts: 1,
+              lastLessonCheckpointPassed: true,
             },
           ],
           attempts: [
@@ -143,6 +152,7 @@ describe("getBookmarkReadModel", () => {
         status: "pendingReview",
         isPendingReview: true,
         isDue: false,
+        learningSignal: "lessonViewed",
       }),
       expect.objectContaining({
         bookmarkId: "bookmark_due",
@@ -152,6 +162,7 @@ describe("getBookmarkReadModel", () => {
         status: "due",
         isPendingReview: false,
         isDue: true,
+        learningSignal: "reviewDue",
       }),
       expect.objectContaining({
         bookmarkId: "bookmark_stable",
@@ -161,6 +172,7 @@ describe("getBookmarkReadModel", () => {
         status: "stable",
         isPendingReview: false,
         isDue: false,
+        learningSignal: "checkpointReady",
       }),
     ]);
   });
