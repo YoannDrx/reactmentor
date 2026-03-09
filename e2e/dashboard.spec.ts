@@ -86,10 +86,18 @@ test.describe("dashboard overview", () => {
       launchMockButton.first().click(),
     ]);
 
-    const currentQuestion = page.getByText(
-      /Does changing a key always force|Une key differente force-t-elle toujours/i,
-    );
+    const currentQuestion = page.locator("main .font-display.text-3xl").first();
     await expect(currentQuestion).toBeVisible({
+      timeout: SESSION_LAUNCH_TIMEOUT_MS,
+    });
+    const liveQuestionPrompt = (await currentQuestion.textContent())?.trim();
+
+    expect(liveQuestionPrompt).toBeTruthy();
+    await expect(
+      page.getByRole("button", {
+        name: /Save question|Sauvegarder/,
+      }),
+    ).toBeVisible({
       timeout: SESSION_LAUNCH_TIMEOUT_MS,
     });
 
@@ -111,9 +119,7 @@ test.describe("dashboard overview", () => {
       }),
     ).toBeVisible({ timeout: SESSION_LAUNCH_TIMEOUT_MS });
     await expect(
-      page.getByText(
-        /Does changing a key always force|Une key differente force-t-elle toujours/i,
-      ),
+      page.getByText(liveQuestionPrompt ?? "", { exact: true }),
     ).toBeVisible();
 
     const removeBookmarkButton = page.getByRole("button", {
@@ -162,11 +168,20 @@ test.describe("dashboard overview", () => {
       launchMockButton.first().click(),
     ]);
 
+    const currentQuestion = page.locator("main .font-display.text-3xl").first();
+    await expect(currentQuestion).toBeVisible({
+      timeout: SESSION_LAUNCH_TIMEOUT_MS,
+    });
+    const liveQuestionPrompt = (await currentQuestion.textContent())?.trim();
+
+    expect(liveQuestionPrompt).toBeTruthy();
     await expect(
-      page.getByText(
-        /Does changing a key always force|Une key differente force-t-elle toujours/i,
-      ),
-    ).toBeVisible({ timeout: SESSION_LAUNCH_TIMEOUT_MS });
+      page.getByRole("button", {
+        name: /Save question|Sauvegarder/,
+      }),
+    ).toBeVisible({
+      timeout: SESSION_LAUNCH_TIMEOUT_MS,
+    });
 
     await page.getByRole("button", {
       name: /Save question|Sauvegarder/,
@@ -183,6 +198,9 @@ test.describe("dashboard overview", () => {
         name: /Saved questions|Questions sauvegardees/,
       }),
     ).toBeVisible({ timeout: SESSION_LAUNCH_TIMEOUT_MS });
+    await expect(
+      page.getByText(liveQuestionPrompt ?? "", { exact: true }),
+    ).toBeVisible();
 
     const noteField = page.getByPlaceholder(
       /Write the mechanism|Ecris le mecanisme/i,
@@ -206,5 +224,8 @@ test.describe("dashboard overview", () => {
         name: /Personal notes|Notes personnelles/,
       }),
     ).toBeVisible({ timeout: SESSION_LAUNCH_TIMEOUT_MS });
+    await expect(
+      page.getByText(liveQuestionPrompt ?? "", { exact: true }),
+    ).toBeVisible();
   });
 });
