@@ -102,15 +102,20 @@ describe("lifecycle email", () => {
       lifecycleEmailsEnabled: true,
     });
 
+    const welcomePayload = resendSendMock.mock.calls[0]?.[0];
+
     expect(resendSendMock).toHaveBeenCalledWith(
       expect.objectContaining({
         from: "React Mentor <noreply@reactmentor.dev>",
         to: ["john@example.com"],
         subject: "React Mentor est pret pour ton prochain cycle d'entretien",
-        html: expect.stringContaining("Ta boucle de preparation est prete."),
         text: expect.stringContaining("https://reactmentor.dev/dashboard"),
       }),
     );
+    expect(welcomePayload?.html).toContain("Your prep loop is ready.");
+    expect(welcomePayload?.html).toContain("Ta boucle de preparation est prete.");
+    expect(welcomePayload?.html).toContain("English version");
+    expect(welcomePayload?.html).toContain("Version française");
     expect(operationalEventCreateMock).toHaveBeenCalledWith({
       data: expect.objectContaining({
         userId: "user_1",
@@ -274,6 +279,8 @@ describe("lifecycle email", () => {
       limit: 10,
     });
 
+    const reviewPayload = resendSendMock.mock.calls[0]?.[0];
+
     expect(result).toEqual(
       expect.objectContaining({
         attempted: 1,
@@ -285,14 +292,18 @@ describe("lifecycle email", () => {
       expect.objectContaining({
         to: ["jane@example.com"],
         subject: "3 review cards are ready to revisit",
-        html: expect.stringContaining(
-          "Your review queue is back on the critical path.",
-        ),
         text: expect.stringContaining(
           "https://reactmentor.dev/dashboard/review",
         ),
       }),
     );
+    expect(reviewPayload?.html).toContain(
+      "Your review queue is back on the critical path.",
+    );
+    expect(reviewPayload?.html).toContain(
+      "La queue de review revient sur le chemin critique.",
+    );
+    expect(reviewPayload?.html).toContain("Version française");
     expect(resendSendMock).toHaveBeenCalledWith(
       expect.objectContaining({
         text: expect.stringContaining(

@@ -4,10 +4,10 @@ export const SiteConfig = {
   title: "React Mentor",
   description:
     "Le cockpit d'entraînement pour préparer les entretiens React, React Native et TypeScript avec des explications profondes, un dashboard premium et une progression par compétence.",
-  prodUrl: "https://reactmentor.dev",
+  prodUrl: "https://www.react-mentor.com",
   logoPath: BRAND_LOGO_PATH,
   appId: "react-mentor",
-  domain: "reactmentor.dev",
+  domain: "react-mentor.com",
   company: {
     name: "React Mentor",
     address: "",
@@ -21,7 +21,7 @@ export const SiteConfig = {
   },
   team: {
     name: "React Mentor Studio",
-    website: "https://reactmentor.dev",
+    website: "https://www.react-mentor.com",
     image: BRAND_LOGO_PATH,
     twitter: "",
   },

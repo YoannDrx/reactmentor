@@ -39,12 +39,26 @@ export const emailStyles = {
     textTransform: "uppercase",
     color: "#7dd3fc",
   } satisfies CSSProperties,
+  eyebrowSecondary: {
+    margin: "8px 0 0",
+    fontSize: "11px",
+    letterSpacing: "0.16em",
+    textTransform: "uppercase",
+    color: "#93c5fd",
+  } satisfies CSSProperties,
   title: {
     margin: "16px 0 0",
-    fontSize: "30px",
-    lineHeight: "36px",
+    fontSize: "28px",
+    lineHeight: "34px",
     fontWeight: "700",
     color: "#ffffff",
+  } satisfies CSSProperties,
+  titleSecondary: {
+    margin: "8px 0 0",
+    fontSize: "22px",
+    lineHeight: "28px",
+    fontWeight: "600",
+    color: "#e2e8f0",
   } satisfies CSSProperties,
   intro: {
     margin: "14px 0 0",
@@ -52,8 +66,44 @@ export const emailStyles = {
     lineHeight: "26px",
     color: "#cbd5e1",
   } satisfies CSSProperties,
+  introSecondary: {
+    margin: "8px 0 0",
+    fontSize: "14px",
+    lineHeight: "24px",
+    color: "#94a3b8",
+  } satisfies CSSProperties,
   content: {
     padding: "30px 32px 32px",
+  } satisfies CSSProperties,
+  languageSection: {
+    margin: "0 0 8px",
+  } satisfies CSSProperties,
+  languageLabel: {
+    margin: "0 0 6px",
+    fontSize: "11px",
+    letterSpacing: "0.18em",
+    textTransform: "uppercase",
+    color: SiteConfig.brand.primary,
+  } satisfies CSSProperties,
+  sectionEyebrow: {
+    margin: "0",
+    fontSize: "12px",
+    letterSpacing: "0.16em",
+    textTransform: "uppercase",
+    color: "#64748b",
+  } satisfies CSSProperties,
+  sectionTitle: {
+    margin: "12px 0 0",
+    fontSize: "24px",
+    lineHeight: "30px",
+    fontWeight: "700",
+    color: "#0f172a",
+  } satisfies CSSProperties,
+  sectionIntro: {
+    margin: "12px 0 18px",
+    fontSize: "15px",
+    lineHeight: "25px",
+    color: "#475569",
   } satisfies CSSProperties,
   bodyText: {
     margin: "0 0 16px",
@@ -88,6 +138,22 @@ export const emailStyles = {
   } satisfies CSSProperties,
   ctaSection: {
     marginTop: "24px",
+  } satisfies CSSProperties,
+  languageDivider: {
+    margin: "30px 0",
+  } satisfies CSSProperties,
+  languageDividerLine: {
+    borderColor: "#dbeafe",
+    borderWidth: "1px",
+    margin: "0",
+  } satisfies CSSProperties,
+  languageDividerLabel: {
+    margin: "10px 0",
+    fontSize: "11px",
+    letterSpacing: "0.14em",
+    textTransform: "uppercase",
+    textAlign: "center",
+    color: "#94a3b8",
   } satisfies CSSProperties,
   primaryButton: {
     display: "inline-block",
@@ -126,5 +192,10 @@ export const emailStyles = {
     margin: "4px 0 0",
     fontSize: "11px",
     color: "#cbd5e1",
+  } satisfies CSSProperties,
+  automationTextSecondary: {
+    margin: "4px 0 0",
+    fontSize: "11px",
+    color: "#94a3b8",
   } satisfies CSSProperties,
 } as const;

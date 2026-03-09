@@ -13,6 +13,7 @@ import {
   openBillingPortalAction,
   startBillingCheckoutAction,
 } from "@/features/billing/billing.action";
+import { getBillingPlanAnchor } from "@/features/billing/billing-plan-navigation";
 import {
   getStripeConfiguredPlanCatalog,
   isStripeServerConfigured,
@@ -302,10 +303,11 @@ export default async function DashboardSettingsPage({
               return (
                 <Card
                   key={plan.plan}
+                  id={getBillingPlanAnchor(plan.plan)}
                   className={
                     isCurrentPlan
-                      ? "border-slate-950 bg-slate-950 text-white"
-                      : undefined
+                      ? "scroll-mt-24 border-slate-950 bg-slate-950 text-white"
+                      : "scroll-mt-24"
                   }
                 >
                   <CardHeader>

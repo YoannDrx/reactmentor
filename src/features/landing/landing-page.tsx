@@ -1,5 +1,6 @@
 "use client";
 
+import { BillingPlan } from "@prisma/client";
 import { LogoLockup, LogoMark } from "@/components/brand/logo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -40,7 +41,15 @@ const sectionMotion = {
   transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] as const },
 };
 
-export function LandingPage() {
+type LandingPageProps = {
+  isAuthenticated: boolean;
+  pricingPlanHrefs: Record<BillingPlan, string>;
+};
+
+export function LandingPage({
+  isAuthenticated,
+  pricingPlanHrefs,
+}: LandingPageProps) {
   const { messages, t } = useI18n();
   const landing = messages.landing;
   const dashboard = messages.dashboard;
@@ -49,15 +58,32 @@ export function LandingPage() {
   const previewModules = getLocalizedModules(messages).slice(0, 3);
   const previewReviews = dashboard.reviewQueue;
   const sessions = getLocalizedRecentSessions(messages);
-  const featuredPlans = landing.pricing.plans.map((plan, index) => ({
-    ...plan,
-    featured: index === 1,
-    isFree: index === 0,
-  }));
+  const workspaceHref = isAuthenticated ? "/dashboard" : "/auth/signup";
+  const accountHref = isAuthenticated ? "/dashboard/settings" : "/auth/signin";
+  const featuredPlans = [
+    {
+      billingPlan: BillingPlan.STARTER,
+      ...landing.pricing.plans[0],
+      featured: false,
+      isFree: true,
+    },
+    {
+      billingPlan: BillingPlan.MENTOR_PRO,
+      ...landing.pricing.plans[1],
+      featured: true,
+      isFree: false,
+    },
+    {
+      billingPlan: BillingPlan.HIRING_SPRINT,
+      ...landing.pricing.plans[2],
+      featured: false,
+      isFree: false,
+    },
+  ] as const;
 
   return (
     <div className="relative overflow-x-clip">
-      <LandingHeader />
+      <LandingHeader isAuthenticated={isAuthenticated} />
       <main>
         <section className="relative isolate pb-20 pt-10 sm:pb-24 lg:pb-28 lg:pt-14">
           <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.18),transparent_32%),radial-gradient(circle_at_80%_10%,rgba(255,107,74,0.18),transparent_26%),radial-gradient(circle_at_70%_70%,rgba(34,197,94,0.12),transparent_28%)]" />
@@ -82,9 +108,11 @@ export function LandingPage() {
               </div>
 
               <div className="flex flex-col gap-4 sm:flex-row">
-                <Link href="/auth/signup">
+                <Link href={workspaceHref}>
                   <Button size="lg">
-                    {common.actions.createWorkspace}
+                    {isAuthenticated
+                      ? common.actions.openDashboard
+                      : common.actions.createWorkspace}
                     <ArrowRight className="size-4" />
                   </Button>
                 </Link>
@@ -615,7 +643,7 @@ export function LandingPage() {
               <div className="grid gap-6 lg:grid-cols-3">
                 {featuredPlans.map((plan) => (
                   <Card
-                    key={plan.title}
+                    key={plan.billingPlan}
                     className={
                       plan.featured
                         ? "relative overflow-hidden border-slate-950 bg-slate-950 text-white"
@@ -667,14 +695,18 @@ export function LandingPage() {
                         </div>
                       ))}
                       <div className="pt-4">
-                        <Link href="/auth/signup">
+                        <Link href={pricingPlanHrefs[plan.billingPlan]}>
                           <Button
                             variant={plan.featured ? "secondary" : "primary"}
                             className="w-full"
                           >
-                            {t("landing.pricing.choosePlan", {
-                              plan: plan.title,
-                            })}
+                            {plan.isFree
+                              ? isAuthenticated
+                                ? common.actions.startTraining
+                                : common.actions.createWorkspace
+                              : t("landing.pricing.choosePlan", {
+                                  plan: plan.title,
+                                })}
                           </Button>
                         </Link>
                       </div>
@@ -706,15 +738,19 @@ export function LandingPage() {
                       </p>
                     </div>
                     <div className="flex flex-col gap-3 sm:flex-row">
-                      <Link href="/auth/signup">
+                      <Link href={workspaceHref}>
                         <Button size="lg">
-                          {common.actions.createWorkspace}
+                          {isAuthenticated
+                            ? common.actions.openDashboard
+                            : common.actions.createWorkspace}
                           <ArrowRight className="size-4" />
                         </Button>
                       </Link>
-                      <Link href="/auth/signin">
+                      <Link href={accountHref}>
                         <Button size="lg" variant="secondary">
-                          {common.actions.alreadyHaveAccount}
+                          {isAuthenticated
+                            ? dashboard.entitlements.manageAction
+                            : common.actions.alreadyHaveAccount}
                         </Button>
                       </Link>
                     </div>
@@ -729,8 +765,12 @@ export function LandingPage() {
   );
 }
 
-function LandingHeader() {
-  const { t } = useI18n();
+function LandingHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
+  const { messages, t } = useI18n();
+  const common = messages.common;
+  const dashboard = messages.dashboard;
+  const primaryHref = isAuthenticated ? "/dashboard" : "/auth/signup";
+  const secondaryHref = isAuthenticated ? "/dashboard/settings" : "/auth/signin";
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/40 bg-[rgba(246,239,230,0.82)] backdrop-blur-xl">
@@ -743,7 +783,10 @@ function LandingHeader() {
           markClassName="size-14 lg:size-16"
         />
         <nav className="hidden items-center gap-8 text-sm text-slate-600 lg:flex">
-          <Link href="/learn" className="hover:text-slate-950">
+          <Link
+            href={isAuthenticated ? "/dashboard/learn" : "/learn"}
+            className="hover:text-slate-950"
+          >
             {t("landing.nav.learn")}
           </Link>
           <a href="#tracks" className="hover:text-slate-950">
@@ -758,14 +801,18 @@ function LandingHeader() {
         </nav>
         <div className="flex items-center gap-3">
           <LanguageToggle />
-          <Link href="/auth/signin">
+          <Link href={secondaryHref}>
             <Button variant="ghost" className="hidden sm:inline-flex">
-              {t("common.actions.logIn")}
+              {isAuthenticated
+                ? dashboard.entitlements.manageAction
+                : common.actions.logIn}
             </Button>
           </Link>
-          <Link href="/auth/signup">
+          <Link href={primaryHref}>
             <Button>
-              {t("common.actions.startTraining")}
+              {isAuthenticated
+                ? common.actions.openDashboard
+                : common.actions.startTraining}
               <ArrowRight className="size-4" />
             </Button>
           </Link>

@@ -1,3 +1,4 @@
+import "@email/utils/react-email-node-polyfills";
 import * as Sentry from "@sentry/nextjs";
 import { render } from "@react-email/render";
 import {
@@ -90,25 +91,34 @@ async function buildWelcomeEmail(params: {
   targetRole: string;
   preferredTracks: Track[];
 }) {
-  const content = buildWelcomeLifecycleEmailContent({
-    locale: params.locale,
+  const englishContent = buildWelcomeLifecycleEmailContent({
+    locale: "en",
     userName: params.userName,
     targetRole: params.targetRole,
     preferredTracks: params.preferredTracks,
   });
+  const frenchContent = buildWelcomeLifecycleEmailContent({
+    locale: "fr",
+    userName: params.userName,
+    targetRole: params.targetRole,
+    preferredTracks: params.preferredTracks,
+  });
+  const primaryContent =
+    params.locale === "en" ? englishContent : frenchContent;
   const dashboardUrl = buildAbsoluteUrl("/dashboard");
   const settingsUrl = buildAbsoluteUrl("/dashboard/settings");
 
   const rendered = await renderLifecycleEmail(
     createElement(WelcomeLifecycleEmail, {
-      content,
+      englishContent,
+      frenchContent,
       ctaUrl: dashboardUrl,
       footerUrl: settingsUrl,
     }),
   );
 
   return {
-    subject: content.subject,
+    subject: primaryContent.subject,
     html: rendered.html,
     text: rendered.text,
   };
@@ -121,26 +131,36 @@ async function buildReviewDueEmail(params: {
   moduleTitle: string | null;
   skillTitle: string | null;
 }) {
-  const content = buildReviewDueLifecycleEmailContent({
-    locale: params.locale,
+  const englishContent = buildReviewDueLifecycleEmailContent({
+    locale: "en",
     userName: params.userName,
     dueCount: params.dueCount,
     moduleTitle: params.moduleTitle,
     skillTitle: params.skillTitle,
   });
+  const frenchContent = buildReviewDueLifecycleEmailContent({
+    locale: "fr",
+    userName: params.userName,
+    dueCount: params.dueCount,
+    moduleTitle: params.moduleTitle,
+    skillTitle: params.skillTitle,
+  });
+  const primaryContent =
+    params.locale === "en" ? englishContent : frenchContent;
   const reviewUrl = buildAbsoluteUrl("/dashboard/review");
   const settingsUrl = buildAbsoluteUrl("/dashboard/settings");
 
   const rendered = await renderLifecycleEmail(
     createElement(ReviewDueEmail, {
-      content,
+      englishContent,
+      frenchContent,
       ctaUrl: reviewUrl,
       footerUrl: settingsUrl,
     }),
   );
 
   return {
-    subject: content.subject,
+    subject: primaryContent.subject,
     html: rendered.html,
     text: rendered.text,
   };

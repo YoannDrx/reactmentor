@@ -4,19 +4,15 @@ import {
   ensureUserEntitlementRecord,
   getBillingPlanDefaults,
 } from "@/features/billing/user-entitlements";
+import {
+  premiumBillingPlanOrder,
+  stripePremiumPlanCatalog,
+  type PremiumBillingPlan,
+} from "@/features/billing/stripe-plan-catalog";
 import { env } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 import { getServerUrl } from "@/lib/server-url";
 import { getStripeServerClient } from "@/lib/stripe";
-
-export type PremiumBillingPlan =
-  | "MENTOR_PRO"
-  | "HIRING_SPRINT";
-
-const premiumPlanOrder = [
-  BillingPlan.MENTOR_PRO,
-  BillingPlan.HIRING_SPRINT,
-] as const satisfies readonly PremiumBillingPlan[];
 
 const stripePlanConfig: Record<
   PremiumBillingPlan,
@@ -25,10 +21,12 @@ const stripePlanConfig: Record<
   }
 > = {
   [BillingPlan.MENTOR_PRO]: {
-    priceId: env.STRIPE_PRICE_MENTOR_PRO ?? null,
+    priceId:
+      env[stripePremiumPlanCatalog[BillingPlan.MENTOR_PRO].envKey] ?? null,
   },
   [BillingPlan.HIRING_SPRINT]: {
-    priceId: env.STRIPE_PRICE_HIRING_SPRINT ?? null,
+    priceId:
+      env[stripePremiumPlanCatalog[BillingPlan.HIRING_SPRINT].envKey] ?? null,
   },
 };
 
@@ -82,7 +80,7 @@ function getStripeSubscriptionPeriodRange(subscription: Stripe.Subscription) {
 }
 
 export function parsePremiumBillingPlan(value: string | null | undefined) {
-  return premiumPlanOrder.find((plan) => plan === value) ?? null;
+  return premiumBillingPlanOrder.find((plan) => plan === value) ?? null;
 }
 
 export function isStripeServerConfigured() {
@@ -94,7 +92,9 @@ export function canStartStripeCheckoutForPlan(plan: PremiumBillingPlan) {
 }
 
 export function isStripeCheckoutConfigured() {
-  return premiumPlanOrder.some((plan) => canStartStripeCheckoutForPlan(plan));
+  return premiumBillingPlanOrder.some((plan) =>
+    canStartStripeCheckoutForPlan(plan),
+  );
 }
 
 export function isStripeWebhookConfigured() {
@@ -102,7 +102,7 @@ export function isStripeWebhookConfigured() {
 }
 
 export function getStripeConfiguredPlanCatalog() {
-  return premiumPlanOrder.map((plan) => ({
+  return premiumBillingPlanOrder.map((plan) => ({
     plan,
     checkoutEnabled: canStartStripeCheckoutForPlan(plan),
     priceId: stripePlanConfig[plan].priceId,
@@ -117,8 +117,9 @@ export function resolveBillingPlanFromStripePriceId(
   }
 
   return (
-    premiumPlanOrder.find((plan) => stripePlanConfig[plan].priceId === priceId) ??
-    null
+    premiumBillingPlanOrder.find(
+      (plan) => stripePlanConfig[plan].priceId === priceId,
+    ) ?? null
   );
 }
 
@@ -148,7 +149,8 @@ export function buildEntitlementUpdateFromStripeSubscription(
   subscription: Stripe.Subscription,
 ) {
   const subscriptionStatus = mapStripeSubscriptionStatus(subscription.status);
-  const subscriptionPeriodRange = getStripeSubscriptionPeriodRange(subscription);
+  const subscriptionPeriodRange =
+    getStripeSubscriptionPeriodRange(subscription);
   const pricePlan =
     resolveBillingPlanFromStripePriceId(
       getStripeSubscriptionPriceId(subscription),
@@ -378,7 +380,10 @@ export async function syncUserEntitlementFromCheckoutSession(params: {
     },
   );
 
-  if (checkoutSession.mode !== "subscription" || !checkoutSession.subscription) {
+  if (
+    checkoutSession.mode !== "subscription" ||
+    !checkoutSession.subscription
+  ) {
     return null;
   }
 
