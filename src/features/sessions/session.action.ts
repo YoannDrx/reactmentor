@@ -30,6 +30,7 @@ import { createTrainingSession } from "./session-builder";
 import {
   buildAttemptResponse,
   evaluateAttemptResponse,
+  isAttemptResponseValidForQuestion,
   supportsAutomaticAttemptScoring,
   supportsLiveQuestionFormat,
   toAttemptResponseData,
@@ -66,11 +67,14 @@ const recordAttemptSchema = z.object({
   sessionId: z.string().trim().min(1),
   questionId: z.string().trim().min(1),
   selectedOptionIds: z.array(z.string().trim().min(1)).default([]),
-  responseText: z.string().optional(),
-  responseCode: z.string().optional(),
-  responseLanguage: z.string().optional(),
-  responseSummary: z.string().optional(),
-  selectedLineNumbers: z.array(z.coerce.number().int().min(1)).default([]),
+  responseText: z.string().max(10_000).optional(),
+  responseCode: z.string().max(50_000).optional(),
+  responseLanguage: z.string().max(50).optional(),
+  responseSummary: z.string().max(10_000).optional(),
+  selectedLineNumbers: z
+    .array(z.coerce.number().int().min(1).max(100_000))
+    .max(1_000)
+    .default([]),
   timeSpentMs: z.coerce.number().int().min(0).max(7_200_000).optional(),
 });
 
@@ -224,7 +228,8 @@ async function refreshQuestionAndSkillProgress(
     })),
     params.now,
   );
-  const signalDetails = skillProgressSnapshot.signalDetails as Prisma.InputJsonValue;
+  const signalDetails =
+    skillProgressSnapshot.signalDetails as Prisma.InputJsonValue;
 
   await tx.skillProgress.upsert({
     where: {
@@ -361,9 +366,7 @@ export async function createTrainingSessionAction(formData: FormData) {
   const user = await getUser();
 
   if (!user) {
-    redirect(
-      `/auth/signin?callbackUrl=${encodeURIComponent(safeCallbackUrl)}`,
-    );
+    redirect(`/auth/signin?callbackUrl=${encodeURIComponent(safeCallbackUrl)}`);
   }
 
   const parsed = createSessionSchema.safeParse({
@@ -607,6 +610,20 @@ export async function recordTrainingSessionAttemptAction(
     });
 
     if (!response) {
+      return {
+        status: "error",
+        feedbackStatus: null,
+        formError: "invalid",
+      };
+    }
+
+    if (
+      !isAttemptResponseValidForQuestion({
+        questionFormat: question.format,
+        response,
+        optionIds: question.options.map((option) => option.id),
+      })
+    ) {
       return {
         status: "error",
         feedbackStatus: null,

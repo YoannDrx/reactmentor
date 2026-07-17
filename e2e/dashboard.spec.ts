@@ -4,6 +4,7 @@ import {
   completeOnboardingIfNeeded,
   createTestUser,
   signUpWithEmail,
+  upgradeUserToPlan,
 } from "./test-helpers";
 
 test.describe("dashboard overview", () => {
@@ -15,6 +16,7 @@ test.describe("dashboard overview", () => {
     const testUser = createTestUser("react-mentor-dashboard-rec");
 
     await signUpWithEmail(page, testUser);
+    await upgradeUserToPlan({ email: testUser.email });
     await completeOnboardingIfNeeded(page);
 
     await expect(page).toHaveURL(/\/dashboard$/);
@@ -33,6 +35,7 @@ test.describe("dashboard overview", () => {
     const testUser = createTestUser("react-mentor-dashboard");
 
     await signUpWithEmail(page, testUser);
+    await upgradeUserToPlan({ email: testUser.email });
     await completeOnboardingIfNeeded(page);
 
     await page.goto("/dashboard/mock-interviews");
@@ -68,6 +71,7 @@ test.describe("dashboard overview", () => {
     const testUser = createTestUser("react-mentor-bookmarks");
 
     await signUpWithEmail(page, testUser);
+    await upgradeUserToPlan({ email: testUser.email });
     await completeOnboardingIfNeeded(page);
 
     await page.goto("/dashboard/mock-interviews");
@@ -151,6 +155,7 @@ test.describe("dashboard overview", () => {
     const testUser = createTestUser("react-mentor-notes");
 
     await signUpWithEmail(page, testUser);
+    await upgradeUserToPlan({ email: testUser.email });
     await completeOnboardingIfNeeded(page);
 
     await page.goto("/dashboard/mock-interviews");

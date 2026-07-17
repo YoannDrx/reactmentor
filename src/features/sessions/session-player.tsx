@@ -154,6 +154,7 @@ export function SessionPlayer({
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [isTimingOut, startTimingOutTransition] = useTransition();
   const hasTriggeredTimeoutRef = useRef(false);
+  const feedbackRef = useRef<HTMLDivElement>(null);
   const isSupportedQuestion = supportsLiveQuestionFormat(question.format);
   const isClosedQuestion = isClosedQuestionFormat(question.format);
   const isMultipleChoice = question.format === "MULTIPLE_CHOICE";
@@ -172,9 +173,9 @@ export function SessionPlayer({
       : messages.keyboardHintSingle
     : question.format === "BUG_HUNT"
       ? messages.bugHuntHint
-    : isSupportedQuestion
-      ? messages.openAnswerHint
-      : null;
+      : isSupportedQuestion
+        ? messages.openAnswerHint
+        : null;
   const answerModeLabel = isClosedQuestion
     ? isMultipleChoice
       ? messages.answerModeLabelMultiple
@@ -192,7 +193,9 @@ export function SessionPlayer({
         Math.min(
           100,
           Math.round(
-            ((remainingSeconds ?? 0) / Math.max(1, timing.durationMinutes * 60)) * 100,
+            ((remainingSeconds ?? 0) /
+              Math.max(1, timing.durationMinutes * 60)) *
+              100,
           ),
         ),
       )
@@ -231,6 +234,12 @@ export function SessionPlayer({
     router,
     state.formError,
   ]);
+
+  useEffect(() => {
+    if (showFeedback) {
+      feedbackRef.current?.focus();
+    }
+  }, [showFeedback]);
 
   useEffect(() => {
     if (!timing) {
@@ -351,9 +360,9 @@ export function SessionPlayer({
             <div className="text-xs uppercase tracking-[0.22em] text-slate-400">
               {modeLabel}
             </div>
-            <div className="mt-2 font-display text-3xl font-semibold tracking-tight text-slate-950">
+            <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-slate-950">
               {question.prompt}
-            </div>
+            </h1>
           </div>
           <Badge className="border-slate-200 bg-slate-100 text-slate-700">
             {messages.progressLabel}
@@ -479,9 +488,9 @@ export function SessionPlayer({
                   ? messages.errors.invalid
                   : state.formError === "unsupported"
                     ? messages.errors.unsupported
-                  : state.formError === "expired"
-                    ? messages.errors.expired
-                    : messages.errors.unknown}
+                    : state.formError === "expired"
+                      ? messages.errors.expired
+                      : messages.errors.unknown}
             </p>
             {canRetrySave ? (
               <p className="mt-2 leading-6 text-amber-800">
@@ -525,7 +534,13 @@ export function SessionPlayer({
 
       {showFeedback ? (
         <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-          <div className="rounded-[28px] border border-slate-200 bg-white/90 p-6">
+          <div
+            ref={feedbackRef}
+            tabIndex={-1}
+            role="status"
+            aria-live="polite"
+            className="rounded-[28px] border border-slate-200 bg-white/90 p-6 outline-none focus-visible:ring-4 focus-visible:ring-cyan-500/20"
+          >
             <div className="mb-4 flex items-center gap-3">
               <Badge
                 className={

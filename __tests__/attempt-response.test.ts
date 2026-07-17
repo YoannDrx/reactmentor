@@ -9,6 +9,7 @@ import {
   getSelectedLineNumbersFromAttemptResponse,
   getSelectedOptionIdsFromAttemptResponse,
   isClosedQuestionFormat,
+  isAttemptResponseValidForQuestion,
   parseAttemptResponseData,
   supportsLiveQuestionFormat,
   supportsAutomaticAttemptScoring,
@@ -107,7 +108,9 @@ describe("attempt-response helpers", () => {
     });
 
     expect(openResponse).not.toBeNull();
-    expect(supportsAutomaticAttemptScoring(QuestionFormat.CODE_OUTPUT)).toBe(false);
+    expect(supportsAutomaticAttemptScoring(QuestionFormat.CODE_OUTPUT)).toBe(
+      false,
+    );
     expect(
       evaluateAttemptResponse({
         questionFormat: QuestionFormat.CODE_OUTPUT,
@@ -115,6 +118,32 @@ describe("attempt-response helpers", () => {
         response: openResponse!,
       }),
     ).toBeNull();
+  });
+
+  it("rejects response kinds, unknown options, and invalid single-choice cardinality", () => {
+    expect(
+      isAttemptResponseValidForQuestion({
+        questionFormat: QuestionFormat.SINGLE_CHOICE,
+        response: createOptionSelectionAttemptResponse([
+          "option_1",
+          "option_2",
+        ]),
+        optionIds: ["option_1", "option_2"],
+      }),
+    ).toBe(false);
+    expect(
+      isAttemptResponseValidForQuestion({
+        questionFormat: QuestionFormat.MULTIPLE_CHOICE,
+        response: createOptionSelectionAttemptResponse(["unknown"]),
+        optionIds: ["option_1", "option_2"],
+      }),
+    ).toBe(false);
+    expect(
+      isAttemptResponseValidForQuestion({
+        questionFormat: QuestionFormat.OPEN_ENDED,
+        response: createOptionSelectionAttemptResponse(["option_1"]),
+      }),
+    ).toBe(false);
   });
 
   it("keeps response draft behavior ready for renderer-based players", () => {
@@ -133,7 +162,9 @@ describe("attempt-response helpers", () => {
   });
 
   it("supports bug-hunt line selection and response parsing", () => {
-    const initialDraft = createInitialAttemptResponseDraft(QuestionFormat.BUG_HUNT);
+    const initialDraft = createInitialAttemptResponseDraft(
+      QuestionFormat.BUG_HUNT,
+    );
     const nextDraft = toggleBugHuntAttemptResponseLineNumber({
       response: initialDraft,
       lineNumber: 4,
@@ -150,6 +181,23 @@ describe("attempt-response helpers", () => {
       kind: "bug_hunt_response",
       summary: "Cleanup is returned from the inner async function.",
       selectedLineNumbers: [4, 5],
+    });
+  });
+
+  it("rejects empty persisted responses and removes invalid bug-hunt lines", () => {
+    expect(
+      parseAttemptResponseData({ kind: "text_response", text: "   " }),
+    ).toBeNull();
+    expect(
+      parseAttemptResponseData({
+        kind: "bug_hunt_response",
+        summary: "The cleanup is misplaced.",
+        selectedLineNumbers: [-2, 0, 4],
+      }),
+    ).toEqual({
+      kind: "bug_hunt_response",
+      summary: "The cleanup is misplaced.",
+      selectedLineNumbers: [4],
     });
   });
 });

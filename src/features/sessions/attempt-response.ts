@@ -86,7 +86,11 @@ export function createBugHuntAttemptResponse(params: {
   selectedLineNumbers?: number[];
 }): BugHuntAttemptResponse {
   const selectedLineNumbers = Array.from(
-    new Set((params.selectedLineNumbers ?? []).filter((line) => Number.isInteger(line))),
+    new Set(
+      (params.selectedLineNumbers ?? []).filter(
+        (line) => Number.isInteger(line) && line > 0,
+      ),
+    ),
   ).sort((left, right) => left - right);
 
   return {
@@ -138,16 +142,67 @@ export function isAttemptResponseDraftSubmittable(
   return response.text.trim().length > 0;
 }
 
+export function isAttemptResponseValidForQuestion(params: {
+  questionFormat: QuestionFormat;
+  response: AttemptResponseData;
+  optionIds?: string[];
+}) {
+  const { questionFormat, response } = params;
+
+  if (isClosedQuestionFormat(questionFormat)) {
+    if (response.kind !== "option_selection") {
+      return false;
+    }
+
+    const allowedOptionIds = new Set(params.optionIds ?? []);
+    const hasValidCardinality =
+      questionFormat === QuestionFormat.SINGLE_CHOICE
+        ? response.selectedOptionIds.length === 1
+        : response.selectedOptionIds.length > 0;
+
+    return (
+      hasValidCardinality &&
+      response.selectedOptionIds.every((optionId) =>
+        allowedOptionIds.has(optionId),
+      )
+    );
+  }
+
+  if (questionFormat === QuestionFormat.OPEN_ENDED) {
+    return response.kind === "text_response" && response.text.length > 0;
+  }
+
+  if (questionFormat === QuestionFormat.CODE_OUTPUT) {
+    return response.kind === "code_response" && response.code.length > 0;
+  }
+
+  if (questionFormat === QuestionFormat.BUG_HUNT) {
+    return (
+      response.kind === "bug_hunt_response" &&
+      response.summary.length > 0 &&
+      response.selectedLineNumbers.every(
+        (lineNumber) => Number.isInteger(lineNumber) && lineNumber > 0,
+      )
+    );
+  }
+
+  return false;
+}
+
 export function getSelectedOptionIdsFromAttemptResponse(
   response: AttemptResponseDraft | null | undefined,
 ) {
-  return response?.kind === "option_selection" ? response.selectedOptionIds : [];
+  return response?.kind === "option_selection"
+    ? response.selectedOptionIds
+    : [];
 }
 
 export function getSelectedLineNumbersFromAttemptResponse(
   response: AttemptResponseDraft | null | undefined,
 ) {
-  return response?.kind === "bug_hunt_response" ? response.selectedLineNumbers : [];
+  return response?.kind === "bug_hunt_response"
+    ? response.selectedLineNumbers
+    : [];
 }
 
 export function toggleClosedChoiceAttemptResponseOption(params: {
@@ -191,7 +246,9 @@ export function toggleBugHuntAttemptResponseLineNumber(params: {
   return createBugHuntAttemptResponse({
     summary: params.response.summary,
     selectedLineNumbers: currentLineNumbers.includes(params.lineNumber)
-      ? currentLineNumbers.filter((lineNumber) => lineNumber !== params.lineNumber)
+      ? currentLineNumbers.filter(
+          (lineNumber) => lineNumber !== params.lineNumber,
+        )
       : [...currentLineNumbers, params.lineNumber],
   });
 }
@@ -206,7 +263,9 @@ export function buildAttemptResponse(params: {
   selectedLineNumbers?: number[];
 }) {
   if (isClosedQuestionFormat(params.questionFormat)) {
-    const response = createOptionSelectionAttemptResponse(params.selectedOptionIds ?? []);
+    const response = createOptionSelectionAttemptResponse(
+      params.selectedOptionIds ?? [],
+    );
 
     return response.selectedOptionIds.length > 0 ? response : null;
   }
@@ -247,7 +306,8 @@ export function evaluateOptionSelectionAttempt(params: {
 
   return {
     isCorrect:
-      normalizedCorrectOptionIds.length === normalizedSelectedOptionIds.length &&
+      normalizedCorrectOptionIds.length ===
+        normalizedSelectedOptionIds.length &&
       normalizedCorrectOptionIds.every(
         (optionId, index) => optionId === normalizedSelectedOptionIds[index],
       ),
@@ -259,7 +319,10 @@ export function supportsAutomaticAttemptScoring(format: QuestionFormat) {
 }
 
 export function requiresManualAttemptReview(format: QuestionFormat) {
-  return supportsLiveQuestionFormat(format) && !supportsAutomaticAttemptScoring(format);
+  return (
+    supportsLiveQuestionFormat(format) &&
+    !supportsAutomaticAttemptScoring(format)
+  );
 }
 
 export function evaluateAttemptResponse(params: {
@@ -297,7 +360,9 @@ export function toAttemptResponseData(
   return response as Prisma.InputJsonValue;
 }
 
-export function parseAttemptResponseData(value: unknown): AttemptResponseData | null {
+export function parseAttemptResponseData(
+  value: unknown,
+): AttemptResponseData | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return null;
   }
@@ -305,38 +370,54 @@ export function parseAttemptResponseData(value: unknown): AttemptResponseData | 
   const response = value as Record<string, unknown>;
 
   if (response.kind === "option_selection") {
-    return createOptionSelectionAttemptResponse(
+    const parsedResponse = createOptionSelectionAttemptResponse(
       Array.isArray(response.selectedOptionIds)
-        ? response.selectedOptionIds
-            .filter((optionId): optionId is string => typeof optionId === "string")
+        ? response.selectedOptionIds.filter(
+            (optionId): optionId is string => typeof optionId === "string",
+          )
         : [],
     );
+
+    return isAttemptResponseDraftSubmittable(parsedResponse)
+      ? parsedResponse
+      : null;
   }
 
   if (response.kind === "text_response") {
-    return createTextAttemptResponse(
+    const parsedResponse = createTextAttemptResponse(
       typeof response.text === "string" ? response.text : "",
     );
+
+    return isAttemptResponseDraftSubmittable(parsedResponse)
+      ? parsedResponse
+      : null;
   }
 
   if (response.kind === "code_response") {
-    return createCodeAttemptResponse({
+    const parsedResponse = createCodeAttemptResponse({
       code: typeof response.code === "string" ? response.code : "",
       language:
         typeof response.language === "string" ? response.language : null,
     });
+
+    return isAttemptResponseDraftSubmittable(parsedResponse)
+      ? parsedResponse
+      : null;
   }
 
   if (response.kind === "bug_hunt_response") {
-    return createBugHuntAttemptResponse({
+    const parsedResponse = createBugHuntAttemptResponse({
       summary: typeof response.summary === "string" ? response.summary : "",
       selectedLineNumbers: Array.isArray(response.selectedLineNumbers)
-        ? response.selectedLineNumbers
-            .map((lineNumber) =>
-              typeof lineNumber === "number" ? lineNumber : Number(lineNumber),
-            )
+        ? response.selectedLineNumbers.map((lineNumber) =>
+            typeof lineNumber === "number" ? lineNumber : Number(lineNumber),
+          )
         : [],
     });
+
+    return isAttemptResponseDraftSubmittable(parsedResponse)
+      ? parsedResponse
+      : null;
   }
 
   return null;

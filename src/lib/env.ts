@@ -29,7 +29,10 @@ export const env = createEnv({
     SENTRY_PROJECT: z.string().optional(),
     SENTRY_ENVIRONMENT: z.string().optional(),
     SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).optional(),
-    EMAIL_FROM: z.string().default("React Mentor <noreply@do-not-reply.app>"),
+    EMAIL_FROM: z
+      .string()
+      .default("React Mentor <contact@do-not-reply.app>"),
+    EMAIL_REPLY_TO: z.string().email().default("hello@react-mentor.com"),
     NODE_ENV: z
       .enum(["development", "production", "test"])
       .default("development"),

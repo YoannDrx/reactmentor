@@ -12,7 +12,7 @@ The current product includes:
 - dedicated product surfaces for modules, sessions, notes, bookmarks and playlists
 - a multi-format practice/review/mock engine for `SINGLE_CHOICE`, `MULTIPLE_CHOICE`, `OPEN_ENDED`, `CODE_OUTPUT` and `BUG_HUNT`
 - an admin content workspace for modules, skills, questions, pitfall tags and import/export
-- Stripe billing, entitlements and gating for premium surfaces
+- Stripe billing, layered entitlements and gating for premium surfaces
 - lifecycle emails, product telemetry and Sentry wiring
 - a Prisma schema designed for localized content, attempts, progress, playlists and billing entitlements
 
@@ -54,7 +54,6 @@ src/
     telemetry/*
   lib/
     auth/*
-    demo-data.ts
     env.ts
     prisma.ts
     server-url.ts
@@ -155,6 +154,16 @@ pnpm pricing:verify
 pnpm stripe-webhooks
 ```
 
+Billing model:
+
+- `Mentor Pro` is a monthly subscription.
+- `Hiring Sprint` is a one-time purchase that grants 30 days of access. A second
+  purchase extends the existing active window by another 30 days.
+- Stripe webhook processing is idempotent: completed one-time checkouts are
+  recorded in `billing_purchase` before the effective entitlement is updated.
+- Subscription and one-time access are stored as separate layers so cancelling
+  Mentor Pro cannot remove an active Hiring Sprint purchase.
+
 ## Observability
 
 - Sentry is wired through `next.config.ts`, `src/instrumentation.ts`, `src/instrumentation-client.ts` and `src/app/global-error.tsx`
@@ -196,7 +205,6 @@ What is already real:
 
 What remains as the active roadmap:
 
-- finish the last `demo-data` residues on authenticated surfaces
 - deepen `learn` with richer micro-exercises, prerequisites and adaptive follow-up flows
 - add learning signals beyond attempts alone and exploit them more deeply in recommendations
 - extend admin QA with bulk freshness / dedup / editorial operations

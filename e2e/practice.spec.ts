@@ -185,12 +185,12 @@ test.describe("practice flow", () => {
     await expect(page.getByLabel(/Your bug analysis|Ton analyse du bug/)).toBeVisible();
     await page
       .getByRole("button", {
-        name: /const timer = window\.setTimeout/,
+        name: /Selected lines 4|Lignes selectionnees 4/,
       })
       .click();
     await page
       .getByRole("button", {
-        name: /return \(\) =>/,
+        name: /Selected lines 5|Lignes selectionnees 5/,
       })
       .click();
     await page.getByLabel(/Your bug analysis|Ton analyse du bug/).fill(

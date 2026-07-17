@@ -1,8 +1,4 @@
-import {
-  AnalysisDepth,
-  BillingPlan,
-  BillingStatus,
-} from "@prisma/client";
+import { AnalysisDepth, BillingPlan, BillingStatus } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
@@ -41,9 +37,39 @@ import {
   canAccessModuleSlug,
   canAccessQuestionIds,
   getUserEntitlementSnapshot,
+  resolveEffectiveEntitlement,
 } from "@/features/billing/user-entitlements";
 
 describe("user entitlements", () => {
+  it("prioritizes an active sprint and falls back to the subscription after expiry", () => {
+    const layers = {
+      subscriptionPlan: BillingPlan.MENTOR_PRO,
+      subscriptionStatus: BillingStatus.ACTIVE,
+      subscriptionStartsAt: new Date("2026-07-01T00:00:00.000Z"),
+      subscriptionEndsAt: new Date("2026-08-01T00:00:00.000Z"),
+      oneTimePlan: BillingPlan.HIRING_SPRINT,
+      oneTimeAccessStartsAt: new Date("2026-07-10T00:00:00.000Z"),
+      oneTimeAccessEndsAt: new Date("2026-08-09T00:00:00.000Z"),
+    };
+
+    expect(
+      resolveEffectiveEntitlement(layers, new Date("2026-07-17T00:00:00.000Z")),
+    ).toEqual(
+      expect.objectContaining({
+        plan: BillingPlan.HIRING_SPRINT,
+        sprintModeEnabled: true,
+      }),
+    );
+    expect(
+      resolveEffectiveEntitlement(layers, new Date("2026-08-10T00:00:00.000Z")),
+    ).toEqual(
+      expect.objectContaining({
+        plan: BillingPlan.MENTOR_PRO,
+        sprintModeEnabled: false,
+      }),
+    );
+  });
+
   beforeEach(() => {
     userEntitlementFindUniqueMock.mockReset();
     userEntitlementCreateMock.mockReset();

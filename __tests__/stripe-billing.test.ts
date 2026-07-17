@@ -22,11 +22,29 @@ vi.mock("@/lib/prisma", () => ({
 
 import {
   buildEntitlementUpdateFromStripeSubscription,
+  getHiringSprintAccessRange,
   mapStripeSubscriptionStatus,
   resolveBillingPlanFromStripePriceId,
 } from "@/features/billing/stripe-billing";
 
 describe("stripe billing mapping", () => {
+  it("grants 30 days and stacks a renewal after the current sprint window", () => {
+    const paidAt = new Date("2026-07-17T10:00:00.000Z");
+    const first = getHiringSprintAccessRange({ paidAt });
+
+    expect(first.startsAt).toEqual(paidAt);
+    expect(first.endsAt).toEqual(new Date("2026-08-16T10:00:00.000Z"));
+
+    const renewal = getHiringSprintAccessRange({
+      paidAt: new Date("2026-07-20T10:00:00.000Z"),
+      currentStartsAt: first.startsAt,
+      currentEndsAt: first.endsAt,
+    });
+
+    expect(renewal.startsAt).toEqual(first.startsAt);
+    expect(renewal.endsAt).toEqual(new Date("2026-09-15T10:00:00.000Z"));
+  });
+
   it("maps configured Stripe prices back to the expected plan", () => {
     expect(resolveBillingPlanFromStripePriceId("price_mentor_pro")).toBe(
       BillingPlan.MENTOR_PRO,

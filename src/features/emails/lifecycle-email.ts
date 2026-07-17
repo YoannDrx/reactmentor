@@ -245,6 +245,7 @@ async function dispatchLifecycleEmail(params: {
     const response = await getResendServerClient().emails.send({
       from: env.EMAIL_FROM,
       to: [params.recipient],
+      replyTo: env.EMAIL_REPLY_TO,
       subject: params.subject,
       html: params.html,
       text: params.text,

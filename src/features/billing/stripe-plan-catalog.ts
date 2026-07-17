@@ -18,7 +18,9 @@ export type StripePremiumPlanDefinition = {
   envKey: StripePriceEnvKey;
   productName: string;
   productDescription: string;
-  monthlyPriceCents: number;
+  priceCents: number;
+  billingKind: "subscription" | "one_time";
+  accessDays: number | null;
   currency: "eur";
   metadataPlan: string;
 };
@@ -30,7 +32,9 @@ export const stripePremiumPlanCatalog = {
     productName: "React Mentor Pro",
     productDescription:
       "Preparation React complete : tous les modules publies, mocks chronometres illimites, analytics avancees et playlists ciblees.",
-    monthlyPriceCents: 2400,
+    priceCents: 2400,
+    billingKind: "subscription",
+    accessDays: null,
     currency: "eur",
     metadataPlan: "mentor_pro",
   },
@@ -40,7 +44,9 @@ export const stripePremiumPlanCatalog = {
     productName: "React Mentor Hiring Sprint",
     productDescription:
       "Preparation intensive avant entretien : tout Mentor Pro, mode sprint active et surface premium la plus large pour un cycle de candidature court.",
-    monthlyPriceCents: 5900,
+    priceCents: 5900,
+    billingKind: "one_time",
+    accessDays: 30,
     currency: "eur",
     metadataPlan: "hiring_sprint",
   },

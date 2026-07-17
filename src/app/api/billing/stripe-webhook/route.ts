@@ -63,7 +63,9 @@ export async function POST(request: Request) {
   } catch (error) {
     Sentry.captureException(error);
     const message =
-      error instanceof Error ? error.message : "Unknown webhook signature error.";
+      error instanceof Error
+        ? error.message
+        : "Unknown webhook signature error.";
 
     await captureOperationalEvent({
       source: "billing.webhook",
@@ -84,7 +86,10 @@ export async function POST(request: Request) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
 
-        if (session.mode === "subscription") {
+        if (
+          session.mode === "subscription" ||
+          (session.mode === "payment" && session.payment_status === "paid")
+        ) {
           await syncUserEntitlementFromCheckoutSession({
             checkoutSessionId: session.id,
             userId:
@@ -126,7 +131,9 @@ export async function POST(request: Request) {
                 : null,
             name: ProductAnalyticsEventName.SUBSCRIPTION_STARTED,
             source: "billing.webhook",
-            billingPlan: parsePremiumBillingPlan(subscription.metadata?.targetPlan),
+            billingPlan: parsePremiumBillingPlan(
+              subscription.metadata?.targetPlan,
+            ),
             metadata: {
               stripeEventId: event.id,
               subscriptionId: subscription.id,
@@ -154,10 +161,7 @@ export async function POST(request: Request) {
     return Response.json({ received: true });
   } catch (error) {
     Sentry.captureException(error);
-    const message = getErrorMessage(
-      error,
-      "Unknown webhook processing error.",
-    );
+    const message = getErrorMessage(error, "Unknown webhook processing error.");
 
     await captureOperationalEvent({
       source: "billing.webhook",

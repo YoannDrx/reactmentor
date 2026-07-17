@@ -27,9 +27,7 @@ import { getRequiredUser } from "@/lib/auth/auth-user";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
-function getSingleSearchParamValue(
-  value: string | string[] | undefined,
-) {
+function getSingleSearchParamValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
@@ -208,11 +206,7 @@ export default async function DashboardSettingsPage({
                 {entitlements.analyticsDepthLabel}
               </div>
               <div className="mt-2 font-semibold text-slate-950">
-                {
-                  entitlements.analysisDepthLabels[
-                    entitlement.analysisDepth
-                  ]
-                }
+                {entitlements.analysisDepthLabels[entitlement.analysisDepth]}
               </div>
             </div>
             <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4">
@@ -271,7 +265,9 @@ export default async function DashboardSettingsPage({
         <CardHeader className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-start">
           <div>
             <CardTitle>{entitlements.managementTitle}</CardTitle>
-            <CardDescription>{entitlements.managementDescription}</CardDescription>
+            <CardDescription>
+              {entitlements.managementDescription}
+            </CardDescription>
           </div>
           {hasBillingPortal ? (
             <form action={openBillingPortalAction}>
@@ -312,7 +308,9 @@ export default async function DashboardSettingsPage({
                 >
                   <CardHeader>
                     <div className="flex items-center justify-between gap-3">
-                      <CardTitle className={isCurrentPlan ? "text-white" : undefined}>
+                      <CardTitle
+                        className={isCurrentPlan ? "text-white" : undefined}
+                      >
                         {plan.title}
                       </CardTitle>
                       {isCurrentPlan ? (
@@ -336,7 +334,7 @@ export default async function DashboardSettingsPage({
                       }
                     >
                       {plan.price}
-                      {plan.plan === BillingPlan.STARTER ? null : (
+                      {plan.priceSuffix ? (
                         <span
                           className={
                             isCurrentPlan
@@ -344,9 +342,9 @@ export default async function DashboardSettingsPage({
                               : "text-sm font-normal text-slate-500"
                           }
                         >
-                          {landingPricing.monthlySuffix}
+                          {plan.priceSuffix}
                         </span>
-                      )}
+                      ) : null}
                     </div>
 
                     <div className="space-y-3">
@@ -367,7 +365,11 @@ export default async function DashboardSettingsPage({
                     {isCurrentPlan ? (
                       plan.plan !== BillingPlan.STARTER && hasBillingPortal ? (
                         <form action={openBillingPortalAction}>
-                          <Button type="submit" variant="secondary" className="w-full">
+                          <Button
+                            type="submit"
+                            variant="secondary"
+                            className="w-full"
+                          >
                             {entitlements.openPortalAction}
                           </Button>
                         </form>
