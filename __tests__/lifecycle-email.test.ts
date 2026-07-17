@@ -25,7 +25,8 @@ const {
 
 vi.mock("@/lib/env", () => ({
   env: {
-    EMAIL_FROM: "React Mentor <noreply@reactmentor.dev>",
+    EMAIL_FROM: "React Mentor <contact@do-not-reply.app>",
+    EMAIL_REPLY_TO: "hello@react-mentor.com",
     LIFECYCLE_JOB_SECRET: "job_secret_test",
   },
 }));
@@ -106,7 +107,8 @@ describe("lifecycle email", () => {
 
     expect(resendSendMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        from: "React Mentor <noreply@reactmentor.dev>",
+        from: "React Mentor <contact@do-not-reply.app>",
+        replyTo: "hello@react-mentor.com",
         to: ["john@example.com"],
         subject: "React Mentor est pret pour ton prochain cycle d'entretien",
         text: expect.stringContaining("https://reactmentor.dev/dashboard"),
