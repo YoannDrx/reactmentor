@@ -113,6 +113,9 @@ export async function completeOnboardingIfNeeded(page: Page) {
       timeout: 20_000,
     })
     .toMatch(/\/(onboarding|dashboard)(\?.*)?$/);
+  // Force a server-rendered dashboard request so the onboarding redirect is
+  // settled before deciding whether the wizard still needs to run.
+  await page.goto("/dashboard");
   await page.waitForLoadState("networkidle");
 
   if (!page.url().includes("/onboarding")) {
