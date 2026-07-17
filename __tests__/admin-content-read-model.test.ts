@@ -1,5 +1,5 @@
 import { ContentStatus, TranslationStatus } from "@prisma/client";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   learningModuleFindManyMock,
@@ -41,10 +41,16 @@ import { getAdminContentReadModel } from "@/features/admin/admin-content-read-mo
 
 describe("getAdminContentReadModel", () => {
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-10T12:00:00.000Z"));
     learningModuleFindManyMock.mockReset();
     skillFindManyMock.mockReset();
     pitfallTagFindManyMock.mockReset();
     questionFindManyMock.mockReset();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("builds admin inventory stats, form options and publication checklist signals", async () => {

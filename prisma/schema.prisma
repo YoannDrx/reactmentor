@@ -127,16 +127,17 @@ model User {
   sessions Session[]
   accounts Account[]
 
-  preferences      UserPreference?
-  entitlement      UserEntitlement?
-  attempts         Attempt[]
-  questionProgress QuestionProgress[]
-  skillProgress    SkillProgress[]
-  bookmarks        Bookmark[]
-  notes            Note[]
-  playlists        Playlist[]
-  trainingSessions TrainingSession[]
-  analyticsEvents  ProductAnalyticsEvent[]
+  preferences       UserPreference?
+  entitlement       UserEntitlement?
+  billingPurchases  BillingPurchase[]
+  attempts          Attempt[]
+  questionProgress  QuestionProgress[]
+  skillProgress     SkillProgress[]
+  bookmarks         Bookmark[]
+  notes             Note[]
+  playlists         Playlist[]
+  trainingSessions  TrainingSession[]
+  analyticsEvents   ProductAnalyticsEvent[]
   operationalEvents OperationalEvent[]
 
   @@map("user")
@@ -218,6 +219,13 @@ model UserEntitlement {
   sprintModeEnabled     Boolean        @default(false)
   currentPeriodStartsAt DateTime?
   currentPeriodEndsAt   DateTime?
+  subscriptionPlan      BillingPlan?
+  subscriptionStatus    BillingStatus?
+  subscriptionStartsAt  DateTime?
+  subscriptionEndsAt    DateTime?
+  oneTimePlan           BillingPlan?
+  oneTimeAccessStartsAt DateTime?
+  oneTimeAccessEndsAt   DateTime?
   billingCustomerId     String?        @unique
   billingSubscriptionId String?        @unique
   createdAt             DateTime       @default(now())
@@ -226,6 +234,24 @@ model UserEntitlement {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_entitlement")
+}
+
+model BillingPurchase {
+  id                String      @id @default(cuid())
+  userId            String
+  plan              BillingPlan
+  checkoutSessionId String      @unique
+  paymentIntentId   String      @unique
+  amount            Int
+  currency          String
+  accessDays        Int
+  paidAt            DateTime
+  createdAt         DateTime    @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, paidAt])
+  @@map("billing_purchase")
 }
 
 model LearningModule {
@@ -535,23 +561,23 @@ model Attempt {
 }
 
 model QuestionProgress {
-  id                 String       @id @default(cuid())
-  userId             String
-  questionId         String
-  ease               Float        @default(2.3)
-  intervalDays       Int          @default(1)
-  streakCorrect      Int          @default(0)
-  reviewCount        Int          @default(0)
-  lapseCount         Int          @default(0)
-  lastOutcomeCorrect Boolean?
-  lastAttemptAt      DateTime?
-  nextReviewAt       DateTime?
-  masteryState       MasteryState @default(NEW)
-  lessonViews        Int          @default(0)
-  lastLessonViewedAt DateTime?
-  lessonCheckpointAttempts Int    @default(0)
-  lessonCheckpointPassCount Int   @default(0)
-  lastLessonCheckpointAt DateTime?
+  id                         String       @id @default(cuid())
+  userId                     String
+  questionId                 String
+  ease                       Float        @default(2.3)
+  intervalDays               Int          @default(1)
+  streakCorrect              Int          @default(0)
+  reviewCount                Int          @default(0)
+  lapseCount                 Int          @default(0)
+  lastOutcomeCorrect         Boolean?
+  lastAttemptAt              DateTime?
+  nextReviewAt               DateTime?
+  masteryState               MasteryState @default(NEW)
+  lessonViews                Int          @default(0)
+  lastLessonViewedAt         DateTime?
+  lessonCheckpointAttempts   Int          @default(0)
+  lessonCheckpointPassCount  Int          @default(0)
+  lastLessonCheckpointAt     DateTime?
   lastLessonCheckpointPassed Boolean?
 
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)

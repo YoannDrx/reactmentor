@@ -120,7 +120,7 @@ async function ensureProduct(plan: (typeof premiumBillingPlanOrder)[number]) {
   } as const;
 }
 
-function isMatchingMonthlyPrice(
+function isMatchingPrice(
   price: Stripe.Price,
   plan: (typeof premiumBillingPlanOrder)[number],
 ) {
@@ -129,22 +129,24 @@ function isMatchingMonthlyPrice(
   return (
     price.active &&
     price.currency === definition.currency &&
-    price.unit_amount === definition.monthlyPriceCents &&
-    price.recurring?.interval === "month" &&
+    price.unit_amount === definition.priceCents &&
+    (definition.billingKind === "subscription"
+      ? price.type === "recurring" && price.recurring?.interval === "month"
+      : price.type === "one_time" && !price.recurring) &&
     price.metadata.app === appMetadata.app &&
     price.metadata.plan === definition.metadataPlan &&
-    price.metadata.billing === "monthly"
+    price.metadata.billing === definition.billingKind
   );
 }
 
-async function ensureMonthlyPrice(params: {
+async function ensurePrice(params: {
   plan: (typeof premiumBillingPlanOrder)[number];
   productId: string;
 }) {
   const definition = stripePremiumPlanCatalog[params.plan];
   const prices = await listProductPrices(params.productId);
   const matchingPrice = prices.find((price) =>
-    isMatchingMonthlyPrice(price, params.plan),
+    isMatchingPrice(price, params.plan),
   );
 
   let price = matchingPrice ?? null;
@@ -154,14 +156,17 @@ async function ensureMonthlyPrice(params: {
     price = await stripe.prices.create({
       product: params.productId,
       currency: definition.currency,
-      unit_amount: definition.monthlyPriceCents,
-      recurring: {
-        interval: "month",
-      },
+      unit_amount: definition.priceCents,
+      ...(definition.billingKind === "subscription"
+        ? { recurring: { interval: "month" as const } }
+        : {}),
       metadata: {
         ...appMetadata,
         plan: definition.metadataPlan,
-        billing: "monthly",
+        billing: definition.billingKind,
+        ...(definition.accessDays
+          ? { accessDays: String(definition.accessDays) }
+          : {}),
       },
     });
     created = true;
@@ -169,10 +174,7 @@ async function ensureMonthlyPrice(params: {
 
   if (deactivateOldPrices && !dryRun) {
     const staleActivePrices = prices.filter(
-      (candidate) =>
-        candidate.id !== price?.id &&
-        candidate.active &&
-        candidate.recurring?.interval === "month",
+      (candidate) => candidate.id !== price?.id && candidate.active,
     );
 
     await Promise.all(
@@ -207,7 +209,7 @@ async function run() {
             price: null,
             created: true,
           }
-        : await ensureMonthlyPrice({
+        : await ensurePrice({
             plan,
             productId: ensuredProduct.product.id,
           });

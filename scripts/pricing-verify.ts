@@ -67,12 +67,8 @@ async function verifyStaticPlanDefinitions() {
       );
     }
 
-    if (definition.monthlyPriceCents <= 0) {
-      pushIssue(
-        "error",
-        "plans.static",
-        `monthlyPriceCents invalide pour ${plan}`,
-      );
+    if (definition.priceCents <= 0) {
+      pushIssue("error", "plans.static", `priceCents invalide pour ${plan}`);
     }
   }
 
@@ -131,11 +127,11 @@ async function verifyStripePrices() {
         );
       }
 
-      if (price.unit_amount !== definition.monthlyPriceCents) {
+      if (price.unit_amount !== definition.priceCents) {
         pushIssue(
           "error",
           "stripe.live",
-          `${plan}: montant inattendu (${price.unit_amount} vs ${definition.monthlyPriceCents})`,
+          `${plan}: montant inattendu (${price.unit_amount} vs ${definition.priceCents})`,
         );
       }
 
@@ -147,11 +143,16 @@ async function verifyStripePrices() {
         );
       }
 
-      if (price.recurring?.interval !== "month") {
+      const cadenceIsValid =
+        definition.billingKind === "subscription"
+          ? price.type === "recurring" && price.recurring?.interval === "month"
+          : price.type === "one_time" && !price.recurring;
+
+      if (!cadenceIsValid) {
         pushIssue(
           "error",
           "stripe.live",
-          `${plan}: intervalle inattendu (${price.recurring?.interval ?? "none"} vs month)`,
+          `${plan}: cadence inattendue (${price.type}/${price.recurring?.interval ?? "none"} vs ${definition.billingKind})`,
         );
       }
 
@@ -171,11 +172,11 @@ async function verifyStripePrices() {
         );
       }
 
-      if (price.metadata.billing !== "monthly") {
+      if (price.metadata.billing !== definition.billingKind) {
         pushIssue(
           "warning",
           "stripe.live",
-          `${priceId}: metadata.billing absent/invalide (${price.metadata.billing || "absent"})`,
+          `${priceId}: metadata.billing absent/invalide (${price.metadata.billing || "absent"} vs ${definition.billingKind})`,
         );
       }
 

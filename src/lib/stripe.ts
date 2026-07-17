@@ -8,6 +8,8 @@ export function getStripeServerClient() {
     throw new Error("Stripe secret key is not configured.");
   }
 
-  stripeClient ??= new Stripe(env.STRIPE_SECRET_KEY);
+  stripeClient ??= new Stripe(env.STRIPE_SECRET_KEY, {
+    apiVersion: "2026-02-25.clover",
+  });
   return stripeClient;
 }

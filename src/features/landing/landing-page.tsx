@@ -12,10 +12,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import {
-  getLocalizedModules,
-  getLocalizedRecentSessions,
-} from "@/features/dashboard/dashboard-view-model";
 import { LanguageToggle } from "@/features/i18n/language-toggle";
 import { useI18n } from "@/i18n/provider";
 import {
@@ -55,9 +51,9 @@ export function LandingPage({
   const dashboard = messages.dashboard;
   const common = messages.common;
 
-  const previewModules = getLocalizedModules(messages).slice(0, 3);
+  const previewModules = dashboard.modulesCatalog.slice(0, 3);
   const previewReviews = dashboard.reviewQueue;
-  const sessions = getLocalizedRecentSessions(messages);
+  const sessionExamples = dashboard.recentSessions;
   const workspaceHref = isAuthenticated ? "/dashboard" : "/auth/signup";
   const accountHref = isAuthenticated ? "/dashboard/settings" : "/auth/signin";
   const featuredPlans = [
@@ -88,7 +84,11 @@ export function LandingPage({
         <section className="relative isolate pb-20 pt-10 sm:pb-24 lg:pb-28 lg:pt-14">
           <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.18),transparent_32%),radial-gradient(circle_at_80%_10%,rgba(255,107,74,0.18),transparent_26%),radial-gradient(circle_at_70%_70%,rgba(34,197,94,0.12),transparent_28%)]" />
           <div className="mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-8">
-            <motion.div {...sectionMotion} className="space-y-8">
+            <motion.div
+              {...sectionMotion}
+              initial={false}
+              className="space-y-8"
+            >
               <Badge className="w-fit">
                 <Sparkles className="size-3.5 text-cyan-600" />
                 {landing.hero.badge}
@@ -148,6 +148,7 @@ export function LandingPage({
 
             <motion.div
               {...sectionMotion}
+              initial={false}
               transition={{
                 duration: 0.65,
                 ease: [0.16, 1, 0.3, 1],
@@ -454,40 +455,15 @@ export function LandingPage({
                   <CardContent className="space-y-4">
                     {previewModules.map((module) => (
                       <div
-                        key={module.id}
+                        key={module.title}
                         className="rounded-[24px] border border-slate-200/80 bg-slate-50/70 p-4"
                       >
-                        <div className="mb-3 flex items-start justify-between gap-4">
-                          <div>
-                            <div className="text-sm text-slate-500">
-                              {module.track}
-                            </div>
-                            <div className="font-display text-xl font-semibold text-slate-950">
-                              {module.title}
-                            </div>
-                          </div>
-                          <div className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-700">
-                            {
-                              common.levels[
-                                module.level as keyof typeof common.levels
-                              ]
-                            }
-                          </div>
+                        <div className="font-display text-xl font-semibold text-slate-950">
+                          {module.title}
                         </div>
-                        <p className="mb-4 text-sm leading-6 text-slate-600">
+                        <p className="mt-3 text-sm leading-6 text-slate-600">
                           {module.summary}
                         </p>
-                        <Progress value={module.completion} />
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {module.focus.map((focus) => (
-                            <Badge
-                              key={focus}
-                              className="border-white bg-white text-slate-600"
-                            >
-                              {focus}
-                            </Badge>
-                          ))}
-                        </div>
                       </div>
                     ))}
                   </CardContent>
@@ -549,23 +525,15 @@ export function LandingPage({
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {sessions.map((session) => (
+                  {sessionExamples.map((session) => (
                     <div
-                      key={session.id}
+                      key={session.title}
                       className="rounded-[24px] border border-white/10 bg-white/5 p-4"
                     >
-                      <div className="mb-2 flex items-center justify-between">
-                        <div className="font-medium text-white">
-                          {session.title}
-                        </div>
-                        <div className="rounded-full bg-white/10 px-3 py-1 text-xs text-cyan-200">
-                          {session.score}%
-                        </div>
+                      <div className="font-medium text-white">
+                        {session.title}
                       </div>
-                      <div className="mb-2 text-xs uppercase tracking-[0.2em] text-slate-500">
-                        {session.duration}
-                      </div>
-                      <p className="text-sm leading-6 text-slate-300">
+                      <p className="mt-2 text-sm leading-6 text-slate-300">
                         {session.summary}
                       </p>
                     </div>
@@ -669,11 +637,9 @@ export function LandingPage({
                         }
                       >
                         {plan.price}
-                        {plan.isFree ? null : (
-                          <span className="text-base">
-                            {landing.pricing.monthlySuffix}
-                          </span>
-                        )}
+                        {plan.priceSuffix ? (
+                          <span className="text-base">{plan.priceSuffix}</span>
+                        ) : null}
                       </CardTitle>
                       <CardDescription
                         className={plan.featured ? "text-slate-300" : undefined}
@@ -770,7 +736,9 @@ function LandingHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
   const common = messages.common;
   const dashboard = messages.dashboard;
   const primaryHref = isAuthenticated ? "/dashboard" : "/auth/signup";
-  const secondaryHref = isAuthenticated ? "/dashboard/settings" : "/auth/signin";
+  const secondaryHref = isAuthenticated
+    ? "/dashboard/settings"
+    : "/auth/signin";
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/40 bg-[rgba(246,239,230,0.82)] backdrop-blur-xl">

@@ -1,8 +1,9 @@
-import { BillingPlan, BillingStatus } from "@prisma/client";
+import { BillingPlan, BillingStatus, Prisma } from "@prisma/client";
 import type Stripe from "stripe";
 import {
   ensureUserEntitlementRecord,
   getBillingPlanDefaults,
+  resolveEffectiveEntitlement,
 } from "@/features/billing/user-entitlements";
 import {
   premiumBillingPlanOrder,
@@ -30,11 +31,15 @@ const stripePlanConfig: Record<
   },
 };
 
+const HIRING_SPRINT_ACCESS_DAYS = 30;
+
 function getStripeSuccessUrl() {
   const url = new URL("/dashboard/settings", getServerUrl());
   url.searchParams.set("billing", "success");
   url.searchParams.set("session_id", "{CHECKOUT_SESSION_ID}");
-  return url.toString();
+  return url
+    .toString()
+    .replace("%7BCHECKOUT_SESSION_ID%7D", "{CHECKOUT_SESSION_ID}");
 }
 
 function getStripeCancelUrl() {
@@ -186,6 +191,10 @@ export function buildEntitlementUpdateFromStripeSubscription(
       : subscriptionPeriodRange.currentPeriodEndsAt,
     billingCustomerId: getStripeCustomerId(subscription.customer),
     billingSubscriptionId: shouldDowngradeToStarter ? null : subscription.id,
+    subscriptionPlan: pricePlan,
+    subscriptionStatus,
+    subscriptionStartsAt: subscriptionPeriodRange.currentPeriodStartsAt,
+    subscriptionEndsAt: subscriptionPeriodRange.currentPeriodEndsAt,
   };
 }
 
@@ -285,34 +294,46 @@ export async function createStripeCheckoutSession(params: {
   }
 
   const stripe = getStripeServerClient();
+  const price = await stripe.prices.retrieve(priceId);
   const customerId = await getOrCreateStripeCustomerForUser({
     user: params.user,
   });
-  const session = await stripe.checkout.sessions.create({
-    mode: "subscription",
+  const sharedSessionParams = {
     customer: customerId,
     client_reference_id: params.user.id,
     allow_promotion_codes: true,
-    billing_address_collection: "auto",
-    line_items: [
-      {
-        price: priceId,
-        quantity: 1,
-      },
-    ],
+    billing_address_collection: "auto" as const,
+    line_items: [{ price: priceId, quantity: 1 }],
     success_url: getStripeSuccessUrl(),
     cancel_url: getStripeCancelUrl(),
     metadata: {
       userId: params.user.id,
       targetPlan: params.plan,
     },
-    subscription_data: {
-      metadata: {
-        userId: params.user.id,
-        targetPlan: params.plan,
-      },
-    },
-  });
+  };
+  const session =
+    price.type === "one_time"
+      ? await stripe.checkout.sessions.create({
+          ...sharedSessionParams,
+          mode: "payment",
+          payment_intent_data: {
+            metadata: {
+              userId: params.user.id,
+              targetPlan: params.plan,
+              accessDays: String(HIRING_SPRINT_ACCESS_DAYS),
+            },
+          },
+        })
+      : await stripe.checkout.sessions.create({
+          ...sharedSessionParams,
+          mode: "subscription",
+          subscription_data: {
+            metadata: {
+              userId: params.user.id,
+              targetPlan: params.plan,
+            },
+          },
+        });
 
   if (!session.url) {
     throw new Error("Stripe checkout session did not return a redirect URL.");
@@ -355,17 +376,163 @@ export async function syncUserEntitlementFromStripeSubscription(params: {
   const updateData = buildEntitlementUpdateFromStripeSubscription(
     params.subscription,
   );
+  const existingEntitlement = await ensureUserEntitlementRecord(userId);
+  const effective = resolveEffectiveEntitlement({
+    subscriptionPlan: updateData.subscriptionPlan,
+    subscriptionStatus: updateData.subscriptionStatus,
+    subscriptionStartsAt: updateData.subscriptionStartsAt,
+    subscriptionEndsAt: updateData.subscriptionEndsAt,
+    oneTimePlan: existingEntitlement.oneTimePlan,
+    oneTimeAccessStartsAt: existingEntitlement.oneTimeAccessStartsAt,
+    oneTimeAccessEndsAt: existingEntitlement.oneTimeAccessEndsAt,
+  });
 
   return prisma.userEntitlement.upsert({
     where: {
       userId,
     },
-    update: updateData,
+    update: {
+      ...updateData,
+      ...effective,
+    },
     create: {
       userId,
       ...updateData,
+      ...effective,
     },
   });
+}
+
+function getCheckoutCustomerId(session: Stripe.Checkout.Session) {
+  if (!session.customer) return null;
+  return typeof session.customer === "string"
+    ? session.customer
+    : session.customer.id;
+}
+
+function getCheckoutPaymentIntentId(session: Stripe.Checkout.Session) {
+  if (!session.payment_intent) return null;
+  return typeof session.payment_intent === "string"
+    ? session.payment_intent
+    : session.payment_intent.id;
+}
+
+function addUtcDays(value: Date, days: number) {
+  return new Date(value.getTime() + days * 24 * 60 * 60 * 1000);
+}
+
+export function getHiringSprintAccessRange(params: {
+  paidAt: Date;
+  currentStartsAt?: Date | null;
+  currentEndsAt?: Date | null;
+}) {
+  const continuesActiveSprint = Boolean(
+    params.currentEndsAt && params.currentEndsAt > params.paidAt,
+  );
+  const startsAt = continuesActiveSprint
+    ? (params.currentStartsAt ?? params.paidAt)
+    : params.paidAt;
+  const extensionBase = continuesActiveSprint
+    ? (params.currentEndsAt ?? params.paidAt)
+    : params.paidAt;
+
+  return {
+    startsAt,
+    endsAt: addUtcDays(extensionBase, HIRING_SPRINT_ACCESS_DAYS),
+  };
+}
+
+export async function syncUserEntitlementFromOneTimeCheckoutSession(params: {
+  session: Stripe.Checkout.Session;
+  userId?: string | null;
+}) {
+  const { session } = params;
+  const userId =
+    params.userId ??
+    (typeof session.metadata?.userId === "string"
+      ? session.metadata.userId
+      : null);
+  const plan = parsePremiumBillingPlan(session.metadata?.targetPlan);
+  const paymentIntentId = getCheckoutPaymentIntentId(session);
+  const customerId = getCheckoutCustomerId(session);
+
+  if (
+    !userId ||
+    plan !== BillingPlan.HIRING_SPRINT ||
+    session.mode !== "payment" ||
+    session.payment_status !== "paid" ||
+    !paymentIntentId ||
+    !customerId
+  ) {
+    return null;
+  }
+
+  await ensureUserEntitlementRecord(userId);
+  const paidAt = new Date(session.created * 1000);
+
+  return prisma.$transaction(
+    async (transaction) => {
+      const existingPurchase = await transaction.billingPurchase.findUnique({
+        where: {
+          checkoutSessionId: session.id,
+        },
+      });
+
+      if (existingPurchase) {
+        return transaction.userEntitlement.findUnique({ where: { userId } });
+      }
+
+      const entitlement = await transaction.userEntitlement.findUniqueOrThrow({
+        where: { userId },
+      });
+      const accessRange = getHiringSprintAccessRange({
+        paidAt,
+        currentStartsAt:
+          entitlement.oneTimePlan === BillingPlan.HIRING_SPRINT
+            ? entitlement.oneTimeAccessStartsAt
+            : null,
+        currentEndsAt:
+          entitlement.oneTimePlan === BillingPlan.HIRING_SPRINT
+            ? entitlement.oneTimeAccessEndsAt
+            : null,
+      });
+      const layers = {
+        subscriptionPlan: entitlement.subscriptionPlan,
+        subscriptionStatus: entitlement.subscriptionStatus,
+        subscriptionStartsAt: entitlement.subscriptionStartsAt,
+        subscriptionEndsAt: entitlement.subscriptionEndsAt,
+        oneTimePlan: BillingPlan.HIRING_SPRINT,
+        oneTimeAccessStartsAt: accessRange.startsAt,
+        oneTimeAccessEndsAt: accessRange.endsAt,
+      };
+      const effective = resolveEffectiveEntitlement(layers, paidAt);
+
+      await transaction.billingPurchase.create({
+        data: {
+          userId,
+          plan,
+          checkoutSessionId: session.id,
+          paymentIntentId,
+          amount: session.amount_total ?? 0,
+          currency: session.currency ?? "eur",
+          accessDays: HIRING_SPRINT_ACCESS_DAYS,
+          paidAt,
+        },
+      });
+
+      return transaction.userEntitlement.update({
+        where: { userId },
+        data: {
+          ...layers,
+          ...effective,
+          billingCustomerId: customerId,
+        },
+      });
+    },
+    {
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+    },
+  );
 }
 
 export async function syncUserEntitlementFromCheckoutSession(params: {
@@ -376,16 +543,18 @@ export async function syncUserEntitlementFromCheckoutSession(params: {
   const checkoutSession = await stripe.checkout.sessions.retrieve(
     params.checkoutSessionId,
     {
-      expand: ["subscription"],
+      expand: ["subscription", "payment_intent"],
     },
   );
 
-  if (
-    checkoutSession.mode !== "subscription" ||
-    !checkoutSession.subscription
-  ) {
-    return null;
+  if (checkoutSession.mode === "payment") {
+    return syncUserEntitlementFromOneTimeCheckoutSession({
+      session: checkoutSession,
+      userId: params.userId,
+    });
   }
+
+  if (!checkoutSession.subscription) return null;
 
   const subscription =
     typeof checkoutSession.subscription === "string"

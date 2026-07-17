@@ -226,12 +226,12 @@ const fr = {
         "Un produit qui peut démarrer comme ton outil perso et devenir un vrai business.",
       description:
         "Le positionnement est déjà propre : un free tier utile, un coeur payant crédible et un sprint premium avant candidature.",
-      monthlySuffix: " / mois",
       choosePlan: "Choisir {plan}",
       plans: [
         {
           title: "Starter",
           price: "Free",
+          priceSuffix: "",
           description: "Pour valider le format et poser un diagnostic rapide.",
           features: [
             "2 modules publies",
@@ -242,6 +242,7 @@ const fr = {
         {
           title: "Mentor Pro",
           price: "€24",
+          priceSuffix: " / mois",
           description:
             "Le coeur du produit pour préparer des entretiens React de manière sérieuse.",
           features: [
@@ -253,8 +254,9 @@ const fr = {
         {
           title: "Hiring Sprint",
           price: "€59",
+          priceSuffix: " · 30 jours",
           description:
-            "Pour la fenetre courte avant entretien, quand la boucle de prep doit passer sur la voie la plus agressive.",
+            "Un achat ponctuel pour la fenêtre courte avant entretien, sans abonnement supplémentaire.",
           features: [
             "tout Mentor Pro",
             "mode sprint active",
@@ -1868,7 +1870,8 @@ const fr = {
         description:
           "Teste le mecanisme avant de t appuyer sur la lecture detaillee. Si tu es connecte, le resultat met aussi a jour ton signal de cours.",
         singleChoiceHint: "Choisis la reponse la plus solide.",
-        multipleChoiceHint: "Choisis toutes les reponses qui doivent etre vraies.",
+        multipleChoiceHint:
+          "Choisis toutes les reponses qui doivent etre vraies.",
         validateAction: "Verifier ma reponse",
         resetAction: "Reinitialiser",
         selectionRequired: "Selectionne au moins une option d abord.",

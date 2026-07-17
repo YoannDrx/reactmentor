@@ -31,6 +31,79 @@ const planDefaults = {
   },
 } as const;
 
+const activeSubscriptionStatuses = new Set<BillingStatus>([
+  BillingStatus.ACTIVE,
+  BillingStatus.TRIALING,
+  BillingStatus.PAST_DUE,
+]);
+
+export type EntitlementLayers = {
+  subscriptionPlan: BillingPlan | null;
+  subscriptionStatus: BillingStatus | null;
+  subscriptionStartsAt: Date | null;
+  subscriptionEndsAt: Date | null;
+  oneTimePlan: BillingPlan | null;
+  oneTimeAccessStartsAt: Date | null;
+  oneTimeAccessEndsAt: Date | null;
+};
+
+export function resolveEffectiveEntitlement(
+  layers: EntitlementLayers,
+  now = new Date(),
+) {
+  const oneTimeAccessIsActive = Boolean(
+    layers.oneTimePlan &&
+    layers.oneTimeAccessStartsAt &&
+    layers.oneTimeAccessEndsAt &&
+    layers.oneTimeAccessStartsAt <= now &&
+    layers.oneTimeAccessEndsAt > now,
+  );
+
+  if (oneTimeAccessIsActive && layers.oneTimePlan) {
+    const defaults = planDefaults[layers.oneTimePlan];
+    return {
+      plan: layers.oneTimePlan,
+      billingStatus: BillingStatus.ACTIVE,
+      ...defaults,
+      currentPeriodStartsAt: layers.oneTimeAccessStartsAt,
+      currentPeriodEndsAt: layers.oneTimeAccessEndsAt,
+    };
+  }
+
+  const subscriptionIsActive = Boolean(
+    layers.subscriptionPlan &&
+    layers.subscriptionStatus &&
+    activeSubscriptionStatuses.has(layers.subscriptionStatus),
+  );
+
+  if (
+    subscriptionIsActive &&
+    layers.subscriptionPlan &&
+    layers.subscriptionStatus
+  ) {
+    const defaults = planDefaults[layers.subscriptionPlan];
+    return {
+      plan: layers.subscriptionPlan,
+      billingStatus: layers.subscriptionStatus,
+      ...defaults,
+      currentPeriodStartsAt: layers.subscriptionStartsAt,
+      currentPeriodEndsAt: layers.subscriptionEndsAt,
+    };
+  }
+
+  return {
+    plan: BillingPlan.STARTER,
+    billingStatus:
+      layers.subscriptionStatus === BillingStatus.CANCELED ||
+      layers.subscriptionStatus === BillingStatus.EXPIRED
+        ? layers.subscriptionStatus
+        : BillingStatus.FREE,
+    ...planDefaults[BillingPlan.STARTER],
+    currentPeriodStartsAt: null,
+    currentPeriodEndsAt: null,
+  };
+}
+
 export type UserEntitlementSnapshot = {
   id: string;
   userId: string;
@@ -43,6 +116,13 @@ export type UserEntitlementSnapshot = {
   monthlyMockLimit: number | null;
   currentPeriodStartsAt: Date | null;
   currentPeriodEndsAt: Date | null;
+  subscriptionPlan: BillingPlan | null;
+  subscriptionStatus: BillingStatus | null;
+  subscriptionStartsAt: Date | null;
+  subscriptionEndsAt: Date | null;
+  oneTimePlan: BillingPlan | null;
+  oneTimeAccessStartsAt: Date | null;
+  oneTimeAccessEndsAt: Date | null;
   billingCustomerId: string | null;
   billingSubscriptionId: string | null;
   mocksUsedThisPeriod: number;
@@ -107,6 +187,13 @@ function mapEntitlementSnapshot(
     sprintModeEnabled: boolean;
     currentPeriodStartsAt: Date | null;
     currentPeriodEndsAt: Date | null;
+    subscriptionPlan: BillingPlan | null;
+    subscriptionStatus: BillingStatus | null;
+    subscriptionStartsAt: Date | null;
+    subscriptionEndsAt: Date | null;
+    oneTimePlan: BillingPlan | null;
+    oneTimeAccessStartsAt: Date | null;
+    oneTimeAccessEndsAt: Date | null;
     billingCustomerId: string | null;
     billingSubscriptionId: string | null;
     createdAt: Date;
@@ -177,7 +264,39 @@ export async function ensureUserEntitlementRecord(userId: string) {
 
 export async function getUserEntitlementSnapshot(userId: string) {
   const now = new Date();
-  const entitlement = await ensureUserEntitlementRecord(userId);
+  let entitlement = await ensureUserEntitlementRecord(userId);
+
+  if (
+    entitlement.oneTimePlan &&
+    entitlement.oneTimeAccessEndsAt &&
+    entitlement.oneTimeAccessEndsAt <= now
+  ) {
+    const effective = resolveEffectiveEntitlement(
+      {
+        subscriptionPlan: entitlement.subscriptionPlan,
+        subscriptionStatus: entitlement.subscriptionStatus,
+        subscriptionStartsAt: entitlement.subscriptionStartsAt,
+        subscriptionEndsAt: entitlement.subscriptionEndsAt,
+        oneTimePlan: null,
+        oneTimeAccessStartsAt: null,
+        oneTimeAccessEndsAt: null,
+      },
+      now,
+    );
+
+    entitlement = await prisma.userEntitlement.update({
+      where: {
+        id: entitlement.id,
+      },
+      data: {
+        oneTimePlan: null,
+        oneTimeAccessStartsAt: null,
+        oneTimeAccessEndsAt: null,
+        ...effective,
+      },
+    });
+  }
+
   const window = getEntitlementWindow(entitlement, now);
   const mocksUsedThisPeriod = await prisma.trainingSession.count({
     where: {
@@ -193,9 +312,7 @@ export async function getUserEntitlementSnapshot(userId: string) {
   return mapEntitlementSnapshot(entitlement, mocksUsedThisPeriod);
 }
 
-export async function getAccessibleModuleSlugs(params: {
-  userId: string;
-}) {
+export async function getAccessibleModuleSlugs(params: { userId: string }) {
   const entitlement = await getUserEntitlementSnapshot(params.userId);
 
   if (entitlement.moduleAccessLimit === null) {
@@ -261,7 +378,9 @@ export async function canAccessQuestionIds(params: {
 
   return (
     questions.length === params.questionIds.length &&
-    questions.every((question) => accessibleModuleSlugs.includes(question.module.slug))
+    questions.every((question) =>
+      accessibleModuleSlugs.includes(question.module.slug),
+    )
   );
 }
 

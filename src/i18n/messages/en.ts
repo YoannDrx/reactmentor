@@ -225,12 +225,12 @@ const en = {
         "A product that can start as your own tool and scale into a business.",
       description:
         "The positioning is already clean: a useful free tier, a credible paid core and a premium sprint before applications.",
-      monthlySuffix: " / month",
       choosePlan: "Choose {plan}",
       plans: [
         {
           title: "Starter",
           price: "Free",
+          priceSuffix: "",
           description: "To validate the format and get an early diagnosis.",
           features: [
             "2 published modules",
@@ -241,6 +241,7 @@ const en = {
         {
           title: "Mentor Pro",
           price: "€24",
+          priceSuffix: " / month",
           description:
             "The product core for serious React interview preparation.",
           features: [
@@ -252,8 +253,9 @@ const en = {
         {
           title: "Hiring Sprint",
           price: "€59",
+          priceSuffix: " · 30 days",
           description:
-            "For the short interview window where the prep loop needs the most aggressive lane.",
+            "A one-time purchase for the short interview window, with no additional subscription.",
           features: [
             "everything in Mentor Pro",
             "sprint mode enabled",
@@ -998,7 +1000,8 @@ const en = {
       qualityTranslationGapsLabel: "Questions with translation gaps",
       qualityUntaggedQuestionsLabel: "Questions without pitfall tags",
       qualityThinModulesLabel: "Thin modules",
-      qualityFreshnessReviewLabel: "Published questions pending freshness review",
+      qualityFreshnessReviewLabel:
+        "Published questions pending freshness review",
       qualityDuplicateCandidatesLabel: "Duplicate prompt candidates",
       qualityCoverageLabel: "Coverage snapshot",
       qualityNoThinModules: "No thin modules detected.",

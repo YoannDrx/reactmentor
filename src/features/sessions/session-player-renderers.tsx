@@ -55,7 +55,8 @@ function ClosedChoiceQuestionRenderer({
   showFeedback,
   isInteractionLocked,
 }: SessionQuestionRendererProps) {
-  const selectedOptionIds = getSelectedOptionIdsFromAttemptResponse(responseDraft);
+  const selectedOptionIds =
+    getSelectedOptionIdsFromAttemptResponse(responseDraft);
 
   return (
     <>
@@ -68,7 +69,7 @@ function ClosedChoiceQuestionRenderer({
         />
       ))}
 
-      <div className="grid gap-3">
+      <div className="grid gap-3" role="group" aria-label={question.prompt}>
         {question.options.map((option, index) => {
           const isSelected = selectedOptionIds.includes(option.id);
           const isCorrect = option.isCorrect;
@@ -89,6 +90,7 @@ function ClosedChoiceQuestionRenderer({
                 }
               }}
               disabled={showFeedback || isInteractionLocked}
+              aria-pressed={isSelected}
               className={cn(
                 "rounded-[24px] border px-5 py-4 text-left transition-all",
                 !showFeedback && isSelected
@@ -107,7 +109,9 @@ function ClosedChoiceQuestionRenderer({
                   {index + 1}
                 </div>
                 <div className="min-w-0">
-                  <div className="font-medium text-slate-950">{option.label}</div>
+                  <div className="font-medium text-slate-950">
+                    {option.label}
+                  </div>
                   {showFeedback ? (
                     <p className="mt-2 text-sm leading-6 text-slate-600">
                       {option.explanation}
@@ -246,7 +250,8 @@ function BugHuntQuestionRenderer({
     return null;
   }
 
-  const selectedLineNumbers = getSelectedLineNumbersFromAttemptResponse(responseDraft);
+  const selectedLineNumbers =
+    getSelectedLineNumbersFromAttemptResponse(responseDraft);
   const codeLines = contextData.code.split("\n");
 
   return (
@@ -290,6 +295,8 @@ function BugHuntQuestionRenderer({
                   key={lineNumber}
                   type="button"
                   disabled={showFeedback || isInteractionLocked}
+                  aria-pressed={isSelected}
+                  aria-label={`${messages.bugHuntSelectedLinesLabel} ${lineNumber}`}
                   onClick={() => {
                     if (!showFeedback && !isInteractionLocked) {
                       onChangeResponseDraft(
@@ -308,7 +315,9 @@ function BugHuntQuestionRenderer({
                     isInteractionLocked && "cursor-wait opacity-80",
                   )}
                 >
-                  <span className="font-mono text-xs text-slate-500">{lineNumber}</span>
+                  <span className="font-mono text-xs text-slate-500">
+                    {lineNumber}
+                  </span>
                   <span className="overflow-x-auto font-mono text-sm leading-6 text-slate-100">
                     {codeLine.length > 0 ? codeLine : " "}
                   </span>
@@ -347,9 +356,7 @@ function BugHuntQuestionRenderer({
   );
 }
 
-export function SessionQuestionRenderer(
-  props: SessionQuestionRendererProps,
-) {
+export function SessionQuestionRenderer(props: SessionQuestionRendererProps) {
   if (isClosedQuestionFormat(props.question.format)) {
     return <ClosedChoiceQuestionRenderer {...props} />;
   }
